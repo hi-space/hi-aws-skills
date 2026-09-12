@@ -118,7 +118,9 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 3. Done when: `brief check … ✓`, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
    Then tell the user the paths and any substitutions or assumptions from the brief. **Briefs alone are not a
    deliverable**: the request was a diagram, so the run ends only when every output set named in `## Scope` has
-   its `.drawio` and PNGs — a "final report" with specs "ready for export" is an unfinished run.
+   its `.drawio` and PNGs — a "final report" with specs "ready for export" is an unfinished run. The brief is the
+contract, not "supporting documentation": a diagram whose rebuild fails the brief check is not deliverable even
+if its own validator line is clean.
 
 ## Two icon patterns — the rule that decides whether icons render
 
