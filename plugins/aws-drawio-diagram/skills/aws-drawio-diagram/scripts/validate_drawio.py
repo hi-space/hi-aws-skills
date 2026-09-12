@@ -13,6 +13,8 @@ Warnings:
   W1  orthogonalEdgeStyle edge without exitX/entryX (routing may wander)
   W2  aws4 icon without fillColor (renders white in PNG export)
   W3  group container without dropTarget=1
+  W4  edge whose endpoints share neither a column nor a lane (needs a bend — realign the nodes)
+  W5  straight edge whose corridor passes through an unconnected icon's bounding box
 
 Usage: validate_drawio.py FILE [FILE ...]
 Adapted from vidanov/aws-architecture-diagram-skill tests/validate_drawio.py (MIT).
@@ -51,6 +53,75 @@ def parse_style(style: str | None) -> dict[str, str]:
 def _aws4_name(value: str) -> str | None:
     m = RE_AWS4.search(value or "")
     return m.group(1) if m else None
+
+
+ALIGN_TOLERANCE = 4.0  # px; icons on the same column/lane within this are "aligned"
+
+
+def _abs_geometry(cells: dict[str, ET.Element]) -> dict[str, tuple[float, float, float, float]]:
+    """Absolute (x, y, w, h) for every vertex with geometry, resolving container parents."""
+    geo: dict[str, tuple[float, float, float, float]] = {}
+
+    def resolve(cid: str, seen: tuple[str, ...] = ()) -> tuple[float, float, float, float] | None:
+        if cid in geo:
+            return geo[cid]
+        cell = cells.get(cid)
+        if cell is None or cell.get("vertex") != "1":
+            return None
+        g = cell.find("mxGeometry")
+        if g is None:
+            return None
+        x, y = float(g.get("x", 0)), float(g.get("y", 0))
+        w, h = float(g.get("width", 0)), float(g.get("height", 0))
+        parent = cell.get("parent")
+        if parent and parent not in ("0", "1") and parent not in seen:
+            pg = resolve(parent, seen + (cid,))
+            if pg:
+                x, y = x + pg[0], y + pg[1]
+        geo[cid] = (x, y, w, h)
+        return geo[cid]
+
+    for cid in cells:
+        resolve(cid)
+    return geo
+
+
+def _is_icon(style: dict[str, str]) -> bool:
+    shape = style.get("shape", "")
+    if shape == "image":
+        return True
+    name = _aws4_name(shape)
+    return bool(name) and name not in GROUP_SHAPES
+
+
+def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
+    warnings: list[str] = []
+    geo = _abs_geometry(cells)
+    icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
+    for cid, cell in cells.items():
+        if cell.get("edge") != "1":
+            continue
+        s, t = cell.get("source"), cell.get("target")
+        if s not in icons or t not in icons:
+            continue
+        sx, sy, sw, sh = geo[s]
+        tx, ty, tw, th = geo[t]
+        scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
+        if abs(scx - tcx) <= ALIGN_TOLERANCE:          # vertical corridor
+            y1, y2 = min(sy + sh, ty + th), max(sy, ty)
+            blockers = [o for o in icons - {s, t}
+                        if geo[o][0] <= scx <= geo[o][0] + geo[o][2] and geo[o][1] < y2 and geo[o][1] + geo[o][3] > y1]
+        elif abs(scy - tcy) <= ALIGN_TOLERANCE:        # horizontal corridor
+            x1, x2 = min(sx + sw, tx + tw), max(sx, tx)
+            blockers = [o for o in icons - {s, t}
+                        if geo[o][1] <= scy <= geo[o][1] + geo[o][3] and geo[o][0] < x2 and geo[o][0] + geo[o][2] > x1]
+        else:
+            warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane — "
+                            f"align them (dx={abs(scx - tcx):.0f}, dy={abs(scy - tcy):.0f}) so the edge is one straight segment")
+            continue
+        for o in blockers:
+            warnings.append(f"W5 edge '{cid}': straight path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
+    return warnings
 
 
 def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
@@ -125,6 +196,7 @@ def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
         if style.get("edgeStyle") == "orthogonalEdgeStyle" and "exitX" not in style and "entryX" not in style:
             warnings.append(f"W1 edge '{cid}': no exitX/entryX — set explicit ports so routing stays clean")
 
+    warnings.extend(_layout_warnings(cells))
     return errors, warnings
 
 

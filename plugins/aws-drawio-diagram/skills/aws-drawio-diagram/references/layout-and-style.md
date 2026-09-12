@@ -13,6 +13,26 @@ procedure and the two icon patterns.
 - Icon size **78×78** for main services, **65×65** for secondary. `sketch=0` on every icon. Labels 12 px.
 - Above ~12 icons, split into pages (see Multi-page).
 
+## Grid and straight edges (visual quality)
+
+A diagram with correct icons but a crooked layout still reads as unprofessional. Place icons on a grid and make every edge a single straight segment; the validator warns (`W4`, `W5`) when it cannot.
+
+- **Grid.** Columns every **280 px**, lanes every **260 px** (78 px icon + label + gap). Main flow on one lane, left to right. Pick column x-values once (e.g. 700, 980, 1260, 1540, 1820) and lane y-values once (e.g. 300, 560, 820, 1100) and use only those.
+- **Same column or same lane.** Two connected icons share either the same x (vertical edge) or the same y (horizontal edge). `child.x = parent.x` exactly — never eyeball. If a pair cannot share a row or column, move a node; do not add bends.
+- **Ports follow the geometry.** Horizontal edge: `exitX=1;exitY=0.5;…;entryX=0;entryY=0.5;`. Down: `exitX=0.5;exitY=1;…;entryX=0.5;entryY=0;`. Up: `exitX=0.5;exitY=0;…;entryX=0.5;entryY=1;`.
+- **Nothing in the corridor.** No edge may pass through the bounding box of an icon it does not connect. If a node sits between a source and target on the same lane, either it belongs in the flow (connect through it) or it moves to another lane.
+- **One edge per corridor.** Two edges must not run on top of each other; give them different lanes or different ports.
+- **Fan-out is the one allowed bend.** A branch to several targets leaves the source once and bends once; targets sit on lanes above and below the source's lane, in the next column.
+- **Keep node labels out of edge paths.** Default label position is below the icon. Move it when an edge would
+  cross it: bottom edge only → label on top (`verticalLabelPosition=top;verticalAlign=bottom;`); top and bottom
+  edges, right side free → label on the right (`labelPosition=right;verticalLabelPosition=middle;align=left;
+  verticalAlign=middle;spacingLeft=6;`); edges on top, bottom and a side (hub node) → bottom-left corner
+  (`labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;`). In every case delete the base
+  style's later `align=center;` — otherwise it wins and the text lands on the icon.
+- **Label sparingly.** Most edges need no label. When two edges meet at a node, at most one of them carries a label, or their labels collide.
+- **Balance.** Size the canvas to the content plus a consistent margin; do not leave one half empty.
+- **Self-check before writing.** For every edge: same row or column? corridor free of other icons? at most one bend? no other edge in the same corridor? Fix coordinates, not intent.
+
 ## Canvas and title
 
 ```xml

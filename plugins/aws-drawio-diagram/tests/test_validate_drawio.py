@@ -127,3 +127,27 @@ def test_cli_exit_codes(tmp_path):
     assert ok.returncode == 0 and "0 errors" in ok.stdout
     ko = subprocess.run([sys.executable, str(SCRIPTS / "validate_drawio.py"), str(bad)], capture_output=True, text=True)
     assert ko.returncode == 1 and "E2" in ko.stdout
+
+
+def test_w4_unaligned_edge_and_w5_blocked_corridor():
+    # RESOURCE_OK sits at (300,0); a target at (300,300) is aligned vertically with it,
+    # while a third icon parked on that corridor triggers W5.
+    below = RESOURCE_OK.replace('id="b"', 'id="c"').replace('x="300" y="0"', 'x="300" y="300"')
+    blocker = RESOURCE_OK.replace('id="b"', 'id="k"').replace('x="300" y="0"', 'x="300" y="150"')
+    edge_bc = EDGE_OK.replace('id="e"', 'id="e2"').replace('source="a"', 'source="b"').replace('target="b"', 'target="c"')
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + below + blocker + edge_bc), INDEX)
+    assert errors == [] and codes(warnings) == ["W5"] and "'k'" in warnings[0]
+    diagonal = RESOURCE_OK.replace('id="b"', 'id="d"').replace('x="300" y="0"', 'x="420" y="260"')
+    edge_ad = EDGE_OK.replace('id="e"', 'id="e3"').replace('target="b"', 'target="d"')
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + diagonal + edge_ad), INDEX)
+    assert errors == [] and codes(warnings) == ["W4"]
+
+
+def test_layout_checks_resolve_container_offsets():
+    grp = ('<mxCell id="g" value="VPC" style="shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc2;'
+           'strokeColor=#8C4FFF;fillColor=none;container=1;dropTarget=1;" vertex="1" parent="1">'
+           '<mxGeometry x="100" y="100" width="600" height="300" as="geometry"/></mxCell>')
+    inside = RESOURCE_OK.replace('id="b"', 'id="b"').replace('parent="1"', 'parent="g"').replace('x="300" y="0"', 'x="200" y="-100"')
+    # absolute position of b = (300, 0): aligned with a at (0,0) → clean
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + grp + inside + EDGE_OK), INDEX)
+    assert errors == [] and warnings == []

@@ -20,11 +20,13 @@ draw.io's own sources — never from memory.
 2. **Read** [`references/layout-and-style.md`](references/layout-and-style.md) once. It holds the canvas, edge,
    group, multi-page, and audience rules.
 3. **Look up every icon** (see *Icon lookup*). Write the names down before writing XML.
-4. **Write the XML** with the Write tool to `<descriptive-name>.drawio`. Large diagrams: write in chunks.
-5. **Validate**: run `python3 <skill-dir>/scripts/validate_drawio.py <file>.drawio`. Fix every `ERROR`, then rerun.
-   Treat `warn` lines as suggestions.
-6. **Export** if asked (see *Export*), then open or print the path.
-7. **Companion guide**: write `<name>.md` next to the file (title, numbered flow, services, decisions).
+4. **Lay out on the grid** (layout-and-style.md § Grid): fixed column and lane coordinates, every connected pair on the same
+   column or lane so each edge is one straight segment, no icon inside another edge's corridor, one bend only at fan-out.
+5. **Write the XML** with the Write tool to `<descriptive-name>.drawio`. Large diagrams: write in chunks.
+6. **Validate**: run `python3 <skill-dir>/scripts/validate_drawio.py <file>.drawio`. Fix every `ERROR`, then rerun.
+   Treat `warn` lines as suggestions, except `W4`/`W5` (crooked or obstructed edges): fix the layout.
+7. **Export** if asked (see *Export*), then open or print the path.
+8. **Companion guide**: write `<name>.md` next to the file (title, numbered flow, services, decisions).
 
 `<skill-dir>` is the directory containing this SKILL.md. Locate it with the plugin root you were installed from;
 do not assume it is under the current working directory.
@@ -98,6 +100,7 @@ Root/CI on a current build: add `--no-sandbox` right after `drawio` (older build
 - Groups carry `container=1` (`E4`); children reference the group as `parent`.
 - Unique ids, no XML comments, uncompressed XML (`E5`, `E6`).
 - A `#F5F5F5` background rectangle is the first vertex; a title block follows.
+- Every edge is one straight segment between icons on the same column or lane, with a clear corridor (`W4`, `W5`).
 
 ## Related skill
 

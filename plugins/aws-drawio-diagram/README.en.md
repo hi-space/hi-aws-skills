@@ -21,6 +21,14 @@ draw.io's AWS icons come in two patterns with opposite `strokeColor` rules.
 
 On top of that, stencil names don't track service renames (OpenSearch is still `elasticsearch_service`). This skill prevents the problem with (1) a catalog of 1,000+ names generated from draw.io's `Sidebar-AWS4.js` and `aws4.xml`, (2) a rename-alias table, and (3) a validator that runs automatically after generation.
 
+## Sample
+
+Produced with this skill. The `.drawio.png` embeds the XML, so it opens for editing in draw.io.
+
+![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
+
+[agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio) · [notes](docs/samples/agentic-rag-chat.md)
+
 ## Install (Claude Code)
 
 ```

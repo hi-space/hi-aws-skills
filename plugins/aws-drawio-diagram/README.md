@@ -21,6 +21,14 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 여기에 더해 스텐실 이름은 서비스 리네임을 따라가지 않습니다(OpenSearch 는 여전히 `elasticsearch_service`). 이 스킬은 (1) draw.io 의 `Sidebar-AWS4.js` 와 `aws4.xml` 에서 생성한 1,000개 이상의 이름 카탈로그, (2) 리네임 별칭표, (3) 생성 후 자동 실행하는 검증 스크립트로 이 문제를 막습니다.
 
+## 샘플
+
+이 스킬로 만든 다이어그램입니다. `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다.
+
+![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
+
+[agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio) · [설명](docs/samples/agentic-rag-chat.md)
+
 ## 설치 (Claude Code)
 
 ```
