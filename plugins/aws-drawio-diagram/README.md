@@ -23,11 +23,15 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 ## 샘플
 
-이 스킬로 만든 다이어그램입니다. `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다.
+이 스킬로 만든 다이어그램입니다. 스킬은 세 단계로 일합니다. ① 아키텍처 브리프(구성요소·관계표·흐름·그룹·AWS 정합성 체크)를 먼저 쓰고, ② 브리프만 보고 그리드 스펙(JSON)을 작성해 `scripts/build_diagram.py`로 `.drawio`를 생성·검증하고, ③ 렌더한 PNG를 브리프와 대조해 겹침·가독성·구성을 리뷰합니다. 240×170 그리드, 역할별 그룹 카드, Amazon Ember 글꼴, 직선 또는 한 번 꺾인 엣지가 규칙입니다(`references/layout-and-style.md`). `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다.
 
 ![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
 
-[agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio) · [설명](docs/samples/agentic-rag-chat.md)
+[brief](docs/samples/agentic-rag-chat.brief.md) · [spec](docs/samples/agentic-rag-chat.json) · [agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio)
+
+![Order pipeline](docs/samples/order-pipeline.drawio.png)
+
+[brief](docs/samples/order-pipeline.brief.md) · [spec](docs/samples/order-pipeline.json) · [order-pipeline.drawio](docs/samples/order-pipeline.drawio) — Step Functions 팬아웃(한 번 꺾임)과 한국어 제목 예시
 
 ## 설치 (Claude Code)
 

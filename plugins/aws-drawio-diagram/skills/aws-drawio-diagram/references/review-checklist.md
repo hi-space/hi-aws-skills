@@ -1,0 +1,57 @@
+# Phase 3 — Review checklist
+
+The Reviewer gets three things: the brief, the validator output, and the rendered PNG (plain export, no `-e`,
+so the Read tool can display it). The Reviewer does **not** get the spec or the XML first — judge the picture the
+way the user will, then open the spec to explain what to change.
+
+Report as a list of findings; each finding names the fix **as a spec change** (move node X to lane 2, drop the
+label on edge Y, widen group Z to cols [3,4]). The Drawer applies them and re-exports; the Reviewer looks again.
+Two rounds is normal; a third means the brief or the group plan is wrong — go back to Phase 1.
+
+## A. Faithful to the brief
+
+- [ ] Every component in the brief is a node; no node exists that the brief does not list.
+- [ ] Every relationship is an edge with the right direction and kind (solid = sync, dashed = async/aux,
+      red dashed = error). Count them: brief rows = edges.
+- [ ] Group membership matches the brief's Group column. Users / external systems are outside the AWS Cloud.
+- [ ] Labels use the brief's names (current AWS service names, qualifiers in parentheses).
+
+## B. Mechanically clean (validator)
+
+- [ ] `0 errors, 0 warnings`. `W4`–`W7` are layout defects, not style opinions:
+      W4 two-bend edge · W5 edge through an icon · W6 icon outside every group · W7 edge label on a border.
+
+## C. Human-readable (look at the PNG)
+
+- [ ] **Nothing overlaps**: no text on a line, no line through an icon, no label across a group border, no
+      node label touching a group title. Zoom in on every edge label and every top-placed node label.
+- [ ] **Read order**: main request path runs left → right on one lane; auxiliary paths hang below (or above);
+      the eye finds the entry point in the first second.
+- [ ] **Grouping**: 2–7 role groups, each titled, each with 1–4 icons; no group with more empty cells than
+      icons; no lonely icon floating in the cloud.
+- [ ] **Balance**: the cloud box has no empty quadrant larger than a group; the canvas hugs the content
+      (roughly equal margins); no half-empty page.
+- [ ] **Edges**: every edge is straight or has one bend; fan-out bends are all on the same side of the source;
+      no two edges share a segment.
+- [ ] **Labels**: ≤ 5 edge labels for ~15 nodes; each in free space; each ≤ 2 words. Node labels ≤ 3 words.
+- [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
+      group titles bold; nothing in a second colour except the grey subtitle/legend.
+- [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
+
+## D. Correct as architecture (sanity re-check)
+
+- [ ] Entry, auth, async boundaries, state, observability — the brief's Checks section is still true in the
+      picture (nothing got dropped to make layout easier). If the Drawer removed a component for layout
+      reasons, that is a finding: the fix is a layout change, not a smaller architecture.
+
+## Typical findings → spec fixes
+
+| Finding | Spec fix |
+|---|---|
+| Label on a group border | remove `label`, or move the node so the segment crosses a row gap, or set `label_offset` |
+| Node label collides with a group title | node is in lane 0 with an edge from below → fine (builder puts label on top and the group has a 60 px header); if it still touches, the label is too long — shorten |
+| Hub label overflows the group's left border | shorten the label to two short words (builder splits into two lines) or move one neighbour to free the bottom side |
+| Dead column inside a group | put the side-labelled node's neighbour in that cell, or move the side label by freeing the node's bottom side (rotate one edge to a horizontal neighbour) |
+| Empty band across the top of the cloud | move upper-lane items there (auth, static assets, memory) or drop lane 0 and fan out downward |
+| Fan-out edge runs through an icon | the source's top/bottom cell must be empty; move that icon or fan out on the other side |
+| Group taller than its neighbours for one icon | split lanes: give the extra icon its own single-lane group in the next row |

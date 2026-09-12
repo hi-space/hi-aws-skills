@@ -9,7 +9,7 @@ def test_manifests_are_valid_json_and_agree_on_name():
     a = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())
     b = json.loads((PLUGIN / "plugin.json").read_text())
     assert a["name"] == b["name"] == "aws-drawio-diagram"
-    assert a["version"] == b["version"] == "1.0.0"
+    assert a["version"] == b["version"] == "1.1.0"
 
 
 def test_fixture_snapshots_exist_and_are_plausible():

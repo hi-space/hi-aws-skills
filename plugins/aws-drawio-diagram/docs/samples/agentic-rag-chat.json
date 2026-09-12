@@ -1,0 +1,46 @@
+{
+  "id": "agentic-rag",
+  "page": "Agentic RAG Chat",
+  "title": "Agentic RAG Chat — Serverless on AWS",
+  "subtitle": "hi-aws-skills sample · 2026-09-12 · v2",
+  "groups": [
+    {"id": "g_front", "label": "Frontend", "cols": [1], "lanes": [0, 1]},
+    {"id": "g_api", "label": "API & Auth", "cols": [2], "lanes": [0, 1]},
+    {"id": "g_agent", "label": "Agent runtime", "cols": [3], "lanes": [0, 1]},
+    {"id": "g_model", "label": "Foundation model", "cols": [4], "lanes": [1]},
+    {"id": "g_obs", "label": "Observability", "cols": [1, 2], "lanes": [2]},
+    {"id": "g_know", "label": "Knowledge", "cols": [3, 4], "lanes": [2]},
+    {"id": "g_ingest", "label": "Document ingestion", "cols": [1, 2, 3], "lanes": [3]}
+  ],
+  "nodes": [
+    {"id": "users", "label": "Users", "icon": "users", "col": 0, "lane": 1, "outside": true},
+    {"id": "s3web", "label": "S3 (static site)", "icon": "s3", "col": 1, "lane": 0, "group": "g_front"},
+    {"id": "cf", "label": "CloudFront", "icon": "cloudfront", "col": 1, "lane": 1, "group": "g_front"},
+    {"id": "cognito", "label": "Cognito", "icon": "cognito", "col": 2, "lane": 0, "group": "g_api"},
+    {"id": "apigw", "label": "API Gateway", "icon": "api_gateway", "col": 2, "lane": 1, "group": "g_api"},
+    {"id": "memory", "label": "AgentCore Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg", "col": 3, "lane": 0, "group": "g_agent"},
+    {"id": "lambda", "label": "Chat agent", "icon": "lambda", "col": 3, "lane": 1, "group": "g_agent"},
+    {"id": "bedrock", "label": "Bedrock (Claude)", "icon": "bedrock", "col": 4, "lane": 1, "group": "g_model"},
+    {"id": "sns", "label": "SNS (alerts)", "icon": "sns", "col": 1, "lane": 2, "group": "g_obs"},
+    {"id": "cw", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 2, "lane": 2, "group": "g_obs"},
+    {"id": "oss", "label": "OpenSearch Serverless (vector index)", "icon": "elasticsearch_service", "col": 3, "lane": 2, "group": "g_know"},
+    {"id": "s3docs", "label": "S3 (documents)", "icon": "s3", "col": 1, "lane": 3, "group": "g_ingest"},
+    {"id": "eb", "label": "EventBridge", "icon": "eventbridge", "col": 2, "lane": 3, "group": "g_ingest"},
+    {"id": "ingest", "label": "Ingest / embed", "icon": "lambda", "col": 3, "lane": 3, "group": "g_ingest"}
+  ],
+  "edges": [
+    {"from": "users", "to": "cf", "label": "HTTPS"},
+    {"from": "cf", "to": "s3web"},
+    {"from": "cf", "to": "apigw"},
+    {"from": "apigw", "to": "cognito", "dashed": true},
+    {"from": "apigw", "to": "lambda"},
+    {"from": "lambda", "to": "memory"},
+    {"from": "lambda", "to": "bedrock"},
+    {"from": "lambda", "to": "oss", "label": "retrieve"},
+    {"from": "apigw", "to": "cw", "dashed": true},
+    {"from": "cw", "to": "sns", "label": "alarm"},
+    {"from": "s3docs", "to": "eb"},
+    {"from": "eb", "to": "ingest"},
+    {"from": "ingest", "to": "oss", "label": "embed"}
+  ]
+}

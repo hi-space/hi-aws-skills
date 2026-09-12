@@ -13,9 +13,10 @@ Warnings:
   W1  orthogonalEdgeStyle edge without exitX/entryX (routing may wander)
   W2  aws4 icon without fillColor (renders white in PNG export)
   W3  group container without dropTarget=1
-  W4  edge whose endpoints share neither a column nor a lane (needs a bend — realign the nodes)
-  W5  straight edge whose corridor passes through an unconnected icon's bounding box
+  W4  edge that needs two bends: endpoints share neither column nor lane and the ports do not form an L
+  W5  straight or single-bend edge whose path passes through an unconnected icon's bounding box
   W6  icon drawn inside an AWS Cloud group but not a child of a role group
+  W7  edge label whose box covers a group/cloud border (drop it or shift it with mxGeometry x)
 
 Usage: validate_drawio.py FILE [FILE ...]
 Adapted from vidanov/aws-architecture-diagram-skill tests/validate_drawio.py (MIT).
@@ -95,6 +96,63 @@ def _is_icon(style: dict[str, str]) -> bool:
     return bool(name) and name not in GROUP_SHAPES
 
 
+def _port(style: dict[str, str], key: str) -> float | None:
+    try:
+        return float(style[key])
+    except (KeyError, ValueError):
+        return None
+
+
+def _blockers(icons, geo, exclude, a, b):
+    """Icons (other than `exclude`) whose box intersects the axis-aligned segment a→b."""
+    (x1, y1), (x2, y2) = a, b
+    out = []
+    for o in icons - exclude:
+        ox, oy, ow, oh = geo[o]
+        if abs(x1 - x2) <= ALIGN_TOLERANCE:                       # vertical segment at x1
+            lo, hi = min(y1, y2), max(y1, y2)
+            if ox <= x1 <= ox + ow and oy < hi and oy + oh > lo:
+                out.append(o)
+        else:                                                    # horizontal segment at y1
+            lo, hi = min(x1, x2), max(x1, x2)
+            if oy <= y1 <= oy + oh and ox < hi and ox + ow > lo:
+                out.append(o)
+    return out
+
+
+def _edge_path(style, sg, tg):
+    """Return the polyline draw.io will draw for a straight or single-bend (L) edge, or None if the
+    endpoints need two bends. Straight: aligned centers. L: exit side and entry side on different
+    axes, with the corner lying in the direction each port faces."""
+    sx, sy, sw, sh = sg
+    tx, ty, tw, th = tg
+    scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
+    if abs(scx - tcx) <= ALIGN_TOLERANCE:
+        return [(scx, sy + sh if ty > sy else sy), (scx, ty if ty > sy else ty + th)]
+    if abs(scy - tcy) <= ALIGN_TOLERANCE:
+        return [(sx + sw if tx > sx else sx, scy), (tx if tx > sx else tx + tw, scy)]
+    ex, ey, nx, ny = (_port(style, k) for k in ("exitX", "exitY", "entryX", "entryY"))
+    if None in (ex, ey, nx, ny):
+        return None
+    p = (sx + ex * sw, sy + ey * sh)
+    q = (tx + nx * tw, ty + ny * th)
+    exit_vertical = abs(ex - 0.5) < 0.01 and ey in (0.0, 1.0)
+    exit_horizontal = abs(ey - 0.5) < 0.01 and ex in (0.0, 1.0)
+    entry_vertical = abs(nx - 0.5) < 0.01 and ny in (0.0, 1.0)
+    entry_horizontal = abs(ny - 0.5) < 0.01 and nx in (0.0, 1.0)
+    if exit_vertical and entry_horizontal:
+        c = (p[0], q[1])
+        ok = (c[1] < p[1]) if ey == 0.0 else (c[1] > p[1])
+        ok = ok and ((c[0] < q[0]) if nx == 0.0 else (c[0] > q[0]))
+    elif exit_horizontal and entry_vertical:
+        c = (q[0], p[1])
+        ok = (c[0] > p[0]) if ex == 1.0 else (c[0] < p[0])
+        ok = ok and ((c[1] < q[1]) if ny == 0.0 else (c[1] > q[1]))
+    else:
+        return None
+    return [p, c, q] if ok else None
+
+
 def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     warnings: list[str] = []
     geo = _abs_geometry(cells)
@@ -105,23 +163,68 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
         s, t = cell.get("source"), cell.get("target")
         if s not in icons or t not in icons:
             continue
-        sx, sy, sw, sh = geo[s]
-        tx, ty, tw, th = geo[t]
-        scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
-        if abs(scx - tcx) <= ALIGN_TOLERANCE:          # vertical corridor
-            y1, y2 = min(sy + sh, ty + th), max(sy, ty)
-            blockers = [o for o in icons - {s, t}
-                        if geo[o][0] <= scx <= geo[o][0] + geo[o][2] and geo[o][1] < y2 and geo[o][1] + geo[o][3] > y1]
-        elif abs(scy - tcy) <= ALIGN_TOLERANCE:        # horizontal corridor
-            x1, x2 = min(sx + sw, tx + tw), max(sx, tx)
-            blockers = [o for o in icons - {s, t}
-                        if geo[o][1] <= scy <= geo[o][1] + geo[o][3] and geo[o][0] < x2 and geo[o][0] + geo[o][2] > x1]
-        else:
-            warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane — "
-                            f"align them (dx={abs(scx - tcx):.0f}, dy={abs(scy - tcy):.0f}) so the edge is one straight segment")
+        style = parse_style(cell.get("style"))
+        path = _edge_path(style, geo[s], geo[t])
+        if path is None:
+            sx, sy, sw, sh = geo[s]
+            tx, ty, tw, th = geo[t]
+            dx, dy = abs(sx + sw / 2 - tx - tw / 2), abs(sy + sh / 2 - ty - th / 2)
+            warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane and the ports do not "
+                            f"form a single bend — align them (dx={dx:.0f}, dy={dy:.0f}) or use the fan-out ports "
+                            "(exit top/bottom, enter left/right)")
             continue
-        for o in blockers:
-            warnings.append(f"W5 edge '{cid}': straight path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
+        for a, b in zip(path, path[1:]):
+            for o in _blockers(icons, geo, {s, t}, a, b):
+                warnings.append(f"W5 edge '{cid}': path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
+    return warnings
+
+
+LABEL_CHAR_PX = 6.2      # ~11 px Amazon Ember / Helvetica average glyph advance
+LABEL_PAD_PX = 8
+LABEL_HALF_H = 8
+
+
+def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
+    """W7: an edge label whose box covers a container border (group or cloud). Straight edges only:
+    the label sits at the segment midpoint, shifted by the relative mxGeometry x (-1 source … 1 target);
+    horizontal labels are drawn above the line, vertical labels to its left (align=right)."""
+    geo = _abs_geometry(cells)
+    containers = [cid for cid, c in cells.items()
+                  if cid in geo and parse_style(c.get("style")).get("container") == "1"]
+    if not containers:
+        return []
+    icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
+    warnings: list[str] = []
+    for cid, cell in cells.items():
+        text = re.sub(r"<[^>]+>", "", cell.get("value") or "").strip()
+        if cell.get("edge") != "1" or not text:
+            continue
+        s, t = cell.get("source"), cell.get("target")
+        if s not in icons or t not in icons:
+            continue
+        style = parse_style(cell.get("style"))
+        path = _edge_path(style, geo[s], geo[t])
+        if path is None or len(path) != 2:
+            continue
+        (x1, y1), (x2, y2) = path
+        g = cell.find("mxGeometry")
+        rel = float(g.get("x", 0) or 0) if g is not None else 0.0
+        half_w = LABEL_CHAR_PX * len(text) / 2 + LABEL_PAD_PX
+        if abs(y1 - y2) <= ALIGN_TOLERANCE:                         # horizontal edge
+            cx = (x1 + x2) / 2 + rel * (x2 - x1) / 2
+            cy = y1 - LABEL_HALF_H
+        else:                                                       # vertical edge, label left of line
+            cx = x1 - half_w - 4
+            cy = (y1 + y2) / 2 + rel * (y2 - y1) / 2
+        box = (cx - half_w, cy - LABEL_HALF_H, cx + half_w, cy + LABEL_HALF_H)
+        for k in containers:
+            gx, gy, gw, gh = geo[k]
+            hit_v = any(box[0] <= bx <= box[2] for bx in (gx, gx + gw)) and box[1] < gy + gh and box[3] > gy
+            hit_h = any(box[1] <= by <= box[3] for by in (gy, gy + gh)) and box[0] < gx + gw and box[2] > gx
+            if hit_v or hit_h:
+                warnings.append(f"W7 edge '{cid}': label '{text}' lands on the border of '{k}' — drop the label or "
+                                "shift it along the edge (mxGeometry x=-0.4 toward the source) into free space")
+                break
     return warnings
 
 
@@ -231,6 +334,7 @@ def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
 
     warnings.extend(_layout_warnings(cells))
     warnings.extend(_grouping_warnings(cells))
+    warnings.extend(_label_warnings(cells))
     return errors, warnings
 
 

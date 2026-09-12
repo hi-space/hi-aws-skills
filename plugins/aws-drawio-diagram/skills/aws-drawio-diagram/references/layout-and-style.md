@@ -2,8 +2,11 @@
 
 Read this once per diagram; SKILL.md only keeps the procedure and the two icon patterns. The rules are
 numeric on purpose: a diagram that follows them renders like an AWS reference architecture — compact, grouped by
-role, every edge one straight segment, nothing overlapping. The validator checks what it can (`W4`–`W6`); the
-rest is the self-check at the end of this file.
+role, every edge one straight segment or one bend, nothing overlapping. **`scripts/build_diagram.py` applies
+§1, §2, §5 and §6 for you** from a grid spec (see its header); read those sections to plan the grid and to
+understand what the builder did, and follow them literally only when writing XML by hand. The validator checks
+what it can (`W4`–`W7`); the rest is the self-check at the end of this file. Two finished examples:
+`docs/samples/agentic-rag-chat.*` and `docs/samples/order-pipeline.*` in the plugin root.
 
 Origin: vidanov/aws-architecture-diagram-skill (MIT) for the icon patterns and edge conventions; the grid,
 grouping and typography rules below replace its sparse 280 px layout.
@@ -21,8 +24,10 @@ grouping and typography rules below replace its sparse 280 px layout.
 | Cloud padding | 40 px around the outermost groups | AWS Cloud x = first group x − 40; title row inside it. |
 | Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1320 × 1040. **Never** a fixed 2400 × 1400 page. |
 
-Pick the column centers once (e.g. users at `x=120`, then `380, 620, 860, 1100`), the lane centers once (e.g.
-`260, 430` for group row 1; `650, 870` for group row 2) and use only those. Icon top-left = center − 39.
+Column *i* center `x = 140 + 240·i` (column 0 is the outside column for users/clients: `140, 380, 620, 860, …`).
+Lane *j* center `y = 260 + 170·j`, plus 50 px for every group-row boundary above lane *j*. A group-row boundary
+is a lane where one group ends and another begins (the builder derives it; by hand, add the 50 px yourself).
+Icon top-left = center − 39.
 
 Children of a group use coordinates **relative to the group**: `child.x = center.x − 39 − group.x`.
 
@@ -41,6 +46,12 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
 - Nesting deeper than *AWS Cloud → role group → icons* only when the request is about networking (then Region →
   VPC → AZ → subnet from the table below, same 200/40 arithmetic).
 - Validator `W6`: a service icon whose parent is the canvas while an AWS Cloud group exists → put it in a group.
+- **Orchestrators at overview level.** Step Functions, EventBridge rules, Batch: one icon stands for the
+  workflow; its steps are listed in the brief's Flow. Draw the steps as icons only when they are ≤ 3 and fit the
+  fan-out pattern (§5) in the next column, or on a detail page (§7). Never a dozen Lambdas for one state machine.
+- **Empty cells cost.** A fan-out or a side label leaves one empty cell inside a group — acceptable. A group with
+  more empty cells than icons, or an empty band across the top of the cloud, means the lane plan is wrong: move
+  upper-lane items there (auth, static assets, memory) or fan out downward instead.
 
 **Role group style** (no badge — this is the modern light card look):
 
@@ -129,8 +140,14 @@ error paths.
 | ↓ down | `exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
 
 - **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair
-  cannot, move a node into a free cell; never add bends. Fan-out to several targets is the one allowed bend.
-- **Empty corridor.** No other icon between source and target; no two edges in the same corridor.
+  cannot, move a node into a free cell — or use the fan-out pattern below. Never an S-shaped edge.
+- **Fan-out (the one allowed bend).** Source S on lane B fans out to targets in the **next column**: the target
+  on S's own lane gets a straight horizontal edge; a target on the lane above gets `exitX=0.5;exitY=0;` (leave
+  S's top) + `entryX=0;entryY=0.5;` (enter the target's left) — one bend at (S.x, target.y); a target on the lane
+  below leaves S's bottom the same way. Each fan-out edge uses a different side of S, so no two edges share a
+  segment. The cell directly above/below S must be empty (the vertical leg runs through it). Same ports mirrored
+  for fan-in from the left. Validator: `W4` accepts an L whose ports match its geometry and rejects anything else.
+- **Empty corridor.** No other icon on any leg of the edge; no two edges in the same corridor.
 - Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />`. No `value` when unlabeled.
 - Edges may cross group borders (that is what groups are for); they must not run along one.
 - Left-to-right for the request path: users left, models/data right. Auxiliary (logs, alarms) below.
@@ -139,10 +156,14 @@ error paths.
 
 - Horizontal edge: `verticalAlign=bottom;` (label above the line). Vertical edge: `align=right;spacingRight=4;`
   (label left of the line).
-- Only where the segment has ≥ 60 px of free space around the midpoint: the run from users into the cloud, or a
-  vertical edge crossing the gap between two group rows (`retrieve`, `embed`). **Never on an edge between two
-  adjacent groups** — the 40 px gap cannot hold a label, and the white label background bites a hole in the
-  group border.
+- Only where the segment has ≥ 60 px of free space: the run from users into the cloud, a vertical edge crossing
+  the gap between two group rows (`retrieve`, `embed`), or an edge inside one group. **Never on an edge between
+  two adjacent groups** — the 40 px gap cannot hold a label, and the white label background bites a hole in the
+  group border (`W7`).
+- **Slide the label along the edge** when the midpoint is on a border: `<mxGeometry x="-0.6" relative="1"
+  as="geometry"/>` (−1 = at the source, 0 = midpoint, 1 = at the target). The users → first-service edge always
+  needs this, because its midpoint sits on the AWS Cloud border; the builder computes the offset, by hand aim
+  for the middle of the free space outside the cloud (label ≤ 7 characters there).
 - When two labeled edges meet at one node, at most one keeps its label.
 
 ## 6. Node label placement — keep text out of edge paths
@@ -155,11 +176,13 @@ key wins in draw.io and the text lands on the icon.
 |---|---|---|
 | none / left / right / top only | below (default) | `verticalLabelPosition=bottom;verticalAlign=top;align=center;` |
 | bottom (and any of left/right) | above | `verticalLabelPosition=top;verticalAlign=bottom;align=center;` |
-| top and bottom, right side free | right | `labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=8;` — needs a free cell to the right inside the group (make the group two columns wide) |
-| top, bottom and a side (hub) | bottom-left corner | `labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;spacingRight=6;` — ≤ 55 px wide: break into two lines with `<br>` (`API<br>Gateway`, `Chat<br>agent`) |
+| top **and** bottom (a pass-through node) | first choice: **avoid it** — move one neighbour to the side so the edge is horizontal and the bottom stays free (DynamoDB → S3 archive to its left instead of below). If both vertical edges must stay: right (or left) | `labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=8;` (mirror: `labelPosition=left;…;align=right;spacingRight=8;`) — needs an **empty cell** beside the node inside the same group |
+| top, bottom and a side (hub), or no free cell beside | bottom-left corner | `labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;spacingRight=6;` — ≤ 55 px wide: break into two lines with `<br>` (`API<br>Gateway`, `Chat<br>agent`) |
 
-Labels must stay inside their group rectangle; if a side label does not fit, widen the group by one column or
-shorten the text — do not overflow the border.
+Labels must stay inside their group rectangle; if a side label does not fit, free the node's bottom side, shorten
+the text, or widen the group by one column — do not overflow the border. The builder picks the side from the
+incident edges in this order (bottom → top → right/left if the cell is free → bottom-left two-line);
+`"label_pos"` in the spec overrides it.
 
 ## 7. Multi-page
 
@@ -195,9 +218,9 @@ key design decisions (including any icon substitutions).
 - Save as `<descriptive-name>.drawio`. Export via the draw.io CLI (see SKILL.md) as `name.drawio.png` so the
   PNG embeds the XML and stays editable.
 
-## 11. Self-check before writing (and after the first render)
+## 11. Self-check (Drawer, before handing to the Reviewer)
 
-For every node: which group? which column center, which lane center? label side free of edges? label inside
-the group? For every edge: same column or lane? corridor empty? ports match the direction? label only in a
-free gap? For the canvas: white background, title, legend if two edge types, no half-empty page. Then run the
-validator and **look at the PNG** — a rule that survives the render is the only kind worth keeping.
+For every node: which group? which column, which lane? label side free of edges? label inside the group? For
+every edge: same column or lane, or a proper fan-out? corridor empty? label only in a free gap? For the canvas:
+white background, title, legend if two edge types, no half-empty page, no empty band. Then run the validator
+and **look at the PNG** — the Reviewer's checklist (`review-checklist.md`) is what you will be measured against.

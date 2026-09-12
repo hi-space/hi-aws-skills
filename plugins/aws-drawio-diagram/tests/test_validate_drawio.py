@@ -183,3 +183,60 @@ def test_w6_icon_inside_cloud_but_not_in_a_role_group():
 def test_w6_silent_without_a_cloud_group():
     errors, warnings = vd.validate_text(wrap(icon("a", "1", 0, 0)), INDEX)
     assert errors == [] and codes(warnings) == []
+
+
+def edge_cell(cid, src, dst, ports, label=""):
+    val = f' value="{label}"' if label else ""
+    return (f'<mxCell id="{cid}"{val} style="edgeStyle=orthogonalEdgeStyle;strokeWidth=2;{ports}" edge="1" '
+            f'source="{src}" target="{dst}" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>')
+
+
+UP_THEN_RIGHT = "exitX=0.5;exitY=0;entryX=0;entryY=0.5;"
+RIGHT_TO_LEFT = "exitX=1;exitY=0.5;entryX=0;entryY=0.5;"
+
+
+def test_fan_out_l_edge_with_matching_ports_is_accepted():
+    # Source at column 300 lane 300; upper target one column right, one lane up.
+    # Exit top + enter left = a single bend: no W4.
+    src = icon("s", "1", 300, 300)
+    upper = icon("t", "1", 540, 130)
+    errors, warnings = vd.validate_text(wrap(src + upper + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
+    assert errors == [] and warnings == []
+    # Same geometry with side-to-side ports needs an S-shape (two bends): W4.
+    _, warnings = vd.validate_text(wrap(src + upper + edge_cell("e", "s", "t", RIGHT_TO_LEFT)), INDEX)
+    assert codes(warnings) == ["W4"]
+    # An icon parked on the horizontal leg of the L triggers W5.
+    blocker = icon("k", "1", 420, 130)
+    _, warnings = vd.validate_text(wrap(src + upper + blocker + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
+    assert codes(warnings) == ["W5"] and "'k'" in warnings[0]
+
+
+def test_w7_edge_label_on_a_group_border():
+    # Two role groups 40 px apart; a labelled edge between their icons puts the label on the border.
+    g1 = ('<mxCell id="g1" value="A" style="rounded=0;fillColor=#F7F8FA;strokeColor=#C9D1D9;container=1;dropTarget=1;" '
+          'vertex="1" parent="1"><mxGeometry x="280" y="160" width="200" height="220" as="geometry"/></mxCell>')
+    g2 = g1.replace('id="g1"', 'id="g2"').replace('x="280"', 'x="520"')
+    a = icon("a", "g1", 61, 100)     # abs (341, 260)
+    b = icon("b", "g2", 61, 100)     # abs (581, 260)
+    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + edge_cell("e", "a", "b", RIGHT_TO_LEFT, "On completion")), INDEX)
+    assert codes(warnings) == ["W7"]
+    # Unlabelled: silent. Labelled but both nodes inside the same group: silent.
+    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + edge_cell("e", "a", "b", RIGHT_TO_LEFT)), INDEX)
+    assert warnings == []
+    wide = g1.replace('width="200"', 'width="500"')
+    b_in = icon("b", "g1", 301, 100)
+    _, warnings = vd.validate_text(wrap(wide + a + b_in + edge_cell("e", "a", "b", RIGHT_TO_LEFT, "alarm")), INDEX)
+    assert warnings == []
+
+
+def test_w7_respects_relative_label_offset():
+    # Users outside the cloud → first icon inside. The midpoint label sits on the cloud border (x=200);
+    # shifting it toward the source (mxGeometry x=-0.4) clears it.
+    users = icon("u", "1", 1, 391)           # right edge at 79
+    cf = icon("cf", "cloud", 121, 291)       # abs (321, 391): same lane, edge midpoint = 200
+    mid = edge_cell("e", "u", "cf", RIGHT_TO_LEFT, "HTTPS")
+    _, warnings = vd.validate_text(wrap(CLOUD + ROLE_GROUP + users + cf + mid), INDEX)
+    assert "W7" in codes(warnings)
+    shifted = mid.replace('<mxGeometry relative="1" as="geometry"/>', '<mxGeometry x="-0.4" relative="1" as="geometry"/>')
+    _, warnings = vd.validate_text(wrap(CLOUD + ROLE_GROUP + users + cf + shifted), INDEX)
+    assert "W7" not in codes(warnings)

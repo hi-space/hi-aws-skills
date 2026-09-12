@@ -28,3 +28,11 @@ def test_mentions_validator_and_lookup_order():
     assert "scripts/validate_drawio.py" in text
     assert "aws-icons-aliases.md" in text and "aws-icons-extra.md" in text
     assert "aws3d" not in text.lower()
+
+
+def test_phased_procedure_and_builder():
+    text = SKILL_MD.read_text()
+    for needle in ("Architect", "Drawer", "Reviewer", "scripts/build_diagram.py",
+                   "references/architecture-brief.md", "references/review-checklist.md", "W7"):
+        assert needle in text, needle
+    assert (SKILL / "scripts" / "build_diagram.py").exists()

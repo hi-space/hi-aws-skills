@@ -23,11 +23,15 @@ On top of that, stencil names don't track service renames (OpenSearch is still `
 
 ## Sample
 
-Produced with this skill. The `.drawio.png` embeds the XML, so it opens for editing in draw.io.
+Produced with this skill. The skill works in three phases: ① an architecture brief (components, relationship table, flow, groups, AWS sanity checks), ② a grid spec (JSON) written from the brief alone and built into `.drawio` by `scripts/build_diagram.py`, which also validates it, ③ a review of the rendered PNG against the brief for overlaps, readability and grouping. Rules: 240 × 170 grid, role-group cards, Amazon Ember, every edge straight or with one bend (`references/layout-and-style.md`). The `.drawio.png` embeds the XML, so it opens for editing in draw.io.
 
 ![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
 
-[agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio) · [notes](docs/samples/agentic-rag-chat.md)
+[brief](docs/samples/agentic-rag-chat.brief.md) · [spec](docs/samples/agentic-rag-chat.json) · [agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio)
+
+![Order pipeline](docs/samples/order-pipeline.drawio.png)
+
+[brief](docs/samples/order-pipeline.brief.md) · [spec](docs/samples/order-pipeline.json) · [order-pipeline.drawio](docs/samples/order-pipeline.drawio) — shows the Step Functions fan-out (one bend) and a Korean title
 
 ## Install (Claude Code)
 
