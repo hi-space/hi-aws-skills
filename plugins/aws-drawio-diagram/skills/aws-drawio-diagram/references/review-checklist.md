@@ -12,7 +12,10 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 
 - [ ] Every component in the brief is a node; no node exists that the brief does not list.
 - [ ] Every relationship is an edge with the right direction and kind (solid = sync, dashed = async/aux,
-      red dashed = error). Count them: brief rows = edges.
+      red dashed = error). Count them: brief rows = edges. A Drawer that dropped a *primary* relationship to
+      make layout work is a finding (fix the layout). A brief that lists redundant *aux* edges (one into
+      CloudWatch per service) is a brief defect the Reviewer may fix directly: keep the representative edge,
+      delete the rest from the table, add a line under Decisions — no Phase 1 restart needed.
 - [ ] Group membership matches the brief's Group column. Users / external systems are outside the AWS Cloud.
 - [ ] Labels use the brief's names (current AWS service names, qualifiers in parentheses).
 

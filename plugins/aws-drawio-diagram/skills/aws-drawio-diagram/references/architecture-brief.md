@@ -47,6 +47,21 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 - No Guardrails icon in draw.io: guardrails are described, not drawn.
 ```
 
+## Diagram budget — decide it here, not in the drawing
+
+The grid gives every node **four sides and one edge per side**, and a bend only reaches the diagonally adjacent
+cell. The brief has to respect that, or the Drawer will drop relationships to make the picture work.
+
+- **≤ 4 relationships per component.** A component with more is a hub: put a queue/topic/bus next to it
+  (SQS, SNS, EventBridge) and hang the consumers off that, or split it into two components.
+- **One representative edge per cross-cutting sink.** CloudWatch, X-Ray, KMS, IAM, Secrets Manager receive
+  from everything; draw **one** edge into them from the most telling source (the stream, the API, the main
+  Lambda) and say "all services log to CloudWatch" in Flow. Never one edge per service.
+- **Fan-out/fan-in ≤ 3 targets**, all in the column next to the source (one on its lane, one above, one
+  below). More targets → a topic/bus in between.
+- **Aux edges are optional in the picture.** Mark them `aux` in the relationship table; the Reviewer may trim
+  them (see review-checklist.md § A) — they still belong in Flow.
+
 ## AWS sanity checklist
 
 Answer each for the architecture in front of you. A "no" is a finding to raise with the user, not something to

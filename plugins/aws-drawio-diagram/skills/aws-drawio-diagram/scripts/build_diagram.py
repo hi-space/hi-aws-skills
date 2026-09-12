@@ -30,8 +30,9 @@ boundary above lane j (derived from the groups: a lane where one group ends and 
 Icons are 78 px. Groups are 200 px per column (40 px gaps), 60 px above the first icon, 46 px below
 the last. Edges between cells in the same column/lane are straight; an edge to the diagonally adjacent
 cell leaves the source top/bottom and enters the target left/right (one bend — the fan-out pattern);
-anything else is a spec error (move a node). Each side of a node carries at most one edge; only
-straight edges may carry a label. `icon`
+anything else is a spec error (move a node). Each side of a node carries at most one edge, so a node has
+at most four edges and at most two of them bend — plan hubs and shared sinks (CloudWatch) with one
+representative edge, or put a queue/topic in between. Only straight edges may carry a label. `icon`
 names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
 
 Usage: build_diagram.py SPEC.json OUT.drawio [--no-validate]

@@ -38,7 +38,10 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
 2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, what,
    sync/async, label or —), numbered flow, 2–7 role groups, the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
-4. Findings from the sanity checklist (no auth, sync chain of six, store with no writer) go to the user as
+4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): ≤ 4 relationships per component,
+   one representative edge into CloudWatch-like sinks, fan-out ≤ 3. A brief that ignores this forces the Drawer
+   to drop edges.
+5. Findings from the sanity checklist (no auth, sync chain of six, store with no writer) go to the user as
    questions or stated assumptions — not silently into the drawing.
 
 ### Phase 2 — Drawer
@@ -64,7 +67,9 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
 1. Look at the PNG **before** the spec. Walk the checklist: faithful to the brief, validator clean, nothing
    overlapping, read order, grouping, balance, typography.
 2. Report findings as spec changes; the Drawer applies them and re-exports. Two rounds is normal; a third means
-   the group plan or the brief is wrong — return to Phase 1.
+   the group plan or the brief is wrong — return to Phase 1. Exception the Reviewer may settle alone: when the
+   brief over-specified instrumentation (five edges into CloudWatch, a sink drawn from every service), trim the
+   brief's relationship table to the representative edge, record why under Decisions, and continue.
 3. Done when: brief rows = edges, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
    Then tell the user the paths and any substitutions or assumptions from the brief.
 
