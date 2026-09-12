@@ -42,9 +42,13 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 - [ ] AWS sanity (see below) — each item answered or marked N/A.
 - [ ] Open questions / assumptions listed.
 
+## Architecture review
+(filled in Phase 2 by the Assessor — see architecture-review.md; leave this heading in place)
+
 ## Decisions & assumptions
 - OpenSearch drawn with legacy stencil `elasticsearch_service` (renamed service).
 - No Guardrails icon in draw.io: guardrails are described, not drawn.
+- R1 (WAF in front of API Gateway) accepted for v1 — source: Serverless Applications Lens, <url>.
 ```
 
 ## Diagram budget — decide it here, not in the drawing
@@ -79,6 +83,9 @@ paper over in the drawing.
 - **Networking**: VPC-bound services (RDS, ElastiCache, EC2, ECS on EC2, OpenSearch provisioned) only when the
   request is about networking; otherwise stay at service level and skip VPC/subnet boxes.
 - **Observability**: CloudWatch (and optionally X-Ray, alarms → SNS) unless the user said to leave it out.
+
+This checklist is *completeness* (is anything obviously missing from the picture?). Whether the architecture
+follows AWS best practice is Phase 2's job, answered from AWS sources — do not write best-practice claims here.
 - **Direction**: Arrows point the way data or the request travels; a response path is not a second arrow.
 - **Naming**: Current service names (OpenSearch Service not Elasticsearch, EventBridge not CloudWatch Events,
   Amazon Q / Quick Suite not QuickSight) — the alias table maps them to stencil names.

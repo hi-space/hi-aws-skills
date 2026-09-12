@@ -3,7 +3,7 @@ name: aws-drawio-diagram
 description: "Generate editable AWS architecture diagrams as draw.io (.drawio) XML using draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio'. Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘. Not for HTML/SVG/PNG editorial diagrams — use the aws-diagram-design skill for those; use this one when the output must be opened and edited in draw.io."
 license: MIT
 metadata:
-  version: "1.1.0"
+  version: "1.2.0"
   base: "vidanov/aws-architecture-diagram-skill 29c1bab (MIT) + regenerated stencil catalog, grid builder, validator, image fallbacks"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
@@ -17,17 +17,18 @@ every stencil name comes from a catalog generated from draw.io's own sources.
 `<skill-dir>` is the directory containing this SKILL.md. Locate it from the plugin root you were installed from;
 do not assume it is under the current working directory.
 
-## Three phases, three hats
+## Four phases, four hats
 
-Do not start drawing. Understand → lay out → review, with a file between each step so the next hat sees only
-what it needs. When the Agent tool is available, run each phase as its **own subagent** with a fresh context and
+Do not start drawing. Understand → check against AWS guidance → lay out → review, with a file between each
+step so the next hat sees only what it needs. When the Agent tool is available, run each phase as its **own subagent** with a fresh context and
 hand it only the files named below; otherwise do the phases yourself in order and still write the files.
 
 | Phase | Hat | Reads | Writes | Reference |
 |---|---|---|---|---|
 | 1 | **Architect** | the request, this file's *Icon lookup* | `<name>.brief.md` | [`references/architecture-brief.md`](references/architecture-brief.md) |
-| 2 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
-| 3 | **Reviewer** | the brief, builder/validator output, the PNG | findings as spec changes → back to 2 | [`references/review-checklist.md`](references/review-checklist.md) |
+| 2 | **Assessor** | the brief + AWS docs/skills via MCP | `## Architecture review` section in the brief | [`references/architecture-review.md`](references/architecture-review.md) |
+| 3 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
+| 4 | **Reviewer** | the brief, builder/validator output, the PNG | findings as spec changes → back to 3 | [`references/review-checklist.md`](references/review-checklist.md) |
 
 Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout spec), `drawio`, `drawio.png`.
 
@@ -44,7 +45,20 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
 5. Findings from the sanity checklist (no auth, sync chain of six, store with no writer) go to the user as
    questions or stated assumptions — not silently into the drawing.
 
-### Phase 2 — Drawer
+### Phase 2 — Assessor
+
+1. Check the tool list for an AWS MCP server (`search_documentation` / `retrieve_skill`). None → write
+   "Architecture review — skipped" into the brief with the install command and move on. **Never** substitute
+   your own opinion for the missing source.
+2. Pick the Well-Architected lens for the workload, read its closest reference scenario, then look up each
+   service's AWS skill or documentation for the relationships the brief draws
+   (architecture-review.md § 2).
+3. Write the `## Architecture review` table into the brief: pillar, finding, **source you opened**, severity
+   (must / should / could), diagram impact. No source, no finding. Zero findings with a sources list is fine.
+4. Put the findings to the user: fix (Architect edits the brief) or accept (Decisions, with the source).
+   Unattended: apply *must* findings that add ≤ 1 component, accept the rest for now and say so.
+
+### Phase 3 — Drawer
 
 1. Read [`references/layout-and-style.md`](references/layout-and-style.md) §1–§2 and §6 once.
 2. Plan the grid from the brief: main request path on one lane left → right; upper lane for things the main lane
@@ -62,12 +76,12 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
 6. Hand-written XML is the fallback only when the spec cannot express something (multi-page, VPC/subnet
    nesting): follow layout-and-style.md §1–§6 literally and validate with `scripts/validate_drawio.py`.
 
-### Phase 3 — Reviewer
+### Phase 4 — Reviewer
 
 1. Look at the PNG **before** the spec. Walk the checklist: faithful to the brief, validator clean, nothing
    overlapping, read order, grouping, balance, typography.
 2. Report findings as spec changes; the Drawer applies them and re-exports. Two rounds is normal; a third means
-   the group plan or the brief is wrong — return to Phase 1. Exception the Reviewer may settle alone: when the
+   the group plan or the brief is wrong — return to Phase 1 (and re-run Phase 2 if components changed). Exception the Reviewer may settle alone: when the
    brief over-specified instrumentation (five edges into CloudWatch, a sink drawn from every service), trim the
    brief's relationship table to the representative edge, record why under Decisions, and continue.
 3. Done when: brief rows = edges, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
@@ -156,7 +170,7 @@ https://app.diagrams.net, which is always current.
   other. Treat all five as defects; `W1`–`W3` are style hints. The builder refuses specs that would produce
   `W4`/`W8` and prints `hint:` lines for sparse groups and single-icon lanes — act on them.
 - Not checked by the script, checked by the Reviewer's eyes: label length, read order, balance,
-  faithfulness to the brief.
+  faithfulness to the brief. Architecture quality is not checked here at all — that is Phase 2, against AWS sources.
 
 ## Related skill
 

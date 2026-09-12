@@ -59,7 +59,36 @@ Ingestion · Processing · Storage · Analytics · Observability · Notification
 - Two labels only: `MQTT` (outside the cloud) and `notify` (free space under Analytics). No label on the bent
   edge to SNS — the target's name carries the meaning.
 
+## Architecture review
+Lens: IoT Lens (read: landing page `iot-lens.html`; closest scenario: *Device telemetry* — the brief matches its
+IoT Core → stream → processing → storage shape). Skills: aws-serverless
+(event-sources.md), setting-up-cloudwatch-alarm-notifications, securing-s3-buckets,
+managing-amazon-kinesis-data-streams (no finding). Tool: AWS Knowledge MCP (`aws-mcp`). Date: 2026-09-12.
+
+| # | Pillar | Finding | Source | Severity | Diagram |
+|---|---|---|---|---|---|
+| R1 | Reliability | `kinesis → normalize` is drawn as a plain event source mapping with no failure-destination or bounded-retry path. Kinesis/DynamoDB-Streams ESMs need `OnFailure` destination, `MaximumRetryAttempts`, and `MaximumRecordAgeInSeconds` — without them a poison record can block the shard for the whole retention window | aws-serverless skill, `references/event-sources.md` § "Error handling and concurrency" ("DynamoDB/Kinesis: BisectBatchOnFunctionError; ReportBatchItemFailures; MaximumRetryAttempts + MaximumRecordAgeInSeconds (prevent shard blocking); OnFailure destination") | should | + an `OnFailure` destination (e.g. SQS DLQ) hanging off the `kinesis → normalize` edge |
+| R2 | Operational excellence | CloudWatch only receives Kinesis stream metrics (relationship 11); no CloudWatch alarm→notification action is drawn. The threshold-breach path to SNS (relationship 6) is the Lambda's own application logic, not an infrastructure alarm (e.g. on IteratorAge or Lambda Errors) | setting-up-cloudwatch-alarm-notifications skill (SKILL.md): "Always use this skill when configuring alarm notifications — it creates encrypted SNS topics... and links alarms to notification actions" | should | + `cw → sns` edge (alarm action), reusing the existing SNS node |
+
+Out of scope, consider: S3 data-lake baseline controls (default encryption, HTTPS-only bucket policy, Block
+Public Access) aren't things this diagram shows either way — noted per the securing-s3-buckets skill's
+"Secure New Bucket" workflow (encryption + `DenyInsecureTransport` policy as required steps), not drawn as a
+finding since the brief doesn't omit anything a node/edge could represent here.
+
+Decisions: no *must* findings, so nothing was applied. R1 and R2 **accepted for v1** and recorded under Decisions with their sources; both are one-node additions (OnFailure queue, alarm edge) for the production version.
+
+Sources consulted (incl. no-finding): https://docs.aws.amazon.com/wellarchitected/latest/iot-lens/iot-lens.html,
+https://aws.amazon.com/blogs/publicsector/4-common-iot-protocols-and-their-security-considerations/ (IoT Core
+X.509/mTLS — already satisfied by the brief's device-certificate entry check, no finding), skill aws-serverless
+(SKILL.md, references/event-sources.md), skill setting-up-cloudwatch-alarm-notifications (SKILL.md), skill
+securing-s3-buckets (SKILL.md), skill managing-amazon-kinesis-data-streams (SKILL.md — covers KDS→S3 Tables
+channels, not applicable to this brief's plain Kinesis stream, no finding), search results for
+`querying-data-lake` / `ingesting-into-data-lake` / `exploring-data-catalog` skills (Glue/Athena/S3 lake — no
+skill matched the crawler→catalog→Athena→QuickSight relationships closely enough to cite a finding).
+
 ## Decisions
 - `quicksight` (retired palette) instead of `quick_suite` so the PNG renders on draw.io ≤ 26.x; switch to
   `quick_suite` on a current build (see `aws-icons-aliases.md`).
 - CloudWatch is fed from Kinesis rather than from the Lambda: the Lambda's four sides are taken; Lambda logging is implied.
+- Review R1 accepted for v1: Kinesis → Normalize event source mapping has no OnFailure destination / bounded retry (source: aws-serverless skill, references/event-sources.md § Error handling and concurrency).
+- Review R2 accepted for v1: no CloudWatch alarm → SNS action drawn; the SNS edge shown is application threshold logic (source: setting-up-cloudwatch-alarm-notifications skill).

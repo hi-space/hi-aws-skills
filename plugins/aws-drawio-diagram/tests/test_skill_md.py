@@ -32,7 +32,18 @@ def test_mentions_validator_and_lookup_order():
 
 def test_phased_procedure_and_builder():
     text = SKILL_MD.read_text()
-    for needle in ("Architect", "Drawer", "Reviewer", "scripts/build_diagram.py",
-                   "references/architecture-brief.md", "references/review-checklist.md", "W7"):
+    for needle in ("Architect", "Assessor", "Drawer", "Reviewer", "scripts/build_diagram.py",
+                   "references/architecture-brief.md", "references/architecture-review.md",
+                   "references/review-checklist.md", "W7"):
         assert needle in text, needle
     assert (SKILL / "scripts" / "build_diagram.py").exists()
+    assert (SKILL / "references" / "architecture-review.md").exists()
+
+
+def test_architecture_review_is_evidence_only():
+    text = (SKILL / "references" / "architecture-review.md").read_text()
+    for needle in ("No source → no finding", "knowledge-mcp.global.api.aws", "retrieve_skill",
+                   "search_documentation", "wellarchitected/latest", "skipped"):
+        assert needle in text, needle
+    # the brief template reserves the section the Assessor fills in
+    assert "## Architecture review" in (SKILL / "references" / "architecture-brief.md").read_text()

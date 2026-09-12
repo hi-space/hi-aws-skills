@@ -23,7 +23,7 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 ## 샘플
 
-이 스킬로 만든 다이어그램입니다. 스킬은 세 단계로 일합니다. ① 아키텍처 브리프(구성요소·관계표·흐름·그룹·AWS 정합성 체크)를 먼저 쓰고, ② 브리프만 보고 그리드 스펙(JSON)을 작성해 `scripts/build_diagram.py`로 `.drawio`를 생성·검증하고, ③ 렌더한 PNG를 브리프와 대조해 겹침·가독성·구성을 리뷰합니다. 240×170 그리드, 역할별 그룹 카드, Amazon Ember 글꼴, 직선 또는 한 번 꺾인 엣지가 규칙입니다(`references/layout-and-style.md`). `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다.
+이 스킬로 만든 다이어그램입니다. 스킬은 네 단계로 일합니다. ① 아키텍처 브리프(구성요소·관계표·흐름·그룹·완결성 체크)를 먼저 쓰고, ② 브리프를 AWS가 공개한 가이드와 대조하는 아키텍처 리뷰를 합니다. Well-Architected 렌즈, 서비스 문서, AWS 공식 agent skills를 AWS Knowledge MCP 서버로 읽고, 모든 finding에 읽은 출처를 붙입니다. MCP 서버가 없으면 임의로 판단하지 않고 건너뛴다고 기록합니다. ③ 브리프만 보고 그리드 스펙(JSON)을 작성해 `scripts/build_diagram.py`로 `.drawio`를 생성·검증하고, ④ 렌더한 PNG를 브리프와 대조해 겹침·가독성·구성을 리뷰합니다. 240×170 그리드, 역할별 그룹 카드, Amazon Ember 글꼴, 직선 또는 한 번 꺾인 엣지가 규칙입니다(`references/layout-and-style.md`). `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다.
 
 ![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
 

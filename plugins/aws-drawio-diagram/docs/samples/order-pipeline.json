@@ -16,6 +16,7 @@
     {"id": "apigw", "label": "API Gateway", "icon": "api_gateway", "col": 1, "lane": 1, "group": "g_api"},
     {"id": "cognito", "label": "Cognito", "icon": "cognito", "col": 1, "lane": 0, "group": "g_api"},
     {"id": "sqs", "label": "SQS (orders)", "icon": "sqs", "col": 2, "lane": 1, "group": "g_api"},
+    {"id": "dlq", "label": "SQS (DLQ)", "icon": "sqs", "col": 2, "lane": 0, "group": "g_api"},
     {"id": "handler", "label": "Order handler", "icon": "lambda", "col": 3, "lane": 1, "group": "g_order"},
     {"id": "ddb", "label": "DynamoDB (orders)", "icon": "dynamodb", "col": 3, "lane": 2, "group": "g_order"},
     {"id": "sfn", "label": "Step Functions", "icon": "step_functions", "col": 4, "lane": 1, "group": "g_wf"},
@@ -38,6 +39,7 @@
     {"from": "sfn", "to": "sns", "label": "on completion"},
     {"from": "sns", "to": "customer", "label": "notify", "dashed": true},
     {"from": "apigw", "to": "cw", "label": "metrics", "dashed": true},
-    {"from": "ddb", "to": "s3", "dashed": true}
+    {"from": "ddb", "to": "s3", "dashed": true},
+    {"from": "sqs", "to": "dlq", "dashed": true}
   ]
 }

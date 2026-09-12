@@ -1,4 +1,4 @@
-# Phase 3 — Review checklist
+# Phase 4 — Review checklist
 
 The Reviewer gets three things: the brief, the validator output, and the rendered PNG (plain export, no `-e`,
 so the Read tool can display it). The Reviewer does **not** get the spec or the XML first — judge the picture the
@@ -50,7 +50,8 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 ## D. Correct as architecture (sanity re-check)
 
 - [ ] Entry, auth, async boundaries, state, observability — the brief's Checks section is still true in the
-      picture (nothing got dropped to make layout easier). If the Drawer removed a component for layout
+      picture (nothing got dropped to make layout easier). Every *fixed* finding in `## Architecture review`
+      is visible; every *accepted* one is under Decisions with its source. If the Drawer removed a component for layout
       reasons, that is a finding: the fix is a layout change, not a smaller architecture.
 
 ## Typical findings → spec fixes
