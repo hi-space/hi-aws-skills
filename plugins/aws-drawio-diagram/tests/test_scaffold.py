@@ -31,3 +31,19 @@ def test_templates_copied():
         "three-tier-web-app.drawio",
         "vpc-networking.drawio",
     ]
+
+
+def test_marketplace_registers_plugin():
+    root = PLUGIN.parents[1]
+    mp = json.loads((root / ".claude-plugin" / "marketplace.json").read_text())
+    names = {p["name"]: p for p in mp["plugins"]}
+    assert "aws-drawio-diagram" in names
+    assert names["aws-drawio-diagram"]["source"] == "./plugins/aws-drawio-diagram"
+    assert "aws-drawio-diagram" in (root / "README.md").read_text()
+
+
+def test_docs_and_licenses_present():
+    for f in ("README.md", "README.en.md", "THIRD_PARTY_LICENSES.md", "LICENSE"):
+        assert (PLUGIN / f).exists(), f
+    tpl = (PLUGIN / "THIRD_PARTY_LICENSES.md").read_text()
+    assert "Vidanov" in tpl and "Apache" in tpl and "AgentCore" in tpl

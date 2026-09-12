@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes. Currently: aws-diagram-design (AWS-branded editorial diagrams with official icons, plus a Python generator for bilingual PNG sets)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator) and aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog)."
   },
   "owner": {
     "name": "hi-space"
@@ -11,6 +11,11 @@
       "name": "aws-diagram-design",
       "source": "./plugins/aws-diagram-design",
       "description": "AWS-branded editorial diagrams (27 types) as HTML/SVG/PNG with official AWS Architecture Icons and Amazon Ember; draw.io and Mermaid import; Python generator for ko/en PNG sets."
+    },
+    {
+      "name": "aws-drawio-diagram",
+      "source": "./plugins/aws-drawio-diagram",
+      "description": "Editable AWS architecture diagrams as draw.io (.drawio) XML. Stencil catalog of 1,000+ names regenerated from draw.io sources, two-pattern icon rule, layout conventions, 5 templates, validator, and SVG image fallback for icons draw.io lacks (Bedrock AgentCore resources)."
     }
   ]
 }
