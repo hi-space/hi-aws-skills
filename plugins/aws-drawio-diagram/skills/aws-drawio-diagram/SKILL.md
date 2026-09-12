@@ -3,7 +3,7 @@ name: aws-drawio-diagram
 description: "Generate editable AWS architecture diagrams as draw.io (.drawio) XML using draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio' — including 'analyse this repo / codebase and draw its AWS architecture' (source code is read as evidence, one detailed diagram per deployable unit). Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘, 코드 분석해서 아키텍처 그려줘. Not for HTML/SVG/PNG editorial diagrams — use the aws-diagram-design skill for those; use this one when the output must be opened and edited in draw.io."
 license: MIT
 metadata:
-  version: "1.3.0"
+  version: "1.3.1"
   base: "vidanov/aws-architecture-diagram-skill 29c1bab (MIT) + regenerated stencil catalog, grid builder, validator, image fallbacks"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
