@@ -97,7 +97,8 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    Components row is a node unless marked "not drawn"; every Relationships row is an edge unless its Kind says
    `aux`; nothing in the spec that the brief lacks) and prints `brief check: N components → N nodes … ✓`. A
    mismatch is an error — the fix is a layout change or a second diagram (from-source-code.md § 1), never a
-   node the brief does not have and never a dropped edge. `--no-brief` exists for hand-written experiments only.
+   node the brief does not have and never a dropped edge. There is no flag that makes a deliverable skip this
+   check; a build log without `brief check … ✓` is an unfinished build.
 5. `W9 icon has no edge` means the brief lists a component with no relationship: either the Architect forgot the
    relationship (add the row) or the component does not belong in the picture (mark its row "not drawn" — VPC,
    NAT, ECR, IAM roles usually). The Drawer never solves it by deleting the node from the spec.

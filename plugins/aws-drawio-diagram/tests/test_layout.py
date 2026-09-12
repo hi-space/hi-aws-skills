@@ -109,3 +109,27 @@ def test_brief_count_guard_catches_a_shrunken_table():
     spec = {"nodes": [{"id": "u"}, {"id": "a"}], "edges": [{"from": "u", "to": "a"}]}
     errors, _ = bd.brief_check(brief, spec)
     assert any("declares 'Components: 5'" in e for e in errors)
+
+
+def test_scaffold_checks_evidence_paths_against_the_repo(tmp_path):
+    (tmp_path / "infra").mkdir()
+    (tmp_path / "infra" / "main.tf").write_text("resource \"aws_lambda_function\" \"f\" {}\n")
+    brief = f"""# T
+Repo: {tmp_path}
+Components: 2 · Relationships: 1
+
+## Components
+| id | Service (stencil) | Role | Group | Evidence | Provenance |
+|---|---|---|---|---|---|
+| u | Users (`users`) | people | outside | — | assumed |
+| f | Lambda (`lambda`) | handler | G | infra/main.tf:1 (`aws_lambda_function.f`) | deployed |
+| g | S3 (`s3`) | bucket | G | infra/storage/s3.tf:4 | deployed |
+
+## Relationships
+| # | From → To | What | Kind | Label |
+|---|---|---|---|---|
+| 1 | u → f | HTTPS | sync | HTTPS |
+"""
+    spec, warnings = sc.scaffold(brief, STENCILS)
+    assert [w for w in warnings if "does not exist" in w] == ["g: evidence path 'infra/storage/s3.tf' does not exist under "
+                                                              f"{tmp_path} — cite a file you opened"]

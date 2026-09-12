@@ -138,6 +138,7 @@ def test_image_node_and_no_cloud():
     (lambda s: s["nodes"][1].update(col=4), "outside group"),
     (lambda s: s["groups"].append({"id": "h", "label": "H", "cols": [2], "lanes": [1]}), "overlap"),
     (lambda s: s["edges"].append({"from": "a", "to": "zzz"}), "must name a node"),
+    (lambda s: s["edges"].append({"from": "b", "to": "b", "dashed": True}), "cannot connect to itself"),
     (lambda s: s["edges"].append({"from": "b", "to": "c", "label": "x"}), "bent edge cannot carry a label"),
 ])
 def test_spec_errors(mutate, message):

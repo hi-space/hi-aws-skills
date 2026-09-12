@@ -34,8 +34,12 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 
 ## B. Mechanically clean (validator)
 
-- [ ] The builder's output contains `brief check: … ✓` (the brief sat next to the spec) and the numbers in it
-      match § A. `--no-brief` in the Drawer's command is a finding by itself.
+- [ ] **Rebuild it yourself**: `python3 <skill-dir>/scripts/build_diagram.py <name>.layout.json /tmp/<name>.drawio
+      --brief <name>.brief.md` must print `brief check: … ✓` and `0 errors, 0 warnings`, and `cmp` of its output
+      with the delivered `<name>.drawio` must be silent. A delivered file that differs from the rebuild, or a
+      log with `brief check SKIPPED` / `skipped`, is `not ready` whatever the Drawer's report says.
+- [ ] When the unit was split (from-source-code.md § 1): the split briefs' Components together equal the unit's
+      inventory in Scope. Pages that add up to a fraction of the inventory are `not ready`.
 - [ ] The builder exited 0 and the summary reads `0 errors, 0 warnings`. Read the codes, do not guess them:
       `W4`–`W9` are layout defects and the builder prints `Layout defects … NOT CLEAN` for them —
       W4 two-bend or long bend · W5 edge through an icon · W6 icon outside every group · W7 edge label on a
@@ -70,7 +74,8 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       picture (nothing got dropped to make layout easier). Every *fixed* finding in `## Architecture review`
       is visible; every *accepted* one is under Decisions with its source. If the Drawer removed a component for layout
       reasons, that is a finding: the fix is a layout change, not a smaller architecture.
-- [ ] When the input was a codebase: every node has Evidence and Provenance in the brief; `assumed` nodes are
+- [ ] When the input was a codebase: the brief has `Repo:` and the scaffold log shows no "evidence path … does
+      not exist" line (spot-check two paths yourself); every node has Evidence and Provenance; `assumed` nodes are
       each a Decisions line; the `## Architecture review` header states the MCP call count and every source in
       a finding appears in *Sources consulted*.
 

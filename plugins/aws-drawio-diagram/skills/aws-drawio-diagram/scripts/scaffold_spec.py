@@ -5,7 +5,8 @@ Reads `## Components` (id, "Service (`stencil`)" or "(image `file.svg`)", Group)
 (`from → to`, Kind, Label) from `<name>.brief.md` and writes `<name>.json` with nodes, edges and groups. Rows
 marked "not drawn" are skipped. Edges whose Kind contains `async`, `aux` or `dashed` are dashed; labels come
 from the Label column unless it is "—". Unknown stencil names are reported and left for you to fix (the builder
-refuses them anyway).
+refuses them anyway). When the brief has a `Repo: /abs/path` line, every path in the Evidence column is checked
+to exist there — a missing path is an error (exit 1): evidence must be a file the Architect opened.
 
     python3 scaffold_spec.py <name>.brief.md <name>.json
     python3 build_diagram.py <name>.json <name>.drawio          # places nodes automatically, checks the brief
@@ -97,8 +98,39 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
         if label and label not in ("—", "-", "–") and len(label) <= 12 and not re.search(r"[(), ]", label):
             edge["label"] = label                       # short, one word: anything longer lands on a border
         edges.append(edge)
+    warnings += check_evidence(brief_text, comp_rows)
     spec = {"title": title, "layout": "auto", "groups": [groups[g] for g in order], "nodes": nodes, "edges": edges}
     return spec, warnings
+
+
+def check_evidence(brief_text: str, comp_rows: list[list[str]]) -> list[str]:
+    """When the brief names its repository (`Repo: /abs/path` under the title), every path in the Evidence column
+    must exist there. Invented evidence is the failure this guards against; a missing path is reported per row."""
+    m = re.search(r"^Repo:\s*(\S+)", brief_text, re.M)
+    if not m:
+        return []
+    root = Path(m.group(1)).expanduser()
+    if not root.is_dir():
+        return [f"Repo: {root} is not a directory — fix the line under the title"]
+    header = None
+    hm = re.search(r"^##\s+Components\b.*?$", brief_text, re.M)
+    if hm:
+        for line in brief_text[hm.end():].splitlines():
+            if line.lstrip().startswith("|"):
+                header = [c.strip().lower() for c in line.strip().strip("|").split("|")]
+                break
+    ev_i = next((i for i, c in enumerate(header or []) if c.startswith("evidence")), None)
+    if ev_i is None:
+        return ["brief has a Repo: line but no Evidence column in Components"]
+    out = []
+    for row in comp_rows:
+        if ev_i >= len(row):
+            continue
+        cell = row[ev_i]
+        for path in re.findall(r"(?<![\w/.-])((?:[\w.-]+/)+[\w.-]+\.[A-Za-z0-9]+)", cell):
+            if not (root / path).exists():
+                out.append(f"{row[0].strip('`* ')}: evidence path '{path}' does not exist under {root} — cite a file you opened")
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -112,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {args[1]}: {len(spec['nodes'])} nodes, {len(spec['edges'])} edges, {len(spec['groups'])} groups")
     for w in warnings:
         print(f"  warn: {w}")
-    return 1 if any("unknown stencil" in w or "no stencil" in w for w in warnings) else 0
+    return 1 if any(k in w for w in warnings for k in ("unknown stencil", "no stencil", "does not exist", "Repo:")) else 0
 
 
 if __name__ == "__main__":

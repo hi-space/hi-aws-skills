@@ -18,19 +18,29 @@ Architect's procedure for that case; the brief template in architecture-brief.md
 
 ## 1. Inventory the deployable units (5 minutes, read-only)
 
-Walk the tree once (`find . -maxdepth 3 -type d`, then `ls` the interesting ones) and list every unit that has
-its own deployment definition:
+Find every deployment definition in the whole tree — IaC often sits four or five directories deep
+(`deployment/terraform/environments/prod/main.tf`), so never stop at depth three:
+
+```bash
+find . \( -name node_modules -o -name .venv -o -name .git -o -name dist \) -prune -o \
+  \( -name '*.tf' -o -name cdk.json -o -name template.yaml -o -name serverless.yml -o -name Pulumi.yaml \
+     -o -name Chart.yaml -o -name kustomization.yaml -o -name Dockerfile -o -name 'docker-compose*.yml' \) -print
+```
+
+Group the hits by the directory they deploy, then list every unit that has its own deployment definition:
 
 | Marker | Unit type |
 |---|---|
 | `*.tf`, `cdk.json` + `lib/`, `template.yaml` / `samconfig.toml`, `serverless.yml`, `Pulumi.yaml` | IaC stack |
 | `Chart.yaml`, `k8s/`, `manifests/`, `kustomization.yaml` | Kubernetes workload |
 | `Dockerfile` + `deploy.sh` / `.github/workflows/*deploy*` | container service |
-| `docker-compose*.yml` only, no cloud IaC | local-only — see §5 |
+| `docker-compose*.yml` **and nothing else in the whole tree** | local-only — see §5 (a compose file next to a `deployment/` folder is a dev harness, not the unit) |
 
 Write the result into the brief as **`## Scope`** before anything else, and once the tables are done add one line
 under the title: `Components: 30 · Relationships: 33` — the builder checks the tables against it, so a later
-phase cannot quietly cut rows.
+phase cannot quietly cut rows — and `Repo: /absolute/path/to/repo`: `scaffold_spec.py` then verifies that every
+path in the Evidence column exists there. Evidence is a file you opened, cited as `path:line` relative to Repo;
+a plausible-looking path you did not open is fabrication and fails the build.
 
 ```markdown
 ## Scope
@@ -47,7 +57,12 @@ Cross-unit calls: agent-platform → llm-gateway (MCP tool, `server/tools/llm_ga
 - One deployable unit → one diagram, one output set (`<unit>.brief.md`, `.json`, `.drawio`, `.drawio.png`),
   Phases 2–4 run per diagram.
 - A unit with more than ~25 components → split it **by request path** (e.g. `llm-gateway-request`,
-  `llm-gateway-admin`), never by merging services. Say in Scope which components appear on both.
+  `llm-gateway-admin`), never by merging services. A split **covers the unit**: the split briefs' Components
+  tables together contain every component of the unit (shared ones, like the API and its stores, appear in
+  both), and Scope lists each split diagram with its component count. Seven components on a "chat" page and
+  three on an "admin" page out of forty-one is not a split, it is a deletion — the Reviewer sends it back.
+  With the automatic layout a unit of 30–40 components fits one page; split only when the layout reports
+  `unresolved:` edges you cannot fix by moving a node.
 - Two or more units that call each other → add a **system map** *only if the user asks for it or the calls are
   the point of the request*. Its nodes are still real services: each unit's entry service and the services on
   the cross-unit edges (ALB → EKS ingress, AgentCore Gateway → Lambda), grouped by unit. A node labelled
@@ -89,7 +104,11 @@ are often aspirational — cite them only as `README` evidence when nothing else
    Every other type: look it up (SKILL.md § Icon lookup). Unknown → parent service icon **of that resource's
    own service**, never a look-alike from another service.
 2. **SDK clients in code.** `grep -rn "boto3.client(\|boto3.resource(\|@aws-sdk/client-\|aws-sdk\|software.amazon.awssdk"`.
-   Each distinct service client is a component (deployed elsewhere → tag `referenced`).
+   Each distinct service client is a component (deployed elsewhere → tag `referenced`). **External systems the
+   code calls** — SaaS APIs (Tavily, OpenAI), on-premises endpoints (SAP, a token service), partner databases —
+   are components too: Group `outside`, Provenance `referenced`, icon from aws-icons-general.md (`internet`,
+   `traditional_server`, `generic_database`). A relationship whose target is not a component cannot be
+   drawn, and dropping the relationship instead is the mistake this rule prevents.
 3. **Configuration.** Environment variables and config files carrying ARNs, queue URLs, table names,
    endpoints, account ids, regions: they give you *relationships* and cross-account/cross-region facts.
 4. **Runtime manifests.** Helm values / K8s Deployments (one node per Deployment when they have different

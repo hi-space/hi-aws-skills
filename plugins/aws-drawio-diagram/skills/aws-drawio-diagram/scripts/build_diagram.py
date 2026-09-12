@@ -181,6 +181,9 @@ class Builder:
             for k in ("from", "to"):
                 if e.get(k) not in self.nodes:
                     raise SpecError(f"edge {e}: '{k}' must name a node")
+            if e["from"] == e["to"]:
+                raise SpecError(f"edge {e['from']}→{e['to']}: a node cannot connect to itself (draw.io draws a box around "
+                                "the icon). A retry/loop is a note in the brief's Flow, not an edge")
 
     # ---- edges --------------------------------------------------------------------------------
     def edge_geometry(self, e: dict) -> tuple[str, str, str, str]:
@@ -614,7 +617,10 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         print(f"{summary} ✓ ({brief_path.name})")
     elif "--no-brief" not in flags:
-        print(f"note: no {spec_path.with_suffix('.brief.md').name} next to the spec — brief check skipped (pass --brief PATH)")
+        print(f"note: no {spec_path.with_suffix('.brief.md').name} next to the spec — brief check skipped (pass --brief PATH). "
+              "A diagram built without its brief check is not deliverable.")
+    else:
+        print("brief check SKIPPED (--no-brief) — test builds only; a deliverable diagram is always built next to its brief")
     out_path.write_text(xml, encoding="utf-8")
     print(f"wrote {out_path}")
     for h in hints(spec):
