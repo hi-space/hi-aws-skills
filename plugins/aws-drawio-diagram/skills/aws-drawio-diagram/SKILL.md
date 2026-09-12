@@ -1,9 +1,9 @@
 ---
 name: aws-drawio-diagram
-description: "Generate editable AWS architecture diagrams as draw.io (.drawio) XML using draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio'. Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘. Not for HTML/SVG/PNG editorial diagrams — use the aws-diagram-design skill for those; use this one when the output must be opened and edited in draw.io."
+description: "Generate editable AWS architecture diagrams as draw.io (.drawio) XML using draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio' — including 'analyse this repo / codebase and draw its AWS architecture' (source code is read as evidence, one detailed diagram per deployable unit). Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘, 코드 분석해서 아키텍처 그려줘. Not for HTML/SVG/PNG editorial diagrams — use the aws-diagram-design skill for those; use this one when the output must be opened and edited in draw.io."
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   base: "vidanov/aws-architecture-diagram-skill 29c1bab (MIT) + regenerated stencil catalog, grid builder, validator, image fallbacks"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
@@ -25,28 +25,40 @@ hand it only the files named below; otherwise do the phases yourself in order an
 
 | Phase | Hat | Reads | Writes | Reference |
 |---|---|---|---|---|
-| 1 | **Architect** | the request, this file's *Icon lookup* | `<name>.brief.md` | [`references/architecture-brief.md`](references/architecture-brief.md) |
+| 1 | **Architect** | the request (or the codebase), this file's *Icon lookup* | `<name>.brief.md` (one per deployable unit) | [`references/architecture-brief.md`](references/architecture-brief.md); codebase input: [`references/from-source-code.md`](references/from-source-code.md) |
 | 2 | **Assessor** | the brief + AWS docs/skills via MCP | `## Architecture review` section in the brief | [`references/architecture-review.md`](references/architecture-review.md) |
 | 3 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
 | 4 | **Reviewer** | the brief, builder/validator output, the PNG | findings as spec changes → back to 3 | [`references/review-checklist.md`](references/review-checklist.md) |
 
 Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout spec), `drawio`, `drawio.png`.
+A repo with several deployable units produces several output sets — never one diagram of abstract boxes.
+
+**Drawer and Reviewer are different contexts.** A Drawer that reviews its own picture passes it; every trial that
+skipped the split shipped dropped edges, invented nodes and unread validator warnings. Spawn the Reviewer as a
+subagent, or at minimum write `<name>.review.md` with the § A counts before touching the spec again.
 
 ### Phase 1 — Architect
 
+0. **Input is source code?** Follow [`references/from-source-code.md`](references/from-source-code.md): inventory
+   the deployable units into `## Scope` (one diagram each), take components from IaC → SDK clients → config with
+   an `Evidence` and `Provenance` column per row, relationships from IAM/env/event wiring. The brief must be as
+   detailed as the code; a repo with 40 resources does not become a 6-box picture.
 1. Clarify only what changes the drawing: audience (technical vs executive), services in scope, PNG wanted?
    One question at most; otherwise assume and record the assumption.
 2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, what,
    sync/async, label or —), numbered flow, 2–7 role groups, the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
-4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): ≤ 4 relationships per component,
-   one representative edge into CloudWatch-like sinks, fan-out ≤ 3. A brief that ignores this forces the Drawer
-   to drop edges.
+4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): hubs keep their own column free
+   above/below so their neighbours can stack beside them (bus edges), one representative edge into
+   CloudWatch-like sinks, no abstract nodes. Budget problems are solved with lanes, buses and more diagrams —
+   never by merging services or dropping primary relationships.
 5. Findings from the sanity checklist (no auth, sync chain of six, store with no writer) go to the user as
    questions or stated assumptions — not silently into the drawing.
 
 ### Phase 2 — Assessor
 
+0. Spot-check service identity against the brief's Evidence column first (a Runtime labelled Lambda makes
+   every later finding wrong) — mismatches go back to the Architect (architecture-review.md § 2 step 0).
 1. Check the tool list for an AWS MCP server (`search_documentation` / `retrieve_skill`). None → write
    "Architecture review — skipped" into the brief with the install command and move on. **Never** substitute
    your own opinion for the missing source.
@@ -55,37 +67,57 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
    (architecture-review.md § 2).
 3. Write the `## Architecture review` table into the brief: pillar, finding, **source you opened**, severity
    (must / should / could), diagram impact. No source, no finding. Zero findings with a sources list is fine.
+   The header line states the tool and the **number of calls made**; three calls for fifteen services is not a
+   review.
 4. Put the findings to the user: fix (Architect edits the brief) or accept (Decisions, with the source).
    Unattended: apply *must* findings that add ≤ 1 component, accept the rest for now and say so.
 
 ### Phase 3 — Drawer
 
-1. Read [`references/layout-and-style.md`](references/layout-and-style.md) §1–§2 and §6 once.
-2. Plan the grid from the brief: main request path on one lane left → right; upper lane for things the main lane
-   calls "up" (auth, static assets, memory); lower row for observability/ingestion/archive. Users and external
-   systems outside the cloud. Every inside node gets a group cell; a fan-out target sits in the next column on
-   the lane above or below its source.
-3. Write `<name>.json` — the spec format is in the header of
-   [`scripts/build_diagram.py`](scripts/build_diagram.py): groups (cols, lanes), nodes (icon or image, col,
-   lane, group | outside), edges (from, to, label?, dashed?). Node ids = brief ids.
-4. Build: `python3 <skill-dir>/scripts/build_diagram.py <name>.json <name>.drawio`. The builder computes
-   coordinates, ports, label sides, group rectangles, the cloud box and the canvas, then runs the validator.
-   Fix every `ERROR` and every `W4`–`W8` by changing the spec (move a node, drop a label, widen a group);
-   read the builder's `hint:` lines too.
-5. Export (see *Export*) — always a plain preview PNG for the Reviewer, plus the `-e` embedded one for the user.
-6. Hand-written XML is the fallback only when the spec cannot express something (multi-page, VPC/subnet
+1. Read [`references/layout-and-style.md`](references/layout-and-style.md) §1–§2 and §5–§6 once — to understand
+   what the builder does, not to do it yourself.
+2. **Do not place nodes by hand.** Run `python3 <skill-dir>/scripts/scaffold_spec.py <name>.brief.md <name>.json`:
+   it turns the brief's Components and Relationships tables into a coordinate-free spec (nodes with icon/image and
+   group, edges with dashed/label). Fix any `warn:` it prints (unknown stencil → look it up; a relationship naming
+   an undrawn component → mark that row "not drawn" or add the component) by editing the **brief**, then rerun.
+3. Build: `python3 <skill-dir>/scripts/build_diagram.py <name>.json <name>.drawio`. Nodes without coordinates are
+   placed automatically (`scripts/layout.py`: request path left → right on one lane, hubs with their neighbours
+   stacked beside them, groups as rectangles, users outside) and the placed spec is saved as
+   `<name>.layout.json`. The builder then computes ports, labels, group boxes, cloud box and canvas, checks the
+   spec against the brief, and runs the validator. Hand-tuning: edit `<name>.layout.json` (move a node to another
+   cell, force `"route": "h"` on an edge) and rebuild **from that file**; never from a hand-written subset.
+4. Read the builder's output to the end. `unresolved:` lines mean two nodes cannot be joined with one bend in
+   this placement — move one of them in `<name>.layout.json`; if a node has neighbours spread over four or more
+   columns, that is the signal to split the diagram by request path (from-source-code.md § 1). `note: label
+   dropped` is fine (bent edges carry no label).
+   **Exit status 0 is the only pass**: any `ERROR` or `W4`–`W9` prints `Layout defects … NOT CLEAN` and exits 1
+   — fix it by changing the spec (move a node, drop a label, widen a group, stack a hub's neighbours beside it);
+   read the builder's `hint:` lines too. Never export, and never call the diagram done, on a non-zero exit.
+   Keep `<name>.brief.md` next to `<name>.json`: the builder then **checks the spec against the brief** (every
+   Components row is a node unless marked "not drawn"; every Relationships row is an edge unless its Kind says
+   `aux`; nothing in the spec that the brief lacks) and prints `brief check: N components → N nodes … ✓`. A
+   mismatch is an error — the fix is a layout change or a second diagram (from-source-code.md § 1), never a
+   node the brief does not have and never a dropped edge. `--no-brief` exists for hand-written experiments only.
+5. `W9 icon has no edge` means the brief lists a component with no relationship: either the Architect forgot the
+   relationship (add the row) or the component does not belong in the picture (mark its row "not drawn" — VPC,
+   NAT, ECR, IAM roles usually). The Drawer never solves it by deleting the node from the spec.
+6. Export (see *Export*) — always a plain preview PNG for the Reviewer, plus the `-e` embedded one for the user.
+7. Hand-written XML is the fallback only when the spec cannot express something (multi-page, VPC/subnet
    nesting): follow layout-and-style.md §1–§6 literally and validate with `scripts/validate_drawio.py`.
 
 ### Phase 4 — Reviewer
 
-1. Look at the PNG **before** the spec. Walk the checklist: faithful to the brief, validator clean, nothing
-   overlapping, read order, grouping, balance, typography.
+1. Look at the PNG **before** the spec. Walk the checklist: faithful to the brief (count components and
+   relationships against nodes and edges and write the numbers down), no abstract nodes, validator exit 0,
+   nothing overlapping, read order, grouping, balance, typography. Verdict `ready` / `not ready`, nothing else.
 2. Report findings as spec changes; the Drawer applies them and re-exports. Two rounds is normal; a third means
    the group plan or the brief is wrong — return to Phase 1 (and re-run Phase 2 if components changed). Exception the Reviewer may settle alone: when the
    brief over-specified instrumentation (five edges into CloudWatch, a sink drawn from every service), trim the
    brief's relationship table to the representative edge, record why under Decisions, and continue.
-3. Done when: brief rows = edges, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
-   Then tell the user the paths and any substitutions or assumptions from the brief.
+3. Done when: `brief check … ✓`, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
+   Then tell the user the paths and any substitutions or assumptions from the brief. **Briefs alone are not a
+   deliverable**: the request was a diagram, so the run ends only when every output set named in `## Scope` has
+   its `.drawio` and PNGs — a "final report" with specs "ready for export" is an unfinished run.
 
 ## Two icon patterns — the rule that decides whether icons render
 
@@ -127,8 +159,11 @@ relative to it, `fontFamily` on every cell):
 4. **draw.io has no stencil at all** (Bedrock AgentCore Runtime, Gateway, Memory, …):
    [`aws-icons-extra.md`](references/aws-icons-extra.md) lists bundled SVGs; in the spec use
    `"image": "<file>.svg"` instead of `"icon"`.
-5. **Not there either**: use the parent service icon, label the node with the resource name, and record the
-   substitution in the brief's Decisions. Do not invent a stencil name.
+5. **Not there either**: use the parent service icon **of the same service** (AgentCore Gateway → an AgentCore
+   SVG or `bedrock_agentcore`, never `api_gateway`; a Guardrail → `bedrock`), label the node with the resource
+   name, and record the substitution in the brief's Decisions. Do not invent a stencil name. This rule is for
+   *resources without a stencil*; it never licenses an abstract node — "Agent Platform" drawn as a load balancer
+   or "Agents" drawn as Cognito is a defect, not a substitution.
 
 Quick grep when a name is on the tip of your tongue: `grep -ri "opensearch" <skill-dir>/references/aws-icons-*.md`.
 
@@ -165,10 +200,12 @@ https://app.diagrams.net, which is always current.
 
 - `E1` unknown stencil name · `E2` wrong strokeColor for the pattern · `E3` edge without valid endpoints ·
   `E4` group without `container=1` · `E5` duplicate id · `E6` comment / DOCTYPE / compressed XML.
-- `W4` edge that needs two bends or bends to a non-adjacent cell · `W5` edge through an icon · `W6` icon
-  inside the cloud but in no group · `W7` edge label on a group border · `W8` two edges drawn on top of each
-  other. Treat all five as defects; `W1`–`W3` are style hints. The builder refuses specs that would produce
-  `W4`/`W8` and prints `hint:` lines for sparse groups and single-icon lanes — act on them.
+- `W4` edge that needs two bends · `W5` edge through an icon · `W6`
+  icon inside the cloud but in no group · `W7` edge label on a group border · `W8` two edges drawn on top of
+  each other (bent edges sharing a trunk from one side of one node are a *bus*, allowed) · `W9` icon with no
+  edge. All six are defects: the validator and the builder exit 1 on them. `W1`–`W3` are style hints. The
+  builder refuses specs that would produce `W4`/`W8` and prints `hint:` lines for sparse groups and
+  single-icon lanes — act on them.
 - Not checked by the script, checked by the Reviewer's eyes: label length, read order, balance,
   faithfulness to the brief. Architecture quality is not checked here at all — that is Phase 2, against AWS sources.
 

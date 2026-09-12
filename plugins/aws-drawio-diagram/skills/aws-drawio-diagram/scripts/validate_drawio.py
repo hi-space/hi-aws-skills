@@ -13,11 +13,14 @@ Warnings:
   W1  orthogonalEdgeStyle edge without exitX/entryX (routing may wander)
   W2  aws4 icon without fillColor (renders white in PNG export)
   W3  group container without dropTarget=1
-  W4  edge that needs two bends, or a single bend to a non-adjacent cell
+  W4  edge whose ports do not form a straight line or a single L (it would need two bends)
   W5  straight or single-bend edge whose path passes through an unconnected icon's bounding box
   W6  icon drawn inside an AWS Cloud group but not a child of a role group
   W7  edge label whose box covers a group/cloud border (drop it or shift it with mxGeometry x)
-  W8  two edges with overlapping collinear segments (one edge per node side)
+  W8  two edges with overlapping collinear segments (a node side holds one straight edge, or bent edges that
+      share their trunk — a bus)
+  W9  icon with no edge at all (a floating component)
+W4–W9 are layout defects: the exit status is 1 when any is present, like an error. W1–W3 are style hints.
 
 Usage: validate_drawio.py FILE [FILE ...]
 Adapted from vidanov/aws-architecture-diagram-skill tests/validate_drawio.py (MIT).
@@ -35,6 +38,7 @@ INDEX = HERE / "stencil-index.json"
 
 SERVICE_FRAMES = {"resourceIcon", "productIcon"}
 GROUP_SHAPES = {"group", "group2", "groupCenter"}
+LAYOUT_DEFECTS = {"W4", "W5", "W6", "W7", "W8", "W9"}
 RE_AWS4 = re.compile(r"mxgraph\.aws4\.([A-Za-z0-9_]+)")
 
 
@@ -59,7 +63,7 @@ def _aws4_name(value: str) -> str | None:
 
 
 ALIGN_TOLERANCE = 4.0
-MAX_BEND_DX, MAX_BEND_DY = 260.0, 240.0   # one bend reaches the adjacent column / lane only (240 / 170+50 grid)  # px; icons on the same column/lane within this are "aligned"
+# An L edge may run any distance along its two legs; W5 checks both corridors for icons.
 
 
 def _abs_geometry(cells: dict[str, ET.Element]) -> dict[str, tuple[float, float, float, float]]:
@@ -124,7 +128,7 @@ def _blockers(icons, geo, exclude, a, b):
 
 def _edge_path(style, sg, tg):
     """Return the polyline draw.io will draw for a straight or single-bend (L) edge; None if the
-    endpoints need two bends; "far" if a bend would reach beyond the adjacent cell. Straight: aligned
+    endpoints need two bends. Straight: aligned
     centers. L: exit side and entry side on different axes, corner in the direction each port faces."""
     sx, sy, sw, sh = sg
     tx, ty, tw, th = tg
@@ -146,8 +150,6 @@ def _edge_path(style, sg, tg):
     exit_horizontal = abs(ey - 0.5) < 0.01 and ex in (0.0, 1.0)
     entry_vertical = abs(nx - 0.5) < 0.01 and (ny <= 0.0 or ny >= 1.0)
     entry_horizontal = abs(ny - 0.5) < 0.01 and nx in (0.0, 1.0)
-    if abs(scx - tcx) > MAX_BEND_DX or abs(scy - tcy) > MAX_BEND_DY:
-        return "far"
     if exit_vertical and entry_horizontal:
         c = (p[0], q[1])
         ok = (c[1] < p[1]) if ey <= 0.0 else (c[1] > p[1])
@@ -166,6 +168,7 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     geo = _abs_geometry(cells)
     icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
     paths: dict[str, list] = {}
+    ends: dict[str, tuple[str, str]] = {}
     for cid, cell in cells.items():
         if cell.get("edge") != "1":
             continue
@@ -174,50 +177,67 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
             continue
         style = parse_style(cell.get("style"))
         path = _edge_path(style, geo[s], geo[t])
-        if path is None or path == "far":
+        if path is None:
             sx, sy, sw, sh = geo[s]
             tx, ty, tw, th = geo[t]
             dx, dy = abs(sx + sw / 2 - tx - tw / 2), abs(sy + sh / 2 - ty - th / 2)
-            if path == "far":
-                warnings.append(f"W4 edge '{cid}': '{s}' → '{t}' is not aligned and the target is not in an adjacent cell "
-                                f"(dx={dx:.0f}, dy={dy:.0f}) — a single bend only reaches the next column and lane; "
-                                "move the target, or route through an intermediate node")
-            else:
-                warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane and the ports do not "
-                                f"form a single bend — align them (dx={dx:.0f}, dy={dy:.0f}) or use the fan-out ports "
-                                "(exit top/bottom, enter left/right)")
+            warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane and the ports do not "
+                            f"form a single bend — align them (dx={dx:.0f}, dy={dy:.0f}) or use L ports "
+                            "(exit top/bottom + enter left/right, or exit left/right + enter top/bottom)")
             continue
         paths[cid] = path
+        ends[cid] = (s, t)
         for a, b in zip(path, path[1:]):
             for o in _blockers(icons, geo, {s, t}, a, b):
                 warnings.append(f"W5 edge '{cid}': path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
-    warnings.extend(_overlap_warnings(paths))
+    warnings.extend(_overlap_warnings(paths, ends))
+    touched = set()
+    for cid, cell in cells.items():
+        if cell.get("edge") == "1":
+            touched.update((cell.get("source"), cell.get("target")))
+    for o in sorted(icons - touched) if touched else []:        # a file with no edges at all is an icon sheet, not a diagram
+        warnings.append(f"W9 icon '{o}' has no edge — every component connects to something; add its relationship or "
+                        "remove it (a truly standalone service is a Decisions line, not a floating icon)")
     return warnings
 
 
-def _overlap_warnings(paths: dict[str, list]) -> list[str]:
-    """W8: two edges whose paths contain collinear segments that overlap (they render as one line)."""
+def _overlap_warnings(paths: dict[str, list], ends: dict[str, tuple[str, str]] | None = None) -> list[str]:
+    """W8: two edges whose paths contain collinear segments that overlap (they render as one line).
+    Exception — a *bus*: bent edges that share their source (first leg) or their target (last leg) may share
+    that leg; it reads as one trunk with branches and the arrowheads stay distinct."""
+    ends = ends or {}
+
     def segments(path):
-        for a, b in zip(path, path[1:]):
+        for i, (a, b) in enumerate(zip(path, path[1:])):
             if abs(a[0] - b[0]) <= ALIGN_TOLERANCE:
-                yield ("v", a[0], min(a[1], b[1]), max(a[1], b[1]))
+                yield i, ("v", a[0], min(a[1], b[1]), max(a[1], b[1]))
             else:
-                yield ("h", a[1], min(a[0], b[0]), max(a[0], b[0]))
+                yield i, ("h", a[1], min(a[0], b[0]), max(a[0], b[0]))
+
+    def shared_leg(e1, i1, e2, i2) -> bool:
+        if e1 not in ends or e2 not in ends or len(paths[e1]) < 3 or len(paths[e2]) < 3:
+            return False
+        (s1, t1), (s2, t2) = ends[e1], ends[e2]
+        first = i1 == 0 and i2 == 0 and s1 == s2
+        last = i1 == len(paths[e1]) - 2 and i2 == len(paths[e2]) - 2 and t1 == t2
+        return first or last
 
     warnings: list[str] = []
     ids = sorted(paths)
     for i, e1 in enumerate(ids):
         for e2 in ids[i + 1:]:
-            for k1, c1, lo1, hi1 in segments(paths[e1]):
-                hit = False
-                for k2, c2, lo2, hi2 in segments(paths[e2]):
-                    if k1 == k2 and abs(c1 - c2) <= ALIGN_TOLERANCE and min(hi1, hi2) - max(lo1, lo2) > ALIGN_TOLERANCE:
+            hit = False
+            for i1, (k1, c1, lo1, hi1) in segments(paths[e1]):
+                for i2, (k2, c2, lo2, hi2) in segments(paths[e2]):
+                    if k1 == k2 and abs(c1 - c2) <= ALIGN_TOLERANCE and min(hi1, hi2) - max(lo1, lo2) > ALIGN_TOLERANCE \
+                            and not shared_leg(e1, i1, e2, i2):
                         hit = True
                         break
                 if hit:
-                    warnings.append(f"W8 edges '{e1}' and '{e2}' run on top of each other — give them different sides of the "
-                                    "node or different lanes (one edge per node side)")
                     break
+            if hit:
+                warnings.append(f"W8 edges '{e1}' and '{e2}' run on top of each other — give them different sides of the "
+                                "node or different lanes (a side holds one straight edge, or bent edges sharing a trunk)")
     return warnings
 
 
@@ -402,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     index = load_index()
     total_e = total_w = 0
+    codes: dict[str, int] = {}
     for f in map(Path, args):
         errors, warnings = validate_file(f, index)
         total_e += len(errors)
@@ -411,10 +432,14 @@ def main(argv: list[str] | None = None) -> int:
             print(f"  ERROR {e}")
         for w in warnings:
             print(f"  warn  {w}")
+            codes[w[:2]] = codes.get(w[:2], 0) + 1
         if not errors and not warnings:
             print("  ok")
     print(f"Summary: {total_e} errors, {total_w} warnings in {len(args)} file(s)")
-    return 1 if total_e else 0
+    defects = {c: n for c, n in codes.items() if c in LAYOUT_DEFECTS}
+    if defects:
+        print("Layout defects (must be fixed, not style hints): " + ", ".join(f"{c}×{n}" for c, n in sorted(defects.items())))
+    return 1 if total_e or defects else 0
 
 
 if __name__ == "__main__":

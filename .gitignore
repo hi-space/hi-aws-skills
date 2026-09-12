@@ -2,3 +2,5 @@
 __pycache__/
 *.pyc
 out/
+plugins/aws-ppt-master/projects/*
+!plugins/aws-ppt-master/projects/README.md

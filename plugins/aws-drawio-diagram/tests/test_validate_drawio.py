@@ -136,7 +136,7 @@ def test_w4_unaligned_edge_and_w5_blocked_corridor():
     blocker = RESOURCE_OK.replace('id="b"', 'id="k"').replace('x="300" y="0"', 'x="300" y="150"')
     edge_bc = EDGE_OK.replace('id="e"', 'id="e2"').replace('source="a"', 'source="b"').replace('target="b"', 'target="c"')
     errors, warnings = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + below + blocker + edge_bc), INDEX)
-    assert errors == [] and codes(warnings) == ["W5"] and "'k'" in warnings[0]
+    assert errors == [] and codes(warnings) == ["W5", "W9"] and "'k'" in warnings[0]     # W9: 'a' and 'k' float
     diagonal = RESOURCE_OK.replace('id="b"', 'id="d"').replace('x="300" y="0"', 'x="420" y="260"')
     edge_ad = EDGE_OK.replace('id="e"', 'id="e3"').replace('target="b"', 'target="d"')
     errors, warnings = vd.validate_text(wrap(SERVICE_OK + diagonal + edge_ad), INDEX)
@@ -208,7 +208,7 @@ def test_fan_out_l_edge_with_matching_ports_is_accepted():
     # An icon parked on the horizontal leg of the L triggers W5.
     blocker = icon("k", "1", 420, 130)
     _, warnings = vd.validate_text(wrap(src + upper + blocker + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
-    assert codes(warnings) == ["W5"] and "'k'" in warnings[0]
+    assert codes(warnings) == ["W5", "W9"] and "'k'" in warnings[0] and "'k'" in warnings[1]   # W9: k floats
 
 
 def test_w7_edge_label_on_a_group_border():
@@ -242,11 +242,14 @@ def test_w7_respects_relative_label_offset():
     assert "W7" not in codes(warnings)
 
 
-def test_w4_single_bend_only_reaches_the_adjacent_cell():
+def test_long_l_edge_is_accepted_when_its_legs_are_empty():
     src = icon("s", "1", 300, 300)
-    far = icon("t", "1", 780, 130)               # two columns right, one lane up
+    far = icon("t", "1", 780, 130)               # two columns right, one lane up: one bend, long horizontal leg
     _, warnings = vd.validate_text(wrap(src + far + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
-    assert codes(warnings) == ["W4"] and "adjacent" in warnings[0]
+    assert warnings == []
+    blocker = icon("k", "1", 540, 130)           # parked on the horizontal leg
+    _, warnings = vd.validate_text(wrap(src + far + blocker + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
+    assert codes(warnings) == ["W5", "W9"]
 
 
 def test_w8_two_edges_sharing_a_segment():
@@ -255,7 +258,12 @@ def test_w8_two_edges_sharing_a_segment():
     up_left = icon("b", "1", 60, 130)
     e1 = edge_cell("e1", "s", "a", UP_THEN_RIGHT)
     e2 = edge_cell("e2", "s", "b", "exitX=0.5;exitY=0;entryX=1;entryY=0.5;")
+    # Two bends leaving the same side of one node share their trunk: a bus, not an overlap.
     _, warnings = vd.validate_text(wrap(src + up_right + up_left + e1 + e2), INDEX)
+    assert warnings == []
+    # One leaving, one arriving on that trunk → two arrowheads on one line: W8.
+    back = edge_cell("e3", "a", "s", "exitX=0;exitY=0.5;entryX=0.5;entryY=0;")
+    _, warnings = vd.validate_text(wrap(src + up_right + e1 + back), INDEX)
     assert codes(warnings) == ["W8"]
     # Two edges into the same node from opposite sides do not share a segment.
     left = icon("l", "1", 60, 300)

@@ -163,18 +163,64 @@ def test_cli(tmp_path):
 def test_builder_rejects_far_bends_and_shared_sides():
     s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2, 3, 4], "lanes": [0, 1, 2]}])
     s["nodes"].append({"id": "far", "label": "Far", "icon": "s3", "col": 4, "lane": 0, "group": "g"})
-    s["edges"].append({"from": "b", "to": "far"})                    # (2,1) → (4,0): not adjacent
-    with pytest.raises(bd.SpecError, match="adjacent"):
+    s["edges"].append({"from": "b", "to": "far"})                    # (2,1) → (4,0): a long L, both legs empty → fine
+    assert vd.validate_text(bd.build(s), INDEX) == ([], [])
+    s["nodes"] += [{"id": "k1", "label": "K1", "icon": "sns", "col": 2, "lane": 0, "group": "g"},   # blocks the trunk
+                   {"id": "k2", "label": "K2", "icon": "sqs", "col": 3, "lane": 1, "group": "g"}]   # blocks the other L
+    s["edges"] += [{"from": "c", "to": "k1"}, {"from": "k2", "to": "far"}]
+    with pytest.raises(bd.SpecError, match="cannot be joined"):
         bd.build(s)
-    s["edges"].pop()
+    s["edges"] = s["edges"][:-3]
+    s["nodes"] = s["nodes"][:-3]
     s["nodes"].append({"id": "dn", "label": "Down", "icon": "sns", "col": 3, "lane": 2, "group": "g"})
     s["nodes"].append({"id": "up", "label": "Up", "icon": "sqs", "col": 3, "lane": 0, "group": "g"})
     s["edges"] += [{"from": "b", "to": "dn"}, {"from": "b", "to": "up"}]  # one leaves bottom, one leaves top: fine
     assert vd.validate_text(bd.build(s), INDEX) == ([], [])
     s["nodes"].append({"id": "dn2", "label": "Down2", "icon": "s3", "col": 1, "lane": 2, "group": "g"})
-    s["edges"].append({"from": "b", "to": "dn2"})                    # second bend leaving the bottom
-    with pytest.raises(bd.SpecError, match="both use its"):
+    s["edges"].append({"from": "b", "to": "dn2"})                    # second bend leaving the bottom: a bus, allowed
+    xml = bd.build(s)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    assert xml.count('<mxPoint x="620" y="') == 3                     # every bend pins its corner on b's column
+    s["nodes"].append({"id": "st", "label": "Straight", "icon": "kinesis", "col": 2, "lane": 2, "group": "g"})
+    s["edges"].append({"from": "b", "to": "st"})                     # straight down through the bus trunk
+    with pytest.raises(bd.SpecError, match="one of them is straight|runs through"):
         bd.build(s)
+
+
+def test_bus_reaches_two_lanes_down_when_the_column_is_empty():
+    # A hub (b at col 2, lane 0) with five neighbours: left/right straight, three bends sharing the bottom trunk,
+    # one of them two lanes down. The hub's own column stays empty below it.
+    s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2, 3], "lanes": [0, 1, 2]}],
+             nodes=[{"id": "u", "label": "Users", "icon": "users", "col": 0, "lane": 0, "outside": True},
+                    {"id": "a", "label": "ALB", "icon": "elastic_load_balancing", "col": 1, "lane": 0, "group": "g"},
+                    {"id": "b", "label": "FastAPI", "icon": "ecs_service", "col": 2, "lane": 0, "group": "g"},
+                    {"id": "r", "label": "Runtime", "icon": "bedrock", "col": 3, "lane": 0, "group": "g"},
+                    {"id": "c", "label": "Cognito", "icon": "cognito", "col": 1, "lane": 1, "group": "g"},
+                    {"id": "d", "label": "DynamoDB", "icon": "dynamodb", "col": 3, "lane": 1, "group": "g"},
+                    {"id": "s3", "label": "S3", "icon": "s3", "col": 3, "lane": 2, "group": "g"}],
+             edges=[{"from": "u", "to": "a"}, {"from": "a", "to": "b"}, {"from": "b", "to": "r"},
+                    {"from": "b", "to": "c"}, {"from": "b", "to": "d"}, {"from": "b", "to": "s3"}])
+    xml = bd.build(s)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    # the corridor cell (2,1) must stay empty: park a node there and the builder names it
+    s["nodes"].append({"id": "x", "label": "X", "icon": "sqs", "col": 2, "lane": 1, "group": "g"})
+    s["edges"].append({"from": "c", "to": "x"})
+    with pytest.raises(bd.SpecError, match="runs through 'x'"):
+        bd.build(s)
+
+
+def test_floating_icon_is_a_layout_defect(tmp_path):
+    import subprocess
+    s = spec()
+    s["nodes"].append({"id": "lonely", "label": "S3", "icon": "s3", "col": 2, "lane": 0, "group": "g"})
+    xml = bd.build(s)
+    _, warnings = vd.validate_text(xml, INDEX)
+    assert [w[:2] for w in warnings] == ["W9"] and "'lonely'" in warnings[0]
+    p = tmp_path / "s.json"
+    p.write_text(json.dumps(s))
+    r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(p), str(tmp_path / "s.drawio")],
+                       capture_output=True, text=True)
+    assert r.returncode == 1 and "Layout defects" in r.stdout and "NOT CLEAN" in r.stdout
 
 
 def test_builder_hints_about_sparse_groups(capsys):
@@ -182,3 +228,64 @@ def test_builder_hints_about_sparse_groups(capsys):
     bd.build(s)
     hints = bd.hints(s)
     assert any("g" in h and "empty" in h for h in hints)
+
+
+BRIEF = """# T
+## Components
+| id | Service (stencil) | Role | Group |
+|---|---|---|---|
+| u | Users (`users`) | people | outside |
+| a | API Gateway (`api_gateway`) | entry | G |
+| b | Lambda (`lambda`) | handler | G |
+| c | Cognito (`cognito`) | auth | G |
+| dom | Cognito domain (not drawn) | token endpoint | G |
+
+## Relationships
+| # | From → To | What | Kind | Label |
+|---|---|---|---|---|
+| 1 | u → a | HTTPS | sync | HTTPS |
+| 2 | a → b | invoke | sync | — |
+| 3 | a → c | token | aux (dashed) | — |
+| 4 | b → c | JWKS | sync/aux | — |
+
+## Flow
+"""
+
+
+def test_brief_check_passes_when_spec_matches_and_aux_may_be_omitted():
+    errors, summary = bd.brief_check(BRIEF, spec())          # spec draws u→a, a→b, a→c; b→c (aux) omitted
+    assert errors == []
+    assert summary.startswith("brief check: 4 components → 4 nodes (1 marked not drawn); 4 relationships → 3 edges (1 aux not drawn)")
+
+
+def test_brief_check_names_every_gap():
+    s = spec()
+    s["nodes"] = [n for n in s["nodes"] if n["id"] != "c"] + [{"id": "zz", "label": "S3", "icon": "s3", "col": 2, "lane": 0, "group": "g"}]
+    s["edges"] = [{"from": "u", "to": "a"}, {"from": "b", "to": "zz"}]
+    errors, _ = bd.brief_check(BRIEF, s)
+    text = "\n".join(errors)
+    assert "no node in the spec: c" in text
+    assert "spec nodes the brief does not list: zz" in text
+    assert "a → b" in text and "primary relationships are never dropped" in text
+    assert "b → zz" in text
+
+
+def test_cli_runs_the_brief_check_when_the_brief_sits_next_to_the_spec(tmp_path):
+    import subprocess
+    (tmp_path / "s.brief.md").write_text(BRIEF)
+    p = tmp_path / "s.json"
+    p.write_text(json.dumps(spec()))
+    r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(p), str(tmp_path / "s.drawio")],
+                       capture_output=True, text=True)
+    assert r.returncode == 0 and "brief check: 4 components → 4 nodes" in r.stdout and "✓" in r.stdout
+    small = spec()
+    small["nodes"] = small["nodes"][:2]
+    small["edges"] = small["edges"][:1]
+    p.write_text(json.dumps(small))
+    r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(p), str(tmp_path / "s.drawio")],
+                       capture_output=True, text=True)
+    assert r.returncode == 1 and "ERROR brief" in r.stdout and "NOT CLEAN" in r.stdout
+    assert not (tmp_path / "s.drawio").exists() or "wrote" not in r.stdout
+    r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(p), str(tmp_path / "s.drawio"), "--no-brief"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0

@@ -4,7 +4,12 @@ Write `<name>.brief.md` **before** any layout work. The brief is the contract be
 the system (the Architect) and the person who draws it (the Drawer): if a relationship is not in the brief, it
 is not in the diagram. It also becomes the companion guide that ships next to the `.drawio`.
 
-Keep it to one screen. Bullet points, tables, no prose paragraphs.
+Keep it to one screen per diagram. Bullet points, tables, no prose paragraphs.
+
+**Input is a codebase?** Read [`from-source-code.md`](from-source-code.md) first: it adds a `## Scope` section
+(one diagram per deployable unit), `Evidence` and `Provenance` columns to Components, and the rules on what may be
+merged. The brief must be as detailed as the code — a six-node overview of a forty-resource repo is a failed
+Phase 1, not a stylistic choice.
 
 ## Template
 
@@ -53,18 +58,28 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 
 ## Diagram budget — decide it here, not in the drawing
 
-The grid gives every node **four sides and one edge per side**, and a bend only reaches the diagonally adjacent
-cell. The brief has to respect that, or the Drawer will drop relationships to make the picture work.
+The grid gives every node a left and a right slot (one straight edge each) and a top and a bottom slot that can
+carry a **bus**: any number of bent edges that all leave (or all arrive) there, run along the node's own column
+and turn into the neighbouring columns (layout-and-style.md § 5). So a hub with eight neighbours is drawable —
+as long as its own column stays empty above/below it and the neighbours stack in the adjacent columns. The
+brief has to respect the following, or the Drawer will run out of cells:
 
-- **≤ 4 relationships per component.** A component with more is a hub: put a queue/topic/bus next to it
-  (SQS, SNS, EventBridge) and hang the consumers off that, or split it into two components.
+- **Hubs keep their column.** A component with more than four relationships is a hub: plan its neighbours in
+  the two adjacent columns, on the lanes above and below, and leave the hub's own column free there. Two hubs
+  never share a column.
 - **One representative edge per cross-cutting sink.** CloudWatch, X-Ray, KMS, IAM, Secrets Manager receive
   from everything; draw **one** edge into them from the most telling source (the stream, the API, the main
-  Lambda) and say "all services log to CloudWatch" in Flow. Never one edge per service.
-- **Fan-out/fan-in ≤ 3 targets**, all in the column next to the source (one on its lane, one above, one
-  below). More targets → a topic/bus in between.
+  service) and say "all services log to CloudWatch" in Flow. Never one edge per service.
+- **Fan-out to the same side ≤ 2 per lane** (one target left, one right of the hub's column, per lane step);
+  more consumers on one hop → a topic/queue in between if the code has one — if it does not, add lanes, not
+  fiction.
 - **Aux edges are optional in the picture.** Mark them `aux` in the relationship table; the Reviewer may trim
-  them (see review-checklist.md § A) — they still belong in Flow.
+  them (see review-checklist.md § A) — they still belong in Flow. **Primary edges are never optional**, and
+  neither is a component: a Drawer that cannot place one comes back to the Architect for a layout decision
+  (more lanes, split by request path — from-source-code.md § 1), not a smaller architecture.
+- **No abstract nodes.** A node is one AWS service/resource or one user/external system, drawn with its own
+  icon. "Backend", "Agents", "Platform X" are groups or separate diagrams. Identical resources with identical
+  neighbours may share one node with a count in the label ("DynamoDB (3 tables)").
 
 ## AWS sanity checklist
 
@@ -91,6 +106,14 @@ follows AWS best practice is Phase 2's job, answered from AWS sources — do not
   Amazon Q / Quick Suite not QuickSight) — the alias table maps them to stencil names.
 - **Renames & gaps**: Anything with no stencil and no bundled SVG is a decision to record (substitute parent
   icon, or leave it out and say so).
+
+## The brief is checked mechanically
+
+`build_diagram.py` reads `<name>.brief.md` when it sits next to `<name>.json` and refuses a spec that is smaller
+than the brief (and a brief whose `Components: N · Relationships: M` line no longer matches its tables): every id in Components must be a node (write **"not drawn"** in a row's Service cell for the rare
+thing a picture cannot show — a Cognito domain, an IAM role), every `From → To` in Relationships must be an edge
+with that direction unless its Kind contains `aux`, and the spec may hold nothing the brief does not list. So
+write ids the Drawer can use verbatim, and put the aux marker where you mean "optional in the picture".
 
 ## What the Drawer needs from the brief
 

@@ -8,23 +8,40 @@ Report as a list of findings; each finding names the fix **as a spec change** (m
 label on edge Y, widen group Z to cols [3,4]). The Drawer applies them and re-exports; the Reviewer looks again.
 Two rounds is normal; a third means the brief or the group plan is wrong — go back to Phase 1.
 
+**The Reviewer is not the Drawer.** Run this phase in a fresh context (subagent) whenever you can. If you must
+do it yourself, write the review to `<name>.review.md` *before* touching the spec, with the counts from § A and
+the validator's last summary line pasted in — a review that exists only in your head is the one that passes
+everything. Verdict is `ready` or `not ready`; there is no "ready with warnings".
+
 ## A. Faithful to the brief
 
-- [ ] Every component in the brief is a node; no node exists that the brief does not list.
+- [ ] **Count and write the numbers down**: brief components = nodes, brief relationships = edges (minus aux
+      rows the Reviewer trimmed under Decisions). `22 rows → 12 edges` is `not ready`, whatever the picture
+      looks like.
+- [ ] Every component in the brief is a node; no node exists that the brief does not list (a node the Drawer
+      invented — an "API" box, a "Platform" box — is `not ready`).
+- [ ] **No abstract nodes.** Every node is one AWS service/resource or one user/external system, and its icon
+      is that service's icon. A load-balancer icon labelled "Agent Platform", a Cognito icon labelled
+      "Agents", a directory name as a node: `not ready` — the fix is separate diagrams or groups
+      (from-source-code.md § 4), never a relabel.
 - [ ] Every relationship is an edge with the right direction and kind (solid = sync, dashed = async/aux,
-      red dashed = error). Count them: brief rows = edges. A Drawer that dropped a *primary* relationship to
-      make layout work is a finding (fix the layout). A brief that lists redundant *aux* edges (one into
-      CloudWatch per service) is a brief defect the Reviewer may fix directly: keep the representative edge,
-      delete the rest from the table, add a line under Decisions — no Phase 1 restart needed.
+      red dashed = error). A Drawer that dropped a *primary* relationship to make layout work is `not ready`
+      (fix the layout: bus, more lanes, split by request path). A brief that lists redundant *aux* edges (one
+      into CloudWatch per service) is a brief defect the Reviewer may fix directly: keep the representative
+      edge, delete the rest from the table, add a line under Decisions — no Phase 1 restart needed.
 - [ ] Group membership matches the brief's Group column. Users / external systems are outside the AWS Cloud.
 - [ ] Labels use the brief's names (current AWS service names, qualifiers in parentheses).
 
 ## B. Mechanically clean (validator)
 
-- [ ] `0 errors, 0 warnings`. `W4`–`W8` are layout defects, not style opinions:
+- [ ] The builder's output contains `brief check: … ✓` (the brief sat next to the spec) and the numbers in it
+      match § A. `--no-brief` in the Drawer's command is a finding by itself.
+- [ ] The builder exited 0 and the summary reads `0 errors, 0 warnings`. Read the codes, do not guess them:
+      `W4`–`W9` are layout defects and the builder prints `Layout defects … NOT CLEAN` for them —
       W4 two-bend or long bend · W5 edge through an icon · W6 icon outside every group · W7 edge label on a
-      border · W8 edges drawn on top of each other. Builder `hint:` lines (sparse group, one-icon lane) are
-      findings too unless the Drawer wrote down why not.
+      border · W8 edges drawn on top of each other · W9 icon with no edge. Any of them → `not ready`. `W1`–`W3`
+      are style hints. Builder `hint:` lines (sparse group, one-icon lane) are findings too unless the Drawer
+      wrote down why not.
 - [ ] **A blank coloured square** where an icon should be is not a spec bug: the stencil is newer than the
       installed draw.io (e.g. `quick_suite`, `bedrock_agentcore`). Say so in the report; if the user's draw.io
       is also old, switch to the legacy alias when one exists (`quicksight`) and note it in the brief.
@@ -53,6 +70,9 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
       picture (nothing got dropped to make layout easier). Every *fixed* finding in `## Architecture review`
       is visible; every *accepted* one is under Decisions with its source. If the Drawer removed a component for layout
       reasons, that is a finding: the fix is a layout change, not a smaller architecture.
+- [ ] When the input was a codebase: every node has Evidence and Provenance in the brief; `assumed` nodes are
+      each a Decisions line; the `## Architecture review` header states the MCP call count and every source in
+      a finding appears in *Sources consulted*.
 
 ## Typical findings → spec fixes
 
@@ -63,8 +83,12 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 | Line disappears behind a node label | hand-written XML without the `B` port — use `exitY`/`entryY` = (78 + 4 + 18·lines)/78 with `*Perimeter=0` (layout-and-style.md §5) |
 | Dead column inside a group | move a neighbour into that cell or shrink the group's `cols` |
 | Empty band across the top of the cloud | move upper-lane items there (auth, static assets, memory) or drop lane 0 and fan out downward |
-| Fan-out edge runs through an icon | the source's top/bottom cell must be empty; move that icon or fan out on the other side |
-| Several edges leave one node downward as one line (W8) | one edge per side: put a queue/topic between the node and its many consumers, or move consumers to the node's other sides |
-| A bend crosses half the diagram (W4 "adjacent") | the target must be in the diagonally adjacent cell; move it, or connect via the node in between |
+| Fan-out edge runs through an icon (W5) | the hub's own column must be empty on every lane the trunk crosses; move that icon into an adjacent column |
+| Icon with no edge (W9) | the brief has a relationship for it — draw it; or the component does not belong in this diagram |
+| A hub has more neighbours than free sides | bus: stack the neighbours in the two adjacent columns above and below the hub, keep the hub's column clear (layout-and-style.md §5) |
+| Straight edge and bends on the same side | move the straight target to another side, or make it part of the bus by shifting it one column |
+| A bend crosses two columns (W4 "adjacent") | the horizontal leg reaches one column only; move the target, or connect via the node in between |
+| Brief has 30+ components and the spec has 8 | not a layout problem: rebuild with `scaffold_spec.py` + auto layout; still too dense → one diagram per deployable unit or per request path (from-source-code.md §1) |
+| Layout `unresolved:` line for one edge | move one endpoint in `<name>.layout.json` (a node with neighbours in four columns wants the middle one), or split the diagram |
 | Whole lane holds one icon (`hint:`) | give that icon the main lane or its neighbour's lane; a one-icon lane is an empty band |
 | Group taller than its neighbours for one icon | split lanes: give the extra icon its own single-lane group in the next row |

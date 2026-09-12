@@ -147,19 +147,23 @@ required, otherwise draw.io snaps the point back onto the icon.
 
 - **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair
   cannot, move a node into a free cell — or use the fan-out pattern below. Never an S-shaped edge.
-- **Fan-out (the one allowed bend).** Source S on lane B fans out to targets in the **adjacent column**: the
-  target on S's own lane gets a straight horizontal edge; a target on the **adjacent lane above** gets
-  `exitX=0.5;exitY=0;` (leave S's top) + `entryX=0;entryY=0.5;` (enter the target's left) — one bend at
-  (S.x, target.y); a target on the lane below leaves S's bottom with the `B` port. **Pin the corner** with a
-  waypoint (`<Array as="points"><mxPoint x="S.cx" y="target.cy"/></Array>` inside the geometry): a port outside
-  the shape lets draw.io's router pick the first leg's direction, and it will run sideways along the label. Same ports mirrored for fan-in
-  from the left. The cell directly above/below S must be empty (the vertical leg runs through it). A bend
-  never reaches further than the diagonally adjacent cell — if it would, move the target or add a node in
-  between (validator `W4`, builder error).
-- **One edge per node side.** Every edge owns the side it leaves or enters; a second edge on the same side
-  shares the port and draws on top of the first (validator `W8`, builder error). So a node has at most four
-  edges, and at most two of them bend (one up, one down, or one left, one right). A node that needs more is a
-  hub: put a queue/topic/bus next to it and fan out from there.
+- **The one allowed bend — an L in either orientation.** Two nodes that share neither column nor lane are
+  joined by one L. *Vertical-first* (the fan-out pattern): leave S's top (`exitX=0.5;exitY=0;`) or bottom (`B`
+  port), run along S's column to the target's lane, enter the target's left/right (`entryX=0|1;entryY=0.5;`);
+  corner at (S.cx, T.cy). *Horizontal-first*: leave S's left/right, run along S's lane to the target's column,
+  enter the target's top (`entryX=0.5;entryY=0;`) or bottom (`B` port); corner at (T.cx, S.cy). **Pin the
+  corner** with a waypoint (`<Array as="points"><mxPoint x="…" y="…"/></Array>` inside the geometry): a port
+  outside the shape lets draw.io's router pick the first leg's direction, and it will run sideways along the
+  label. Both legs may be long, but **every cell they cross must be empty** (builder error naming the blockers,
+  validator `W5`); the builder picks vertical-first when both are free (`"route": "h"` in the spec forces the
+  other). Never an S: a path that needs two bends is `W4`.
+- **A side holds one straight edge, or a bus of bends.** A straight edge owns its side. Bent edges that all
+  *leave* one side (or all *arrive* at one side) may share it: they run on the same trunk and branch off at
+  their targets' lanes — one line, several arrowheads, no ambiguity. That is how a hub draws eight
+  neighbours: left/right straight, the rest stacked in the columns beside it above and below, the hub's own
+  column kept clear. `scripts/layout.py` does this placement for you (SKILL.md Phase 3). Mixing a straight edge with bends, or arriving with leaving bends, on one side puts two
+  arrowheads on one line (validator `W8`, builder error). Dashed and solid edges may share a trunk; the trunk
+  renders solid and the dashing shows on the branches.
 - **Empty corridor.** No other icon on any leg of the edge; no two edges in the same corridor.
 - Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />`. No `value` when unlabeled.
 - Edges may cross group borders (that is what groups are for); they must not run along one.
@@ -203,17 +207,22 @@ safety net, not a routing tool: if a line still disappears behind a label, the l
 - **Delete the base style's later `align=center;`** when writing XML by hand — a later key wins in draw.io and
   the text lands on the icon.
 
-## 7. Multi-page
+## 7. Several diagrams, not a smaller one
+
+Above ~25 icons, or when the source has several deployable units (from-source-code.md § 1), produce **several
+complete diagrams** — one output set each (`<unit>.json` → `.drawio` → `.png`), each following the same grid.
+Never shrink the architecture into abstract boxes to fit one page. To ship them as one multi-page `.drawio`,
+concatenate the `<diagram>` elements under a single `<mxfile>` (ids must stay unique across pages):
 
 ```xml
 <mxfile host="app.diagrams.net">
-  <diagram id="overview" name="Overview">…</diagram>
-  <diagram id="network" name="Networking Detail">…</diagram>
+  <diagram id="agent-platform" name="Agent Platform">…</diagram>
+  <diagram id="llm-gateway" name="LLM Gateway">…</diagram>
 </mxfile>
 ```
 
-Above ~14 icons, split: page 1 = service-level overview, later pages = resource-level detail (subnets,
-instances, tables). Each page follows the same grid.
+Resource-level detail (subnets, instances, individual tables) also goes on its own page, not into the
+service-level one.
 
 ## 8. Audience mode
 

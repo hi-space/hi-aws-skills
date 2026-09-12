@@ -27,6 +27,12 @@ Look for `search_documentation` / `retrieve_skill` in your tool list; any one of
 
 ## 2. Procedure
 
+0. **Spot-check the brief's facts before reviewing them.** The Assessor sees only the brief, so an error there
+   becomes a wrong finding (a Runtime labelled `lambda` produces a "Lambda needs a DLQ" *must*). For every
+   component whose service identity a finding might rest on (compute, queues, stores, auth): does the stencil
+   match the service the Evidence column names? Mismatch → one line back to the Architect ("`runtime` evidence
+   is `agentcore launch`, stencil says lambda — fix before review"), and do not review that component until
+   it is fixed. No Evidence column (input was not code) → skip this step.
 1. **Tool check.** No `search_documentation`-style tool → write into the brief:
    `## Architecture review — skipped: no AWS MCP server available (add: claude mcp add --transport http
    aws-knowledge https://knowledge-mcp.global.api.aws)` and tell the user. Stop here; go to Phase 3.
@@ -83,7 +89,10 @@ Look for `search_documentation` / `retrieve_skill` in your tool list; any one of
    | **could** | optimisation the source lists as optional; note only, rarely drawn |
 
 6. **Stop** when the lens scenario and each service's skill/doc have been read once, or at 8 findings. This is a
-   review, not a research project — typical budget is 10–15 tool calls.
+   review, not a research project — typical budget is 10–15 tool calls. Fewer than the lens scenario plus one
+   lookup per distinct service is not a review: a three-call "review" of a fifteen-service brief has not
+   looked anything up, and its findings are the model's opinion in disguise. **Write the call count into the
+   header line** (`Tool: AWS Knowledge MCP, 14 calls`) — the Reviewer checks it against the sources list.
 7. **Hand-off.** Present the findings; for each the user picks **fix** (the Architect edits Components /
    Relationships — respecting the diagram budget) or **accept** (goes under Decisions as *known deviation*, with
    the source). The Drawer draws the decided architecture. **Unattended** (no user in the loop): apply *must*
@@ -95,7 +104,7 @@ Look for `search_documentation` / `retrieve_skill` in your tool list; any one of
 ```markdown
 ## Architecture review
 Lens: Serverless Applications Lens (read: landing page, "RESTful microservices" scenario). Skills: aws-serverless,
-amazon-dynamodb. Tool: AWS Knowledge MCP. Date: 2026-09-12.
+amazon-dynamodb. Tool: AWS Knowledge MCP, 13 calls. Date: 2026-09-12.
 
 | # | Pillar | Finding | Source | Severity | Diagram |
 |---|---|---|---|---|---|

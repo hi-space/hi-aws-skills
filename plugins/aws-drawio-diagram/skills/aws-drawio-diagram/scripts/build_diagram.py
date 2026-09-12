@@ -27,15 +27,31 @@ Spec (JSON):
 Grid: column i center x = 140 + 240·i; lane j center y = 260 + 170·j, plus 50 px for every group row
 boundary above lane j (derived from the groups: a lane where one group ends and another begins).
 Icons are 78 px. Groups are 200 px per column (40 px gaps), 60 px above the first icon, 46 px below
-the last. Edges between cells in the same column/lane are straight; an edge to the diagonally adjacent
-cell leaves the source top/bottom and enters the target left/right (one bend — the fan-out pattern);
-anything else is a spec error (move a node). Each side of a node carries at most one edge, so a node has
-at most four edges and at most two of them bend — plan hubs and shared sinks (CloudWatch) with one
-representative edge, or put a queue/topic in between. Only straight edges may carry a label. Node labels
-longer than 22 characters break into two lines at the middle space. `icon`
-names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
+the last. Edges between cells in the same column/lane are straight (empty corridor). Any other pair is
+joined with ONE bend: first along the source's column to the target's lane, then across ("v", the fan-out
+pattern), or first across on the source's lane, then along the target's column ("h") — whichever route
+crosses no icon (the builder picks "v" when both are free; `"route": "h"` forces the other). Both legs must
+be empty of icons, else it is a spec error naming the blockers. A node side carries one straight edge, or
+a *bus* of bent edges that all leave (or all arrive) there and share the first/last leg — so a hub keeps
+its own column clear above/below and stacks its neighbours in the columns around it. Cross-cutting sinks (CloudWatch) still get one representative edge. Only straight
+edges may carry a label. Node labels longer than 22 characters break into two lines at the middle space.
+`icon` names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
 
-Usage: build_diagram.py SPEC.json OUT.drawio [--no-validate]
+Exit status: 0 only when the validator reports 0 errors and no W4–W9 layout defect; 1 otherwise (do not
+ship the file — change the spec).
+
+Auto layout: nodes without `col`/`lane` (or `"layout": "auto"`) are placed by scripts/layout.py — columns from the
+request flow, lanes by search under the rules above; groups become one or more rectangles per role. The placed
+spec is saved as `<spec stem>.layout.json` for hand adjustments. Start from `scaffold_spec.py <name>.brief.md
+<name>.json`, which writes that coordinate-free spec straight from the brief.
+
+Brief check: when `<spec stem>.brief.md` exists next to the spec (or `--brief PATH` is given) the builder compares
+the spec with the brief — every Components row is a node (rows marked "not drawn" excepted), every Relationships
+row is an edge with the same direction (rows whose Kind says "aux" may be left out), and nothing exists in the
+spec that the brief does not list. A mismatch is an error: the diagram must be as detailed as the brief.
+`--no-brief` skips the check (say why in Decisions).
+
+Usage: build_diagram.py SPEC.json OUT.drawio [--brief BRIEF.md | --no-brief] [--no-validate]
 """
 from __future__ import annotations
 
@@ -177,33 +193,69 @@ class Builder:
         if s["lane"] == t["lane"]:
             d = "right" if t["col"] > s["col"] else "left"
             return d, *ports(d, s), "straight"
-        if abs(t["col"] - s["col"]) != 1 or abs(t["lane"] - s["lane"]) != 1:
-            raise SpecError(f"edge {e['from']}→{e['to']}: cells ({s['col']},{s['lane']})→({t['col']},{t['lane']}) are neither "
-                            "aligned nor adjacent; a single bend only reaches the next column and lane. Move the target "
-                            "onto the source's column or lane, into the adjacent diagonal cell, or route via a node in between")
         vertical = "up" if t["lane"] < s["lane"] else "down"
         horizontal = "right" if t["col"] > s["col"] else "left"
-        return f"{vertical}-{horizontal}", ports(vertical, s)[0], PORTS[horizontal][1], "bend"
+        route = e.get("route") or self.bend_route(s, t)
+        if route == "v":                                  # trunk down/up the source's column, then across on the target's lane
+            return f"{vertical}-{horizontal}", ports(vertical, s)[0], PORTS[horizontal][1], "bend"
+        if route == "h":                                  # across on the source's lane, then down/up the target's column
+            return f"{horizontal}-{vertical}", PORTS[horizontal][0], ports(vertical, t)[1], "bend-h"
+        bv, bh = self.bend_blockers(s, t, "v"), self.bend_blockers(s, t, "h")
+        raise SpecError(f"edge {e['from']}→{e['to']}: cells ({s['col']},{s['lane']})→({t['col']},{t['lane']}) cannot be joined "
+                        f"with one bend: the vertical-first route runs through {', '.join(bv)}; the horizontal-first route "
+                        f"through {', '.join(bh)}. Move one of them, or route via a node in between")
+
+    def bend_blockers(self, s: dict, t: dict, route: str) -> list[str]:
+        """Nodes sitting on the two legs of an L from s to t. 'v': trunk in s's column to t's lane, then across.
+        'h': across on s's lane to t's column, then trunk to t."""
+        corner = (s["col"], t["lane"]) if route == "v" else (t["col"], s["lane"])
+        cells = []
+        step = 1 if t["lane"] > s["lane"] else -1
+        cstep = 1 if t["col"] > s["col"] else -1
+        if route == "v":
+            cells += [(s["col"], l) for l in range(s["lane"] + step, t["lane"] + step, step)]
+            cells += [(c, t["lane"]) for c in range(s["col"] + cstep, t["col"], cstep)]
+        else:
+            cells += [(c, s["lane"]) for c in range(s["col"] + cstep, t["col"] + cstep, cstep)]
+            cells += [(t["col"], l) for l in range(s["lane"] + step, t["lane"], step)]
+        return [f"'{self.occupied[c]}' at {c}" for c in cells if c in self.occupied]
+
+    def bend_route(self, s: dict, t: dict) -> str | None:
+        """'v' when the vertical-first L is free of icons, else 'h' when the horizontal-first one is, else None."""
+        if not self.bend_blockers(s, t, "v"):
+            return "v"
+        if not self.bend_blockers(s, t, "h"):
+            return "h"
+        return None
 
     def incident_sides(self) -> dict[str, set[str]]:
-        """Sides of each node touched by edges. One edge per side: two edges on the same side of a node
-        leave through the same port and render on top of each other (validator W8)."""
+        """Sides of each node touched by edges. A side carries either one straight edge or a *bus* of bent
+        edges that all leave (or all arrive) there: those share their first (last) leg and read as one trunk with
+        branches. A straight edge next to a bend, or leaving and arriving bends on one side, would draw two
+        arrows on the same line (validator W8) — refused."""
         sides: dict[str, set[str]] = {nid: set() for nid in self.nodes}
-        owner: dict[tuple[str, str], str] = {}
+        owner: dict[tuple[str, str], tuple[str, str, str]] = {}   # (node, side) -> (edge id, kind, role)
+        names = {"T": "top", "B": "bottom", "L": "left", "R": "right"}
         for i, e in enumerate(self.spec.get("edges", []), 1):
             d, _, _, kind = self.edge_geometry(e)
             if kind == "straight":
                 ss, ts = SIDES[d]
             else:
-                v, h = d.split("-")
-                ss, ts = SIDES[v][0], SIDES[h][1]
+                first, second = d.split("-")
+                ss, ts = SIDES[first][0], SIDES[second][1]
             eid = e.get("id", f"e{i}")
-            for nid, side in ((e["from"], ss), (e["to"], ts)):
-                if (nid, side) in owner:
-                    name = {"T": "top", "B": "bottom", "L": "left", "R": "right"}[side]
-                    raise SpecError(f"node '{nid}': edges {owner[(nid, side)]} and {eid} both use its {name} side — they would "
-                                    "overlap. Move one neighbour to another lane/column so each side carries one edge")
-                owner[(nid, side)] = eid
+            for nid, side, role in ((e["from"], ss, "out"), (e["to"], ts, "in")):
+                prev = owner.get((nid, side))
+                if prev is not None:
+                    pid, pkind, prole = prev
+                    if kind == "straight" or pkind == "straight":
+                        raise SpecError(f"node '{nid}': edges {pid} and {eid} both use its {names[side]} side and one of them is "
+                                        "straight — they would overlap. Only bent edges may share a side (as a bus); move one "
+                                        "neighbour to another lane/column")
+                    if prole != role:
+                        raise SpecError(f"node '{nid}': edges {pid} and {eid} both use its {names[side]} side but one arrives and "
+                                        "one leaves — two arrowheads on one trunk. Put the arriving edge on another side")
+                owner[(nid, side)] = (eid, kind, role)
                 sides[nid].add(side)
         return sides
 
@@ -365,7 +417,7 @@ class Builder:
                 style += "dashed=1;strokeColor=#DD344C;"
             label = e.get("label", "")
             geo_x = ""
-            if label and kind == "bend":
+            if label and kind != "straight":
                 raise SpecError(f"edge {e['from']}→{e['to']}: a bent edge cannot carry a label (draw.io centres it on the "
                                 "corner). Drop the label or put the target on the source's lane/column")
             if label:
@@ -382,9 +434,13 @@ class Builder:
             # A bent edge leaves under the source label, i.e. from a point outside the shape; draw.io's router
             # then picks the first leg's direction itself and may go sideways along the label. Pin the corner.
             pts = ""
-            if kind == "bend":
+            if kind == "bend":                                   # corner on the source's column, target's lane
                 cx = node_xy[e["from"]][0] + ICON // 2
                 cy = node_xy[e["to"]][1] + ICON // 2
+                pts = f'<Array as="points"><mxPoint x="{cx}" y="{cy}"/></Array>'
+            elif kind == "bend-h":                               # corner on the source's lane, target's column
+                cx = node_xy[e["to"]][0] + ICON // 2
+                cy = node_xy[e["from"]][1] + ICON // 2
                 pts = f'<Array as="points"><mxPoint x="{cx}" y="{cy}"/></Array>'
             geo = f'<mxGeometry{geo_x} relative="1" as="geometry">{pts}</mxGeometry>' if pts else f'<mxGeometry{geo_x} relative="1" as="geometry"/>'
             self.cells.append(
@@ -424,28 +480,154 @@ def hints(spec: dict) -> list[str]:
     return out
 
 
+def _table_rows(text: str, heading: str) -> list[list[str]]:
+    """Cells of every body row of the first markdown table under `## <heading>` (header and rule skipped)."""
+    import re
+    m = re.search(rf"^##\s+{re.escape(heading)}\b.*?$", text, re.M)
+    if not m:
+        return []
+    section = text[m.end():]
+    nxt = re.search(r"^##\s", section, re.M)
+    if nxt:
+        section = section[:nxt.start()]
+    rows = []
+    for line in section.splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [c.strip() for c in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+        if all(set(c) <= set("-: ") for c in cells):
+            continue
+        rows.append(cells)
+    return rows[1:] if rows else []
+
+
+def brief_check(brief_text: str, spec: dict) -> tuple[list[str], str]:
+    """Compare a brief with a spec. Returns (errors, one-line summary)."""
+    import re
+    comp_rows = _table_rows(brief_text, "Components")
+    rel_rows = _table_rows(brief_text, "Relationships")
+    if not comp_rows:
+        return ["brief has no `## Components` table"], ""
+    comps, not_drawn = [], []
+    for row in comp_rows:
+        cid = row[0].strip("`* ")
+        if not cid:
+            continue
+        (not_drawn if re.search(r"not drawn", " ".join(row), re.I) else comps).append(cid)
+    header_kind = None
+    m = re.search(r"^##\s+Relationships\b.*?$", brief_text, re.M)
+    if m:
+        for line in brief_text[m.end():].splitlines():
+            if line.lstrip().startswith("|"):
+                cells = [c.strip().lower() for c in line.strip().strip("|").split("|")]
+                header_kind = next((i for i, c in enumerate(cells) if c.startswith("kind")), None)
+                break
+    required, optional = [], []
+    for row in rel_rows:
+        pair = None
+        for cell in row:
+            mm = re.search(r"([A-Za-z0-9_\-]+)\s*(?:→|->)\s*([A-Za-z0-9_\-]+)", cell)
+            if mm:
+                pair = (mm.group(1), mm.group(2))
+                break
+        if not pair:
+            continue
+        kind = row[header_kind] if header_kind is not None and header_kind < len(row) else " ".join(row)
+        aux = bool(re.search(r"\baux\b|not drawn", kind, re.I))
+        (optional if aux else required).append(pair)
+    nodes = {n["id"] for n in spec.get("nodes", [])}
+    edges = {(e["from"], e["to"]) for e in spec.get("edges", [])}
+    errors = []
+    declared = re.search(r"Components:\s*(\d+)\b.*?Relationships:\s*(\d+)", brief_text, re.S)
+    if declared:                                          # the Architect's own count — a shrunken table cannot hide
+        dc, dr = int(declared.group(1)), int(declared.group(2))
+        if dc != len(comps) + len(not_drawn) or dr != len(required) + len(optional):
+            errors.append(f"the brief declares 'Components: {dc}' / 'Relationships: {dr}' but its tables hold "
+                          f"{len(comps) + len(not_drawn)} / {len(required) + len(optional)} rows — the tables were cut "
+                          "after Phase 1; restore them (the Drawer never edits the brief)")
+    missing = [c for c in comps if c not in nodes]
+    extra = sorted(nodes - set(comps) - set(not_drawn))
+    if missing:
+        errors.append(f"brief components with no node in the spec: {', '.join(missing)} — every component is drawn "
+                      "(mark a row 'not drawn' in the brief only for things the picture cannot show)")
+    if extra:
+        errors.append(f"spec nodes the brief does not list: {', '.join(extra)} — add them to the brief's Components "
+                      "table (with evidence) or remove them")
+    missing_e = [f"{a} → {b}" for a, b in required if (a, b) not in edges]
+    if missing_e:
+        errors.append(f"brief relationships with no edge in the spec: {'; '.join(missing_e)} — primary relationships are "
+                      "never dropped (only rows whose Kind says 'aux' may be left out)")
+    known = set(required) | set(optional)
+    extra_e = [f"{a} → {b}" for a, b in sorted(edges) if (a, b) not in known and (b, a) not in known]
+    if extra_e:
+        errors.append(f"spec edges the brief does not list: {'; '.join(extra_e)} — add them to the brief or remove them")
+    drawn_opt = sum(1 for p in optional if p in edges)
+    summary = (f"brief check: {len(comps)} components → {len(nodes)} nodes"
+               f"{' (' + str(len(not_drawn)) + ' marked not drawn)' if not_drawn else ''}; "
+               f"{len(required) + len(optional)} relationships → {len(edges)} edges "
+               f"({len(optional) - drawn_opt} aux not drawn)")
+    return errors, summary
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = [a for a in (sys.argv[1:] if argv is None else argv) if not a.startswith("--")]
-    flags = {a for a in (sys.argv[1:] if argv is None else argv) if a.startswith("--")}
+    raw = sys.argv[1:] if argv is None else argv
+    flags, args, brief_path = set(), [], None
+    i = 0
+    while i < len(raw):
+        a = raw[i]
+        if a == "--brief" and i + 1 < len(raw):
+            brief_path, i = Path(raw[i + 1]), i + 2
+            continue
+        (flags.add(a) if a.startswith("--") else args.append(a))
+        i += 1
     if len(args) != 2:
         print(__doc__)
         return 2
     spec_path, out_path = Path(args[0]), Path(args[1])
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    sys.path.insert(0, str(HERE))
+    import layout  # noqa: E402
+
+    if layout.needs_layout(spec):
+        spec, notes = layout.plan(spec)
+        planned = spec_path.with_suffix(".layout.json")
+        planned.write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        print(f"auto layout: placed {len(spec['nodes'])} nodes in {max(n['col'] for n in spec['nodes']) + 1} columns × "
+              f"{max(n['lane'] for n in spec['nodes']) + 1} lanes, {len(spec['groups'])} group boxes → {planned.name} "
+              "(edit that file and rebuild from it to adjust)")
+        for n in notes:
+            print(f"  {'note' if n.startswith('label dropped') else 'unresolved'}: {n}")
     try:
-        xml = build(json.loads(spec_path.read_text(encoding="utf-8")))
+        xml = build(spec)
     except SpecError as exc:
         print(f"ERROR spec: {exc}")
         return 1
+    if brief_path is None and "--no-brief" not in flags:
+        candidate = spec_path.with_suffix(".brief.md")
+        brief_path = candidate if candidate.exists() else None
+    if brief_path is not None:
+        errors, summary = brief_check(brief_path.read_text(encoding="utf-8"), spec)
+        for err in errors:
+            print(f"ERROR brief: {err}")
+        if errors:
+            print(f"{summary} — NOT CLEAN: the spec is smaller (or other) than the brief; fix the spec, not the brief")
+            return 1
+        print(f"{summary} ✓ ({brief_path.name})")
+    elif "--no-brief" not in flags:
+        print(f"note: no {spec_path.with_suffix('.brief.md').name} next to the spec — brief check skipped (pass --brief PATH)")
     out_path.write_text(xml, encoding="utf-8")
     print(f"wrote {out_path}")
-    for h in hints(json.loads(spec_path.read_text(encoding="utf-8"))):
+    for h in hints(spec):
         print(f"  {h}")
     if "--no-validate" in flags:
         return 0
     sys.path.insert(0, str(HERE))
     import validate_drawio  # noqa: E402
 
-    return validate_drawio.main([str(out_path)])
+    rc = validate_drawio.main([str(out_path)])
+    if rc:
+        print("NOT CLEAN — fix the spec and rebuild; do not export or hand this file to the Reviewer")
+    return rc
 
 
 if __name__ == "__main__":

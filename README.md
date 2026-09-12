@@ -6,8 +6,9 @@ AWS 작업용 Agent Skills 모음입니다. Claude Code 플러그인 마켓플�
 |---|---|---|
 | [aws-diagram-design](plugins/aws-diagram-design/) | 공식 AWS Architecture Icons + Amazon Ember 스킨의 에디토리얼 다이어그램 27종을 HTML/SVG/PNG로 생성. draw.io·Mermaid 재작도. `scripts/pygen` Python 생성기로 한 레이아웃에서 ko/en PNG 세트를 일괄 생성 | [README](plugins/aws-diagram-design/README.md) · [SKILL.md](plugins/aws-diagram-design/skills/aws-diagram-design/SKILL.md) |
 | [aws-drawio-diagram](plugins/aws-drawio-diagram/) | **편집 가능한 `.drawio` 파일**을 생성. draw.io 소스에서 재생성한 스텐실 카탈로그(1,000개+), 서비스/리소스 두 패턴 규칙, 레이아웃 관례, 템플릿 5종, 검증 스크립트, draw.io에 없는 아이콘(Bedrock AgentCore 리소스)의 SVG 폴백 | [README](plugins/aws-drawio-diagram/README.md) · [SKILL.md](plugins/aws-drawio-diagram/skills/aws-drawio-diagram/SKILL.md) |
+| [aws-ppt-master](plugins/aws-ppt-master/) | ppt-master 포크. 문서·주제에서 네이티브 편집 가능한 PPTX 생성. AI 이미지는 Amazon Bedrock(Stability) 만 사용, PPTX 레이아웃·한국어 카피 보이스 QA, AWS 아이콘 304개 | [README](plugins/aws-ppt-master/README.md) · [SKILL.md](plugins/aws-ppt-master/skills/aws-ppt-master/SKILL.md) |
 
-**어느 쪽을 쓸까?** 문서·슬라이드·블로그에 넣을 완성된 그림이면 `aws-diagram-design`, draw.io에서 계속 편집할 `.drawio` 파일이 필요하면 `aws-drawio-diagram`. 기존 `.drawio`를 하우스 스타일로 **재작도**하는 것은 `aws-diagram-design`의 `/aws-diagram-design:import-drawio` 가 담당합니다.
+**어느 쪽을 쓸까?** 문서·슬라이드·블로그에 넣을 완성된 그림이면 `aws-diagram-design`, draw.io에서 계속 편집할 `.drawio` 파일이 필요하면 `aws-drawio-diagram`. 기존 `.drawio`를 하우스 스타일로 **재작도**하는 것은 `aws-diagram-design`의 `/aws-diagram-design:import-drawio` 가 담당합니다. PPTX 발표자료 자체를 만들 때는 `aws-ppt-master` 를 씁니다.
 
 ## 설치 (Claude Code)
 
@@ -15,6 +16,7 @@ AWS 작업용 Agent Skills 모음입니다. Claude Code 플러그인 마켓플�
 /plugin marketplace add hi-space/hi-aws-skills
 /plugin install aws-diagram-design@hi-aws-skills
 /plugin install aws-drawio-diagram@hi-aws-skills
+/plugin install aws-ppt-master@hi-aws-skills
 /reload-plugins
 ```
 
@@ -26,6 +28,7 @@ AWS 작업용 Agent Skills 모음입니다. Claude Code 플러그인 마켓플�
 git clone https://github.com/hi-space/hi-aws-skills.git
 ln -s "$PWD/hi-aws-skills/plugins/aws-diagram-design/skills/aws-diagram-design" ~/.claude/skills/aws-diagram-design
 ln -s "$PWD/hi-aws-skills/plugins/aws-drawio-diagram/skills/aws-drawio-diagram" ~/.claude/skills/aws-drawio-diagram
+ln -s "$PWD/hi-aws-skills/plugins/aws-ppt-master/skills/aws-ppt-master" ~/.claude/skills/aws-ppt-master
 ```
 
 ## PNG 내보내기 사전 준비
