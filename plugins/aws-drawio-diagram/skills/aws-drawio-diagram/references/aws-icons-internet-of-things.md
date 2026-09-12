@@ -22,6 +22,7 @@ fillColor: `#7AA116`
 ## Resource-level — `shape=mxgraph.aws4.<name>` · **strokeColor=none** · 48×48 or 78×78
 | shape | Display Name |
 |---|---|
+| `lambda_function` | Lambda Function |
 | `iot_lorawan_protocol` | LoRaWAN Protocol |
 | `iot_sailboat` | Sailboat |
 | `sensor` | Sensor |

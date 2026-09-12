@@ -7,6 +7,7 @@ fillColor: `#ED7100`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `fargate` | Fargate |
 | `containers` | Containers |
 | `ecs_anywhere` | ECS Anywhere |
 | `eks_anywhere` | EKS Anywhere |

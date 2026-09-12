@@ -55,6 +55,7 @@ GENERATED_NOTE = (
 )
 
 RE_RES = re.compile(r"resIcon=mxgraph\.aws4\.([A-Za-z0-9_]+)")
+RE_PR = re.compile(r"prIcon=mxgraph\.aws4\.([A-Za-z0-9_]+)")
 RE_GR = re.compile(r"grIcon=mxgraph\.aws4\.([A-Za-z0-9_]+)")
 RE_SHAPE = re.compile(r"shape=mxgraph\.aws4\.([A-Za-z0-9_]+)")
 RE_FILL = re.compile(r"(?:^|;)fillColor=([^;]+)")
@@ -85,6 +86,8 @@ def slug_for(section_id: str) -> str:
 def classify(style: str) -> tuple[str, str | None]:
     if m := RE_RES.search(style):
         return "service", m.group(1)
+    if m := RE_PR.search(style):
+        return "service", m.group(1)
     if m := RE_GR.search(style):
         return "group", m.group(1)
     if (m := RE_SHAPE.search(style)) and m.group(1) not in JS_SHAPES:
@@ -102,6 +105,7 @@ def build_index(data: dict, stencil_names: set[str]) -> tuple[dict, list[dict]]:
     boundaries: list[dict] = []
     for sec in data["sections"]:
         slug = slug_for(sec["id"])
+        section_title = SECTION_TITLES.get(slug, sec["title"].removeprefix("AWS / "))
         for e in sec["entries"]:
             kind, name = classify(e["style"])
             label = (e.get("label") or e.get("value") or name or "").strip()
@@ -109,25 +113,40 @@ def build_index(data: dict, stencil_names: set[str]) -> tuple[dict, list[dict]]:
                 if slug == "groups":
                     boundaries.append({"label": label, "style": e["style"]})
                 continue
-            if name in stencils:          # first palette wins …
+            fill = _first(RE_FILL, e["style"])
+            stroke = _first(RE_STROKE, e["style"])
+            occurrence = {
+                "section": slug,
+                "sectionTitle": section_title,
+                "label": label,
+                "fillColor": fill,
+                "strokeColor": stroke,
+            }
+            if name in stencils:          # first palette wins for the top-level fields …
                 prev = stencils[name]
                 if kind == "group" and label and label not in prev["label"]:
                     # … except group badges reused with a different meaning (Private/Public subnet
                     # both use group_security_group): keep every label and stroke color.
                     prev["label"] = f"{prev['label']} / {label}"
-                    stroke = _first(RE_STROKE, e["style"])
                     if stroke and stroke not in (prev["strokeColor"] or ""):
                         prev["strokeColor"] = f"{prev['strokeColor']} / {stroke}"
+                    continue
+                # … other duplicates (service/resource reused across sections, or an exact-repeat
+                # group entry) are recorded as an extra occurrence instead of being dropped, unless
+                # it's an exact repeat of one already recorded (same section AND same label).
+                if not any(o["section"] == slug and o["label"] == label for o in prev["occurrences"]):
+                    prev["occurrences"].append(occurrence)
                 continue
             stencils[name] = {
                 "kind": kind,
                 "label": label,
                 "section": slug,
-                "sectionTitle": SECTION_TITLES.get(slug, sec["title"].removeprefix("AWS / ")),
-                "fillColor": _first(RE_FILL, e["style"]),
-                "strokeColor": _first(RE_STROKE, e["style"]),
+                "sectionTitle": section_title,
+                "fillColor": fill,
+                "strokeColor": stroke,
                 "style": e["style"] if kind == "group" else None,
                 "renderable": name in stencil_names,
+                "occurrences": [occurrence],
             }
     for name in sorted(stencil_names - set(stencils)):
         stencils[name] = {
@@ -139,6 +158,7 @@ def build_index(data: dict, stencil_names: set[str]) -> tuple[dict, list[dict]]:
             "strokeColor": None,
             "style": None,
             "renderable": True,
+            "occurrences": [],
         }
     return stencils, boundaries
 
@@ -213,12 +233,27 @@ def _render_legacy(items: list[tuple[str, dict]]) -> str:
 
 def render_markdown(stencils: dict, boundaries: list[dict], out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
-    by_section: "OrderedDict[str, list[tuple[str, dict]]]" = OrderedDict()
+    # slug -> {"title": str, "items": list[(name, dict)]}
+    by_section: "OrderedDict[str, dict]" = OrderedDict()
+
+    def _add(slug: str, title: str, name: str, entry: dict) -> None:
+        by_section.setdefault(slug, {"title": title, "items": []})["items"].append((name, entry))
+
     for n, s in stencils.items():
-        by_section.setdefault(s["section"], []).append((n, s))
+        occurrences = s.get("occurrences") or []
+        if s["kind"] in ("service", "resource") and occurrences:
+            # a name reused across sections (e.g. `endpoint`) renders once per section it
+            # occurs in, with that section's own label/fillColor — not just the first one.
+            for occ in occurrences:
+                entry = dict(s, label=occ["label"], fillColor=occ["fillColor"], strokeColor=occ["strokeColor"])
+                _add(occ["section"], occ["sectionTitle"], n, entry)
+        else:
+            _add(s["section"], s["sectionTitle"], n, s)
+
     written: list[Path] = []
-    for slug, items in by_section.items():
-        title = items[0][1]["sectionTitle"]
+    for slug, bucket in by_section.items():
+        items = bucket["items"]
+        title = bucket["title"]
         if slug == "groups":
             text = _render_groups(items, boundaries)
         elif slug == "legacy":
@@ -232,10 +267,14 @@ def render_markdown(stencils: dict, boundaries: list[dict], out_dir: Path) -> li
 
 
 def write_index(stencils: dict, path: Path, sources: dict) -> None:
-    slim = {
-        n: {k: s[k] for k in ("kind", "label", "section", "fillColor", "strokeColor", "renderable")}
-        for n, s in stencils.items()
-    }
+    slim = {}
+    for n, s in stencils.items():
+        entry = {k: s[k] for k in ("kind", "label", "section", "fillColor", "strokeColor", "renderable")}
+        entry["alsoIn"] = [
+            {"section": occ["section"], "label": occ["label"], "fillColor": occ["fillColor"]}
+            for occ in (s.get("occurrences") or [])[1:]
+        ]
+        slim[n] = entry
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(
         {"generated_from": sources, "js_shapes": list(JS_SHAPES), "stencils": slim},

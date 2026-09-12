@@ -7,4 +7,7 @@ fillColor: `#3334B9`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `connect` | Connect |
+| `pinpoint` | Pinpoint |
+| `simple_email_service` | Simple Email Service |
 | `customer_engagement` | Customer Engagement |

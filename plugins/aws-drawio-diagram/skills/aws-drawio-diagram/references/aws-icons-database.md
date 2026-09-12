@@ -7,6 +7,7 @@ fillColor: `#C925D1`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `redshift` | Redshift |
 | `database` | Databases |
 | `aurora` | Aurora |
 | `documentdb_with_mongodb_compatibility` | DocumentDB |
@@ -24,6 +25,8 @@ fillColor: `#C925D1`
 ## Resource-level — `shape=mxgraph.aws4.<name>` · **strokeColor=none** · 48×48 or 78×78
 | shape | Display Name |
 |---|---|
+| `dense_compute_node` | Dense Compute Node |
+| `dense_storage_node` | Dense Storage Node |
 | `attribute` | Attribute |
 | `attributes` | Attributes |
 | `aurora_instance` | Aurora Instance |

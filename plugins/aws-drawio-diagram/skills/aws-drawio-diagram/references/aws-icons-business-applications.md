@@ -9,9 +9,11 @@ fillColor: `#DD344C`
 |---|---|
 | `business_application` | Business Applications |
 | `chime` | Chime |
+| `chime` | Chime Voice Connector |
 | `chime_sdk` | Chime SDK |
 | `connect` | Connect |
 | `pinpoint` | Pinpoint |
+| `pinpoint` | Pinpoint APIs |
 | `quick_suite` | Quick |
 | `simple_email_service` | Simple Email Service |
 | `workdocs` | WorkDocs SDK |

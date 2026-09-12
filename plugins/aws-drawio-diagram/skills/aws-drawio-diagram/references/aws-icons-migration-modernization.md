@@ -7,6 +7,8 @@ fillColor: `#01A88D`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `elastic_vmware_service` | Elastic VMware Service |
+| `database_migration_service` | Database Migration Service |
 | `migration_and_transfer` | Migration & Modernization |
 | `application_discovery_service` | Application Discovery Service |
 | `datasync` | DataSync |

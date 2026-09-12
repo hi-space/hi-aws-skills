@@ -7,6 +7,8 @@ fillColor: `#DD344C`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `organizations` | Organizations |
+| `cloud_directory` | Cloud Directory |
 | `security_identity_and_compliance` | Security & Identity |
 | `cognito` | Cognito |
 | `detective` | Detective |
@@ -39,6 +41,8 @@ fillColor: `#DD344C`
 ## Resource-level — `shape=mxgraph.aws4.<name>` · **strokeColor=none** · 48×48 or 78×78
 | shape | Display Name |
 |---|---|
+| `organizations_account` | Organizations Account |
+| `shield_shield_advanced` | Shield Advanced |
 | `access_analyzer` | IAM Access Analyzer |
 | `identity_access_management_iam_roles_anywhere` | IAM Roles Anywhere |
 | `ad_connector` | AD Connector |

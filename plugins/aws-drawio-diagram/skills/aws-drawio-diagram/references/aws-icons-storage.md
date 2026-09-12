@@ -7,6 +7,8 @@ fillColor: `#7AA116`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `snowball` | Snowball |
+| `snowball_edge` | Snowball Edge |
 | `storage` | Storage |
 | `elastic_block_store` | Elastic Block Store |
 | `file_cache` | File Cache |
@@ -18,6 +20,7 @@ fillColor: `#7AA116`
 | `fsx_for_windows_file_server` | FSx for Windows File Server |
 | `s3_on_outposts_storage` | S3 on Outposts |
 | `glacier` | S3 Glacier |
+| `glacier` | Glacier Flexible Retrieval |
 | `s3` | Simple Storage Service (S3) |
 | `backup` | Backup |
 | `storage_gateway` | Storage Gateway |

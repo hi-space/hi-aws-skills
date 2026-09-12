@@ -10,6 +10,7 @@ fillColor: `#ED7100`
 | `compute` | Compute |
 | `ec2` | EC2 |
 | `auto_scaling2` | EC2 Auto Scaling |
+| `auto_scaling2` | Auto Scaling |
 | `auto_scaling3` | Auto Scaling |
 | `bottlerocket` | Bottlerocket |
 | `lightsail` | Lightsail |

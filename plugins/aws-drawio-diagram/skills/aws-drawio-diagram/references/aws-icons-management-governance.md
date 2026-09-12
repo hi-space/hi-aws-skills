@@ -7,6 +7,10 @@ fillColor: `#E7157B`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `compute_optimizer` | Compute Optimizer |
+| `managed_services` | Managed Services |
+| `command_line_interface` | Command Line Interface |
+| `fault_injection_simulator` | Fault Injection Service |
 | `management_and_governance` | Management Tools |
 | `multicloud_and_hybrid` | Multicloud and Hybrid |
 | `cloudwatch_2` | CloudWatch |
@@ -39,6 +43,7 @@ fillColor: `#E7157B`
 | `systems_manager` | Systems Manager |
 | `telco_network_builder` | Telco Network Builder |
 | `systems_manager_incident_manager` | Systems Manager - Incident Manager |
+| `systems_manager_incident_manager` | Incident Manager |
 | `trusted_advisor` | Trusted Advisor |
 | `user_notifications` | User Notifications |
 | `well_architect_tool` | Well-Architected Tool |
@@ -47,6 +52,8 @@ fillColor: `#E7157B`
 ## Resource-level — `shape=mxgraph.aws4.<name>` · **strokeColor=none** · 48×48 or 78×78
 | shape | Display Name |
 |---|---|
+| `documents` | Documents |
+| `logs` | Logs |
 | `alarm` | Alarm |
 | `cloudwatch_cross_account_observability` | CloudWatch Cross Account Observability |
 | `cloudwatch_data_protection` | CloudWatch Data Protection |

@@ -7,9 +7,14 @@ fillColor: `#ED7100`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `kinesis_video_streams` | Kinesis Video Streams |
 | `media_services` | Media Services |
 | `deadline_cloud` | Deadline Cloud |
 | `elemental` | Elemental Appliances & Software |
+| `elemental` | Elemental Conductor |
+| `elemental` | Elemental Delta |
+| `elemental` | Elemental Live |
+| `elemental` | Elemental Server |
 | `elemental_mediaconnect` | Elemental MediaConnect |
 | `elemental_mediaconvert` | Elemental MediaConvert |
 | `elemental_medialive` | Elemental MediaLive |

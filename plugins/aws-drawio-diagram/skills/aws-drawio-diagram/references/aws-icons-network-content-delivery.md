@@ -7,6 +7,8 @@ fillColor: `#8C4FFF`
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name |
 |---|---|
+| `api_gateway` | API Gateway |
+| `elastic_load_balancing` | Elastic Load Balancing |
 | `networking_and_content_delivery` | Networking & Content Delivery |
 | `application_recovery_controller` | Application Recovery Controller |
 | `cloud_directory` | Cloud Directory |
@@ -30,6 +32,7 @@ fillColor: `#8C4FFF`
 ## Resource-level — `shape=mxgraph.aws4.<name>` · **strokeColor=none** · 48×48 or 78×78
 | shape | Display Name |
 |---|---|
+| `endpoint` | Endpoint |
 | `download_distribution` | Download Distribution |
 | `cloudfront_functions` | CloudFront Functions |
 | `edge_location` | Edge Location |

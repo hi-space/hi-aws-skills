@@ -51,6 +51,7 @@ def test_classification_examples(built):
 
 def test_classify_and_slug():
     assert bic.classify("a;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.ec2;") == ("service", "ec2")
+    assert bic.classify("shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.sqs;") == ("service", "sqs")
     assert bic.classify("shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;") == ("group", "group_region")
     assert bic.classify("shape=mxgraph.aws4.instance2;") == ("resource", "instance2")
     assert bic.classify("fillColor=none;strokeColor=#147EBA;") == ("style", None)
@@ -94,6 +95,25 @@ def test_index_json_shape(built):
     assert set(idx) == {"generated_from", "js_shapes", "stencils"}
     assert idx["js_shapes"] == list(bic.JS_SHAPES)
     assert idx["stencils"]["s3"]["kind"] == "service"
+
+
+def test_duplicate_stencil_names_recorded_and_rendered(built):
+    # `resIcon=endpoint` is defined twice in the sidebar palette: "API Gateway Endpoint"
+    # (Application Integration) and generic "Endpoint" (Network & Content Delivery). Both
+    # occurrences must survive in the index and both must render in their own category file.
+    stencils, _, _, out = built
+    occurrences = stencils["endpoint"]["occurrences"]
+    assert len(occurrences) >= 2
+    assert len({o["section"] for o in occurrences}) >= 2
+
+    app_integration = (out / "aws-icons-application-integration.md").read_text()
+    network = (out / "aws-icons-network-content-delivery.md").read_text()
+    assert "| `endpoint` | API Gateway Endpoint |" in app_integration
+    assert "| `endpoint` | Endpoint |" in network
+
+    idx = json.loads((out / "stencil-index.json").read_text())
+    assert idx["stencils"]["endpoint"]["alsoIn"] != []
+    assert idx["stencils"]["lambda"]["alsoIn"] == []
 
 
 def test_cli_fails_on_empty_source(tmp_path):

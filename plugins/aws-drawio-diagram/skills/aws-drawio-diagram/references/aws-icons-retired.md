@@ -9,6 +9,7 @@ These stencils still render but AWS retired the service or replaced the icon. Pr
 ## Service-level — `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>` · **strokeColor=#ffffff** · 78×78
 | resIcon | Display Name | fillColor |
 |---|---|---|
+| `workdocs` | WorkDocs (retired) | `#01A88D` |
 | `kinesis_data_analytics` | Kinesis Data Analytics (retired) | `#8C4FFF` |
 | `quicksight` | QuickSight (retired) | `#8C4FFF` |
 | `sql_workbench` | SQL Workbench (retired) | `#8C4FFF` |
@@ -21,6 +22,7 @@ These stencils still render but AWS retired the service or replaced the icon. Pr
 | `lookout_for_metrics` | Lookout for Metrics (retired) | `#01A88D` |
 | `deeplens` | DeepLens (retired) | `#01A88D` |
 | `quantum_ledger_database` | Quantum Ledger Database (Blockchain, retired) | `#ED7100` |
+| `quantum_ledger_database` | Quantum Ledger Database (Database, retired) | `#C925D1` |
 | `alexa_for_business` | Alexa for Business (retired) | `#DD344C` |
 | `honeycode` | Honeycode (retired) | `#DD344C` |
 | `application_cost_profiler` | Application Cost Profiler (retired) | `#7AA116` |
@@ -49,6 +51,7 @@ These stencils still render but AWS retired the service or replaced the icon. Pr
 | `thinkbox_draft` | Thinkbox Draft (retired) | `#ED7100` |
 | `thinkbox_sequoia` | Thinkbox Sequoia (retired) | `#ED7100` |
 | `snowmobile` | Snowmobile (Migration, retired) | `#01A88D` |
+| `snowmobile` | Snowmobile (Storage, retired) | `#7AA116` |
 | `snowcone` | Snowcone (retired) | `#7AA116` |
 | `infrequent_access_storage_class` | Infrequent Access Storage Class (retired) | `#7AA116` |
 | `private_5g` | Private 5G (retired) | `#8C4FFF` |
