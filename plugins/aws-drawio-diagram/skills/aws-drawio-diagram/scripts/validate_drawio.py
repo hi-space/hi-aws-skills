@@ -15,6 +15,7 @@ Warnings:
   W3  group container without dropTarget=1
   W4  edge whose endpoints share neither a column nor a lane (needs a bend — realign the nodes)
   W5  straight edge whose corridor passes through an unconnected icon's bounding box
+  W6  icon drawn inside an AWS Cloud group but not a child of a role group
 
 Usage: validate_drawio.py FILE [FILE ...]
 Adapted from vidanov/aws-architecture-diagram-skill tests/validate_drawio.py (MIT).
@@ -124,6 +125,38 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     return warnings
 
 
+def _grouping_warnings(cells: dict[str, ET.Element]) -> list[str]:
+    """W6: an icon drawn inside an AWS Cloud badge group but parented to the canvas or to the cloud itself.
+    Role groups (any non-badge container) are where icons belong; users/on-prem outside the cloud never warn."""
+    geo = _abs_geometry(cells)
+    clouds = []
+    for cid, cell in cells.items():
+        style = parse_style(cell.get("style"))
+        if (_aws4_name(style.get("grIcon", "")) or "").startswith("group_aws_cloud") and cid in geo:
+            clouds.append(cid)
+    if not clouds:
+        return []
+
+    def inside(inner, outer) -> bool:
+        ix, iy, iw, ih = geo[inner]
+        ox, oy, ow, oh = geo[outer]
+        return ix >= ox and iy >= oy and ix + iw <= ox + ow and iy + ih <= oy + oh
+
+    warnings: list[str] = []
+    for cid, cell in cells.items():
+        if cid not in geo or not _is_icon(parse_style(cell.get("style"))):
+            continue
+        parent = cell.get("parent", "1")
+        if parent != "1" and parent not in clouds:
+            continue
+        for cloud in clouds:
+            if cid != cloud and inside(cid, cloud):
+                warnings.append(f"W6 cell '{cid}': sits inside AWS Cloud '{cloud}' but is not a child of a role group — "
+                                "make it a child of a group (layout-and-style.md §2)")
+                break
+    return warnings
+
+
 def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
@@ -197,6 +230,7 @@ def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
             warnings.append(f"W1 edge '{cid}': no exitX/entryX — set explicit ports so routing stays clean")
 
     warnings.extend(_layout_warnings(cells))
+    warnings.extend(_grouping_warnings(cells))
     return errors, warnings
 
 

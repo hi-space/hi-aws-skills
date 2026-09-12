@@ -1,6 +1,10 @@
-# Architecture Templates
+# Architecture Templates (topology reference)
 
-Ready-to-use draw.io templates following the skill's style rules. Use these as starting points or reference for icon placement and styling.
+Five upstream diagrams (vidanov/aws-architecture-diagram-skill, MIT). Use them to see **which services connect to
+which** for a common pattern. They predate this skill's grid, grouping and typography rules (`references/layout-and-style.md`):
+280 px spacing, no role groups, grey page, no `fontFamily`. The validator reports `W4`–`W6` on them for that
+reason. Do not copy their coordinates or canvas — rebuild the topology on the 240 × 170 grid. For the intended
+look, see `docs/samples/agentic-rag-chat.drawio` in the plugin root.
 
 ## Available Templates
 
@@ -14,14 +18,6 @@ Ready-to-use draw.io templates following the skill's style rules. Use these as s
 
 ## How to Use
 
-1. Copy a template as starting point
-2. Modify services, labels, and connections
-3. Add/remove lanes as needed
-
-## Style Conventions in Templates
-
-- Background: `#F5F5F5` rectangle (prevents black on PNG export)
-- Left-to-right flow
-- 78x78 service icons
-- strokeWidth=2 edges
-- All groups use `fillColor=none`
+1. Read the template to learn the topology (icons, edges, group boundaries).
+2. Lay the same services out on the grid with role groups, per `references/layout-and-style.md`.
+3. Keep the icon styles (stencil names, `fillColor`, `strokeColor`); they are correct.

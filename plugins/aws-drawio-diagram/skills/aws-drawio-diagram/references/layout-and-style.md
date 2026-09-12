@@ -1,75 +1,55 @@
 # Layout and style rules
 
-Adapted from vidanov/aws-architecture-diagram-skill (MIT). Read this once per diagram; SKILL.md only keeps the
-procedure and the two icon patterns.
+Read this once per diagram; SKILL.md only keeps the procedure and the two icon patterns. The rules are
+numeric on purpose: a diagram that follows them renders like an AWS reference architecture — compact, grouped by
+role, every edge one straight segment, nothing overlapping. The validator checks what it can (`W4`–`W6`); the
+rest is the self-check at the end of this file.
 
-## Layout
+Origin: vidanov/aws-architecture-diagram-skill (MIT) for the icon patterns and edge conventions; the grid,
+grouping and typography rules below replace its sparse 280 px layout.
 
-- **Left-to-right flow** for the request/data path. Users and front ends on the **left**, data stores and
-  external systems on the **right**.
-- Horizontal lanes for parallel paths (top lane, bottom lane).
-- **≥220 px horizontal** spacing between icons (room for edge labels). **≥250 px vertical** between lanes.
-- Secondary services (monitoring, DLQ, error paths) go **below** the main flow with a **≥280 px** gap.
-- Icon size **78×78** for main services, **65×65** for secondary. `sketch=0` on every icon. Labels 12 px.
-- Above ~12 icons, split into pages (see Multi-page).
+## 1. Grid — all coordinates come from here
 
-## Grid and straight edges (visual quality)
+| Constant | Value | Notes |
+|---|---|---|
+| Icon | **78 × 78** | draw.io AWS4 palette default. Never scale icons; scale the canvas instead. |
+| Column pitch | **240 px** | Distance between icon centers on the same lane (162 px clear between icons). |
+| Lane pitch | **170 px** inside a group | 92 px clear between an icon's label and the icon below it. |
+| Group-row gap | **+50 px** | Lanes in *different* group rows are 220 px apart (170 + 50) so group borders and labels fit. |
+| Group width | **200 px per column**, 40 px gap | Group x = first column center − 100; width = 200 × columns + 40 × (columns − 1). |
+| Group height | **60 px above** first icon, **46 px below** last icon | 60 = group title row + room for a top-placed node label. |
+| Cloud padding | 40 px around the outermost groups | AWS Cloud x = first group x − 40; title row inside it. |
+| Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1320 × 1040. **Never** a fixed 2400 × 1400 page. |
 
-A diagram with correct icons but a crooked layout still reads as unprofessional. Place icons on a grid and make every edge a single straight segment; the validator warns (`W4`, `W5`) when it cannot.
+Pick the column centers once (e.g. users at `x=120`, then `380, 620, 860, 1100`), the lane centers once (e.g.
+`260, 430` for group row 1; `650, 870` for group row 2) and use only those. Icon top-left = center − 39.
 
-- **Grid.** Columns every **280 px**, lanes every **260 px** (78 px icon + label + gap). Main flow on one lane, left to right. Pick column x-values once (e.g. 700, 980, 1260, 1540, 1820) and lane y-values once (e.g. 300, 560, 820, 1100) and use only those.
-- **Same column or same lane.** Two connected icons share either the same x (vertical edge) or the same y (horizontal edge). `child.x = parent.x` exactly — never eyeball. If a pair cannot share a row or column, move a node; do not add bends.
-- **Ports follow the geometry.** Horizontal edge: `exitX=1;exitY=0.5;…;entryX=0;entryY=0.5;`. Down: `exitX=0.5;exitY=1;…;entryX=0.5;entryY=0;`. Up: `exitX=0.5;exitY=0;…;entryX=0.5;entryY=1;`.
-- **Nothing in the corridor.** No edge may pass through the bounding box of an icon it does not connect. If a node sits between a source and target on the same lane, either it belongs in the flow (connect through it) or it moves to another lane.
-- **One edge per corridor.** Two edges must not run on top of each other; give them different lanes or different ports.
-- **Fan-out is the one allowed bend.** A branch to several targets leaves the source once and bends once; targets sit on lanes above and below the source's lane, in the next column.
-- **Keep node labels out of edge paths.** Default label position is below the icon. Move it when an edge would
-  cross it: bottom edge only → label on top (`verticalLabelPosition=top;verticalAlign=bottom;`); top and bottom
-  edges, right side free → label on the right (`labelPosition=right;verticalLabelPosition=middle;align=left;
-  verticalAlign=middle;spacingLeft=6;`); edges on top, bottom and a side (hub node) → bottom-left corner
-  (`labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;`). In every case delete the base
-  style's later `align=center;` — otherwise it wins and the text lands on the icon.
-- **Label sparingly.** Most edges need no label. When two edges meet at a node, at most one of them carries a label, or their labels collide.
-- **Balance.** Size the canvas to the content plus a consistent margin; do not leave one half empty.
-- **Self-check before writing.** For every edge: same row or column? corridor free of other icons? at most one bend? no other edge in the same corridor? Fix coordinates, not intent.
+Children of a group use coordinates **relative to the group**: `child.x = center.x − 39 − group.x`.
 
-## Canvas and title
+## 2. Groups — every icon belongs to one
 
-```xml
-<mxGraphModel dx="2800" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1400" math="0" shadow="0">
-```
+An AWS diagram without role groups reads as a scatter of logos. Group first, then place.
 
-First element after the root cells: a full-canvas background (prevents black PNG backgrounds), then a title block.
+- Decide the **role groups** before placing anything: Frontend, API & Auth, Agent runtime, Data, Ingestion,
+  Observability, … 2–7 groups. Each holds 1–4 icons on adjacent grid cells; a single-icon group is fine
+  ("Foundation model").
+- Groups are **rectangles snapped to grid cells** (§1 formulas). Arrange them in **group rows**: row 1 across
+  the top (lanes A–B), row 2 below (lanes C–D). Groups in the same row share their top edge unless one is
+  intentionally shorter (then it hugs its content, top-aligned to its own first lane).
+- **AWS Cloud** (badge group) contains the role groups; **Users / on-premise / SaaS** sit outside it, on the
+  main lane, 260 px left of the first column.
+- Nesting deeper than *AWS Cloud → role group → icons* only when the request is about networking (then Region →
+  VPC → AZ → subnet from the table below, same 200/40 arithmetic).
+- Validator `W6`: a service icon whose parent is the canvas while an AWS Cloud group exists → put it in a group.
 
-```xml
-<mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#F5F5F5;strokeColor=none;" vertex="1" parent="1">
-  <mxGeometry x="0" y="0" width="2400" height="1400" as="geometry" />
-</mxCell>
-<mxCell id="title" value="&lt;b&gt;Diagram Title&lt;/b&gt;&lt;br&gt;Author | Date | Version" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontSize=14;spacing=8;" vertex="1" parent="1">
-  <mxGeometry x="40" y="30" width="420" height="60" as="geometry" />
-</mxCell>
-```
-
-## Edges
-
-Base style for every edge:
+**Role group style** (no badge — this is the modern light card look):
 
 ```
-edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;
+rounded=0;whiteSpace=wrap;html=1;fillColor=#F7F8FA;strokeColor=#C9D1D9;strokeWidth=1;fontColor=#232F3E;fontFamily=Amazon Ember;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
 ```
 
-- Every edge has `source` and `target` and a child `<mxGeometry relative="1" as="geometry" />`.
-- Labels: 1–2 words. Add `labelBackgroundColor=#F5F5F5;fontSize=11;`. Horizontal edges: `verticalAlign=bottom;`
-  (label above). Vertical edges: `align=right;`. Unlabeled edge: omit the `value` attribute.
-- Routing to a service above/below the flow: exit bottom `exitX=0.5;exitY=1;`, enter top `entryX=0.5;entryY=0;`,
-  exit top `exitX=0.5;exitY=0;`, enter bottom `entryX=0.5;entryY=1;`.
-- Types: solid black = primary flow; `dashed=1;` = optional/async; `dashed=1;strokeColor=#DD344C;` = error path.
-- Do not label an edge when the relationship is obvious (Lambda → DynamoDB needs no "Write").
-
-## Groups
-
-Always `fillColor=none;container=1;dropTarget=1;`. Names and colors come from
-[`aws-icons-groups.md`](aws-icons-groups.md) (generated). The common ones:
+**Badge groups** (AWS Cloud, Region, VPC, …). Always `fillColor=none;container=1;dropTarget=1;`. Names and
+colors come from [`aws-icons-groups.md`](aws-icons-groups.md) (generated). The common ones:
 
 | Boundary | style fragment |
 |---|---|
@@ -82,12 +62,106 @@ Always `fillColor=none;container=1;dropTarget=1;`. Names and colors come from
 | Security group | `fillColor=none;strokeColor=#DD3522;verticalAlign=top;fontStyle=0;fontColor=#DD3522;container=1;dropTarget=1;` (no badge) |
 | AWS Account | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_account;strokeColor=#CD2264;fontColor=#CD2264;fillColor=none;container=1;dropTarget=1;` |
 | On-premise / corporate DC | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_corporate_data_center;strokeColor=#7D8998;fontColor=#5A6C86;fillColor=none;container=1;dropTarget=1;` |
-| Logical group | `whiteSpace=wrap;html=1;fillColor=none;dashed=1;dashPattern=8 8;strokeColor=#5A6C86;fontColor=#5A6C86;container=1;dropTarget=1;` |
 
-Common group prefix: `points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;`
-Children of a group set `parent="<group id>"` and use coordinates relative to the group.
+Badge group prefix: `points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontFamily=Amazon Ember;fontSize=14;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;`
 
-## Multi-page
+## 3. Typography
+
+One family, four sizes. Put `fontFamily=Amazon Ember;` in **every** cell style (icons, groups, edges, text).
+draw.io cannot embed fonts: the PNG uses whatever the exporting machine has installed, and the `.drawio`
+uses the viewer's. Amazon Ember ships with the sibling plugin
+(`plugins/aws-diagram-design/skills/aws-diagram-design/assets/fonts/ttf/`; copy to `~/.fonts` and run
+`fc-cache -f`). Without it draw.io falls back to Helvetica/Arial; **Noto Sans** is the preferred fallback
+where Ember is not allowed — then write `fontFamily=Noto Sans;` instead.
+
+| Element | Size | Weight | Color |
+|---|---|---|---|
+| Diagram title | 20 | bold | `#232F3E` |
+| Subtitle (author · date · version) | 12 | regular | `#5A6C86` |
+| AWS Cloud / badge group label | 14 | bold | group color |
+| Role group label | 13 | bold | `#232F3E` |
+| Node label | 12 | regular | `#232F3E` |
+| Edge label, legend | 11 | regular | `#232F3E` / `#5A6C86` |
+
+Node labels: 1–3 words, sentence case, qualifier in parentheses (`S3 (static site)`, `Bedrock (Claude)`).
+No `fontStyle=1` on node labels.
+
+## 4. Canvas, title, legend
+
+```xml
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="1040" math="0" shadow="0">
+```
+
+First cells after the root: a **white** full-canvas background (prevents black PNGs), then the title, then a
+legend when the diagram has more than one edge type.
+
+```xml
+<mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
+  <mxGeometry x="0" y="0" width="1320" height="1040" as="geometry" />
+</mxCell>
+<mxCell id="title" value="&lt;font style=&quot;font-size:20px&quot;&gt;&lt;b&gt;Diagram Title&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#5A6C86&quot;&gt;Author · Date · Version&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Amazon Ember;fontSize=12;fontColor=#232F3E;spacing=0;" vertex="1" parent="1">
+  <mxGeometry x="40" y="32" width="700" height="60" as="geometry" />
+</mxCell>
+<mxCell id="lg1" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="44" width="40" height="10" as="geometry" /></mxCell>
+<mxCell id="lg1t" value="request / data flow" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=11;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="38" width="160" height="22" as="geometry" /></mxCell>
+<mxCell id="lg2" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;dashed=1;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="68" width="40" height="10" as="geometry" /></mxCell>
+<mxCell id="lg2t" value="async / auxiliary" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=11;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="62" width="160" height="22" as="geometry" /></mxCell>
+```
+
+Legend lines are `shape=line` **vertices**, not edges (edges without source/target fail `E3`).
+
+## 5. Edges — one straight segment each
+
+Base style for every edge:
+
+```
+edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;fontFamily=Amazon Ember;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;
+```
+
+then the ports for the direction, then `dashed=1;` for async/auxiliary, `dashed=1;strokeColor=#DD344C;` for
+error paths.
+
+| Direction | ports |
+|---|---|
+| → right | `exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;` |
+| ← left | `exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;` |
+| ↑ up | `exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;` |
+| ↓ down | `exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
+
+- **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair
+  cannot, move a node into a free cell; never add bends. Fan-out to several targets is the one allowed bend.
+- **Empty corridor.** No other icon between source and target; no two edges in the same corridor.
+- Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />`. No `value` when unlabeled.
+- Edges may cross group borders (that is what groups are for); they must not run along one.
+- Left-to-right for the request path: users left, models/data right. Auxiliary (logs, alarms) below.
+
+**Edge labels.** Most edges need none (Lambda → DynamoDB is self-explanatory). When one helps:
+
+- Horizontal edge: `verticalAlign=bottom;` (label above the line). Vertical edge: `align=right;spacingRight=4;`
+  (label left of the line).
+- Only where the segment has ≥ 60 px of free space around the midpoint: the run from users into the cloud, or a
+  vertical edge crossing the gap between two group rows (`retrieve`, `embed`). **Never on an edge between two
+  adjacent groups** — the 40 px gap cannot hold a label, and the white label background bites a hole in the
+  group border.
+- When two labeled edges meet at one node, at most one keeps its label.
+
+## 6. Node label placement — keep text out of edge paths
+
+Default is below the icon. Ports are at icon centers, so an edge entering from below runs through a bottom
+label; move the label to the free side. In every case **delete the base style's later `align=center;`** — a later
+key wins in draw.io and the text lands on the icon.
+
+| Edges on the node | Label position | style fragment |
+|---|---|---|
+| none / left / right / top only | below (default) | `verticalLabelPosition=bottom;verticalAlign=top;align=center;` |
+| bottom (and any of left/right) | above | `verticalLabelPosition=top;verticalAlign=bottom;align=center;` |
+| top and bottom, right side free | right | `labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=8;` — needs a free cell to the right inside the group (make the group two columns wide) |
+| top, bottom and a side (hub) | bottom-left corner | `labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;spacingRight=6;` — ≤ 55 px wide: break into two lines with `<br>` (`API<br>Gateway`, `Chat<br>agent`) |
+
+Labels must stay inside their group rectangle; if a side label does not fit, widen the group by one column or
+shorten the text — do not overflow the border.
+
+## 7. Multi-page
 
 ```xml
 <mxfile host="app.diagrams.net">
@@ -96,14 +170,10 @@ Children of a group set `parent="<group id>"` and use coordinates relative to th
 </mxfile>
 ```
 
-Page 1 = service-level overview. Later pages = resource-level detail (subnets, instances, tables).
+Above ~14 icons, split: page 1 = service-level overview, later pages = resource-level detail (subnets,
+instances, tables). Each page follows the same grid.
 
-## Legend
-
-For diagrams with more than one edge type, place a small legend under the title: solid = primary flow,
-dashed = optional/async, red dashed = error path.
-
-## Audience mode
+## 8. Audience mode
 
 Ask "Technical audience or executive/non-technical?" when unclear.
 
@@ -112,15 +182,22 @@ Ask "Technical audience or executive/non-technical?" when unclear.
   circled digits as edge labels: `value="①"` with `fontSize=14;fontStyle=1;labelBackgroundColor=#ffffff;`.
   Second flow uses ❶ ❷ ❸.
 
-## Companion guide
+## 9. Companion guide
 
 Next to `name.drawio`, write `name.md`: title, numbered flow matching the edge labels, service list with purpose,
-key design decisions.
+key design decisions (including any icon substitutions).
 
-## Writing the file
+## 10. Writing the file
 
 - No XML comments (`<!-- -->`) — draw.io's importer rejects them in some paths.
 - Escape `&amp; &lt; &gt; &quot;` in values. Unique `id` per cell. Root cells `id="0"` and `id="1" parent="0"`.
 - Large diagrams: write in chunks (header + left, middle, right, bottom + close) to stay within tool limits.
 - Save as `<descriptive-name>.drawio`. Export via the draw.io CLI (see SKILL.md) as `name.drawio.png` so the
   PNG embeds the XML and stays editable.
+
+## 11. Self-check before writing (and after the first render)
+
+For every node: which group? which column center, which lane center? label side free of edges? label inside
+the group? For every edge: same column or lane? corridor empty? ports match the direction? label only in a
+free gap? For the canvas: white background, title, legend if two edge types, no half-empty page. Then run the
+validator and **look at the PNG** — a rule that survives the render is the only kind worth keeping.
