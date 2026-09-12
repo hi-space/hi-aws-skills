@@ -82,13 +82,19 @@ The exported file uses a double extension so the PNG keeps the XML and reopens i
 
 ```bash
 # Linux (drawio CLI on PATH). Headless servers need xvfb: prefix with `xvfb-run -a`.
-drawio --no-sandbox -x -f png -e -b 10 -o name.drawio.png name.drawio
+xvfb-run -a drawio -x -f png -e -b 10 -o name.drawio.png name.drawio
 # macOS
 /Applications/draw.io.app/Contents/MacOS/draw.io -x -f png -e -b 10 -o name.drawio.png name.drawio
 ```
 
 `-f svg` / `-f pdf` work the same way. If no CLI is available, say so and point to https://app.diagrams.net
 (File → Import). Never claim a PNG was produced without the file existing.
+
+Do not add `--no-sandbox` or `--disable-gpu` before the drawio flags: drawio 26.2.2's own CLI parser (not
+Electron's) does not recognize either as an option, counts them as extra positional arguments, and exits with
+`error: too many arguments` before it opens the file — no render is even attempted. Verified on this CLI version
+running as a non-root user under `xvfb-run -a`; if a root/CI environment needs Chromium's sandbox disabled, that
+is a separate problem to solve (e.g. running as a non-root user), not something this CLI's flags accept.
 
 ## Validation checklist (the script enforces most of these)
 
