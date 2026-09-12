@@ -64,6 +64,17 @@ def test_row_break_inserted_between_stacked_groups():
     assert b.ly(2) == 260 + 340 + 50
 
 
+def test_node_labels_are_bold_13():
+    st = styles(bd.build(spec()))
+    for nid in ("u", "a", "b", "c"):
+        assert st[nid]["fontSize"] == "13" and st[nid]["fontStyle"] == "1", nid
+    img = spec()
+    img["nodes"][2] = {"id": "b", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
+                       "col": 2, "lane": 1, "group": "g"}
+    st = styles(bd.build(img))
+    assert st["b"]["fontSize"] == "13" and st["b"]["fontStyle"] == "1"
+
+
 def test_label_sides_follow_incident_edges():
     st = styles(bd.build(spec()))
     assert st["a"]["verticalLabelPosition"] == "bottom"         # left, right, top used; bottom free

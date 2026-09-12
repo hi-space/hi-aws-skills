@@ -91,11 +91,12 @@ where Ember is not allowed — then write `fontFamily=Noto Sans;` instead.
 | Subtitle (author · date · version) | 12 | regular | `#5A6C86` |
 | AWS Cloud / badge group label | 14 | bold | group color |
 | Role group label | 13 | bold | `#232F3E` |
-| Node label | 12 | regular | `#232F3E` |
+| Node label | 13 | bold | `#232F3E` |
 | Edge label, legend | 11 | regular | `#232F3E` / `#5A6C86` |
 
 Node labels: 1–3 words, sentence case, qualifier in parentheses (`S3 (static site)`, `Bedrock (Claude)`).
-No `fontStyle=1` on node labels.
+Node labels are bold (`fontSize=13;fontStyle=1`) so the service name reads as fast as the icon; group
+titles share the size and weight, which keeps one visual level for "names" and one for the grey subtitle/legend.
 
 ## 4. Canvas, title, legend
 

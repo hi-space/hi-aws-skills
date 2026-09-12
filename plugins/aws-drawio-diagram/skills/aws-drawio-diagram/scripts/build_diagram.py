@@ -281,7 +281,7 @@ class Builder:
             f'<mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" as="geometry"/></mxCell>')
 
     def node_style(self, n: dict, pos: str) -> str:
-        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=12;fontStyle=0;"
+        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=13;fontStyle=1;"
                 f"fontFamily={self.font};aspect=fixed;{LABEL_POS[pos]}")
         if "icon" in n:
             st = self.index[n["icon"]]
@@ -292,7 +292,7 @@ class Builder:
                 return base + f"fillColor={fill};strokeColor=none;shape=mxgraph.aws4.{n['icon']};"
             raise SpecError(f"node '{n['id']}': '{n['icon']}' is a group badge, not an icon")
         b64 = base64.b64encode((EXTRA_ICONS / n["image"]).read_bytes()).decode()
-        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=12;fontFamily={self.font};"
+        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=13;fontStyle=1;fontFamily={self.font};"
                 f"{LABEL_POS[pos]}image=data:image/svg+xml,{b64};")
 
     def build(self) -> str:

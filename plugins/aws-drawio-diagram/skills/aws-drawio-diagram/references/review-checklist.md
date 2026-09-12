@@ -43,7 +43,7 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
       no two edges share a segment.
 - [ ] **Labels**: ≤ 5 edge labels for ~15 nodes; each in free space; each ≤ 2 words. Node labels ≤ 3 words.
 - [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
-      group titles bold; nothing in a second colour except the grey subtitle/legend.
+      group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend.
 - [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
 
 ## D. Correct as architecture (sanity re-check)
