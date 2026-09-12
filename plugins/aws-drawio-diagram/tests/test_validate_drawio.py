@@ -1,0 +1,123 @@
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+PLUGIN = Path(__file__).resolve().parents[1]
+SKILL = PLUGIN / "skills" / "aws-drawio-diagram"
+SCRIPTS = SKILL / "scripts"
+sys.path.insert(0, str(SCRIPTS))
+
+import validate_drawio as vd  # noqa: E402
+
+INDEX = vd.load_index()
+
+
+def wrap(cells: str) -> str:
+    return f"""<mxfile><diagram id="d" name="P"><mxGraphModel><root>
+<mxCell id="0"/><mxCell id="1" parent="0"/>
+{cells}
+</root></mxGraphModel></diagram></mxfile>"""
+
+
+SERVICE_OK = '<mxCell id="a" value="Lambda" style="sketch=0;fillColor=#ED7100;strokeColor=#ffffff;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="78" height="78" as="geometry"/></mxCell>'
+RESOURCE_OK = '<mxCell id="b" value="Fn" style="sketch=0;fillColor=#ED7100;strokeColor=none;shape=mxgraph.aws4.lambda_function;" vertex="1" parent="1"><mxGeometry x="300" y="0" width="78" height="78" as="geometry"/></mxCell>'
+EDGE_OK = '<mxCell id="e" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" edge="1" source="a" target="b" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>'
+
+
+def codes(msgs):
+    return sorted({m.split()[0] for m in msgs})
+
+
+def test_clean_minimal_diagram_passes():
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + EDGE_OK), INDEX)
+    assert errors == [] and warnings == []
+
+
+def test_unknown_stencil_is_error():
+    bad = SERVICE_OK.replace("aws4.lambda;", "aws4.lambda_supreme;")
+    errors, _ = vd.validate_text(wrap(bad), INDEX)
+    assert codes(errors) == ["E1"] and "lambda_supreme" in errors[0]
+
+
+def test_vidanov_broken_names_are_caught():
+    bad = RESOURCE_OK.replace("lambda_function", "vpc_peering")
+    errors, _ = vd.validate_text(wrap(bad), INDEX)
+    assert codes(errors) == ["E1"]
+
+
+def test_service_with_stroke_none_is_error():
+    bad = SERVICE_OK.replace("strokeColor=#ffffff", "strokeColor=none")
+    errors, _ = vd.validate_text(wrap(bad), INDEX)
+    assert codes(errors) == ["E2"]
+
+
+def test_resource_with_white_stroke_is_error():
+    bad = RESOURCE_OK.replace("strokeColor=none", "strokeColor=#ffffff")
+    errors, _ = vd.validate_text(wrap(bad), INDEX)
+    assert codes(errors) == ["E2"]
+
+
+def test_product_icon_counts_as_service_level():
+    ok = SERVICE_OK.replace("resourceIcon;resIcon=", "productIcon;prIcon=")
+    errors, _ = vd.validate_text(wrap(ok), INDEX)
+    assert errors == []
+
+
+def test_legacy_group_vpc_badge_is_accepted_and_group_needs_container():
+    grp = ('<mxCell id="g" value="VPC" style="shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc;'
+           'strokeColor=#8C4FFF;fillColor=none;" vertex="1" parent="1"><mxGeometry x="0" y="0" width="400" height="300" as="geometry"/></mxCell>')
+    errors, warnings = vd.validate_text(wrap(grp), INDEX)
+    assert codes(errors) == ["E4"]
+    fixed = grp.replace("fillColor=none;", "fillColor=none;container=1;")
+    errors, warnings = vd.validate_text(wrap(fixed), INDEX)
+    assert errors == [] and codes(warnings) == ["W3"]
+
+
+def test_edge_endpoint_and_orthogonal_warning():
+    dangling = EDGE_OK.replace('target="b"', 'target="zzz"')
+    errors, _ = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + dangling), INDEX)
+    assert codes(errors) == ["E3"]
+    no_ports = EDGE_OK.replace("exitX=1;exitY=0.5;entryX=0;entryY=0.5;", "")
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + no_ports), INDEX)
+    assert errors == [] and codes(warnings) == ["W1"]
+    iso = no_ports.replace("orthogonalEdgeStyle", "isometricEdgeStyle")
+    errors, warnings = vd.validate_text(wrap(SERVICE_OK + RESOURCE_OK + iso), INDEX)
+    assert errors == [] and warnings == []
+
+
+def test_duplicate_id_comment_and_compressed():
+    errors, _ = vd.validate_text(wrap(SERVICE_OK + SERVICE_OK), INDEX)
+    assert "E5" in codes(errors)
+    errors, _ = vd.validate_text(wrap("<!-- note -->" + SERVICE_OK), INDEX)
+    assert codes(errors) == ["E6"]
+    compressed = '<mxfile><diagram id="d" name="P">eJxTKM5ILEhVAAA=</diagram></mxfile>'
+    errors, _ = vd.validate_text(compressed, INDEX)
+    assert codes(errors) == ["E6"]
+    xxe = '<!DOCTYPE x [<!ENTITY e SYSTEM "file:///etc/passwd">]>' + wrap(SERVICE_OK)
+    errors, _ = vd.validate_text(xxe, INDEX)
+    assert codes(errors) == ["E6"]
+
+
+def test_missing_fill_is_warning():
+    nofill = SERVICE_OK.replace("fillColor=#ED7100;", "")
+    errors, warnings = vd.validate_text(wrap(nofill), INDEX)
+    assert errors == [] and codes(warnings) == ["W2"]
+
+
+@pytest.mark.parametrize("tpl", sorted((SKILL / "templates").glob("*.drawio")), ids=lambda p: p.name)
+def test_shipped_templates_have_no_errors(tpl):
+    errors, _ = vd.validate_file(tpl, INDEX)
+    assert errors == []
+
+
+def test_cli_exit_codes(tmp_path):
+    good = tmp_path / "good.drawio"
+    good.write_text(wrap(SERVICE_OK + RESOURCE_OK + EDGE_OK))
+    bad = tmp_path / "bad.drawio"
+    bad.write_text(wrap(SERVICE_OK.replace("strokeColor=#ffffff", "strokeColor=none")))
+    ok = subprocess.run([sys.executable, str(SCRIPTS / "validate_drawio.py"), str(good)], capture_output=True, text=True)
+    assert ok.returncode == 0 and "0 errors" in ok.stdout
+    ko = subprocess.run([sys.executable, str(SCRIPTS / "validate_drawio.py"), str(bad)], capture_output=True, text=True)
+    assert ko.returncode == 1 and "E2" in ko.stdout
