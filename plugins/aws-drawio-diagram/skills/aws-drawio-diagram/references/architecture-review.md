@@ -106,11 +106,15 @@ Look for `search_documentation` / `retrieve_skill` in your tool list; any one of
 Lens: Serverless Applications Lens (read: landing page, "RESTful microservices" scenario). Skills: aws-serverless,
 amazon-dynamodb. Tool: AWS Knowledge MCP, 13 calls. Date: 2026-09-12.
 
-| # | Pillar | Finding | Source | Severity | Diagram |
+| # | Pillar | Finding | Source (URL or skill § file) + quote | Severity | Diagram |
 |---|---|---|---|---|---|
-| R1 | Security | API Gateway has no WAF; the lens scenario puts AWS WAF in front of public REST APIs | https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/… | should | + WAF badge on API Gateway group |
-| R2 | Reliability | SQS → Lambda without a dead-letter queue | aws-serverless skill § "Event source mappings" | must | + DLQ node under SQS |
-| R3 | Operational excellence | No alarm → notification path from CloudWatch | https://docs.aws.amazon.com/wellarchitected/latest/framework/ops… | should | + CloudWatch → SNS edge |
+| R1 | Security | API Gateway has no WAF; the lens scenario puts AWS WAF in front of public REST APIs | https://docs.aws.amazon.com/wellarchitected/latest/serverless-applications-lens/… — "use AWS WAF … in front of API Gateway" | should | + WAF badge on API Gateway group |
+| R2 | Reliability | SQS → Lambda without a dead-letter queue | aws-serverless skill § references/event-source-mappings.md — "configure a dead-letter queue … maxReceiveCount" | must | + DLQ node under SQS |
+| R3 | Operational excellence | No alarm → notification path from CloudWatch | https://docs.aws.amazon.com/wellarchitected/latest/framework/ops… — "define alarms … notify the on-call" | should | + CloudWatch → SNS edge |
+
+Every Source cell carries a **verbatim quote (≤ 20 words) from the page or file you opened**, after an em dash. A
+row without a quote is a row without a source. The header's call count is *this diagram's* count — the same
+number pasted into four briefs is a sign the review ran once and was copied.
 
 Decisions: R2 fixed (DLQ added). R1, R3 accepted for v1 — noted under Decisions with sources.
 (While the user has not decided yet, write `Decisions (proposed): …` with fix/accept suggestions instead.)
@@ -129,3 +133,5 @@ Sources consulted (incl. no-finding): <url>, <url>, skill aws-serverless (SKILL.
   `read_documentation` (or have its verbatim chunk from `search_documentation`) first.
 - A finding whose only evidence is a skill's registry description. Descriptions say what a skill *covers*,
   not what AWS *recommends*.
+- A *must* about a pattern the brief does not have: a DLQ for a **synchronous** invoke, multi-AZ for a
+  regional managed service. Read the Kind column before applying an asynchronous-messaging rule.
