@@ -107,7 +107,7 @@ def validate_text(xml_text: str, index: dict) -> tuple[list[str], list[str]]:
             if style.get("dropTarget") != "1":
                 warnings.append(f"W3 cell '{cid}': group should set dropTarget=1")
         else:
-            if stroke != "none":
+            if stroke.lower() != "none":
                 errors.append(f"E2 cell '{cid}': resource-level stencil needs strokeColor=none (has '{stroke or 'unset'}')")
             if not style.get("fillColor"):
                 warnings.append(f"W2 cell '{cid}': icon has no fillColor — renders white in PNG export")

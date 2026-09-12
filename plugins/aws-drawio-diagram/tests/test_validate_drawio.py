@@ -59,6 +59,12 @@ def test_resource_with_white_stroke_is_error():
     assert codes(errors) == ["E2"]
 
 
+def test_resource_stroke_none_is_case_insensitive():
+    ok = RESOURCE_OK.replace("strokeColor=none", "strokeColor=NONE")
+    errors, _ = vd.validate_text(wrap(ok), INDEX)
+    assert errors == []
+
+
 def test_product_icon_counts_as_service_level():
     ok = SERVICE_OK.replace("resourceIcon;resIcon=", "productIcon;prIcon=")
     errors, _ = vd.validate_text(wrap(ok), INDEX)

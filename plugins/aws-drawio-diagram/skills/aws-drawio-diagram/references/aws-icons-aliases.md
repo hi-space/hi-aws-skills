@@ -43,7 +43,7 @@ AWS marketing name often does not match. Look here when the category file has no
 | Amazon Nova | `nova2` | service | |
 | Amazon Bedrock | `bedrock` | service | |
 | Amazon Bedrock AgentCore (service) | `bedrock_agentcore` | service | |
-| Bedrock AgentCore Runtime / Gateway / Memory / Identity / … | `agentcore_runtime` | image | no draw.io stencil; see aws-icons-extra.md |
+| Bedrock AgentCore Runtime / Gateway / Memory / Identity / … | `shape=image` | image | no draw.io stencil; see aws-icons-extra.md |
 | AWS Step Functions | `step_functions` | service | |
 | AWS Transit Gateway | `transit_gateway` | service | route table: `transit_gateway_attachment` (resource) |
 | VPC peering connection | `peering` | resource | `vpc_peering` does **not** exist |

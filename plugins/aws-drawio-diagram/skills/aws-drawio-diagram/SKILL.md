@@ -34,6 +34,7 @@ do not assume it is under the current working directory.
 | Pattern | Style | strokeColor | Use for |
 |---|---|---|---|
 | **Service-level** | `shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.<name>;` | **`#ffffff`** (required) | A named service as a node: colored square + white glyph |
+| **Product frame** (variant of service-level) | `shape=mxgraph.aws4.productIcon;prIcon=mxgraph.aws4.<name>;` | **`#ffffff`** (required) | Same as service-level with a product-style frame; rare, appears in one template |
 | **Resource-level** | `shape=mxgraph.aws4.<name>;` | **`none`** (required) | Sub-resources and generic marks: colored silhouette |
 | Group | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.<group_name>;` | category color | Boundary box with a corner badge |
 
