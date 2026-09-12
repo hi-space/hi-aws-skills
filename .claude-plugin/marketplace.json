@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator) and aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate)."
   },
   "owner": {
     "name": "hi-space"
@@ -16,6 +16,11 @@
       "name": "aws-drawio-diagram",
       "source": "./plugins/aws-drawio-diagram",
       "description": "Editable AWS architecture diagrams as draw.io (.drawio) XML. Stencil catalog of 1,000+ names regenerated from draw.io sources, two-pattern icon rule, layout conventions, 5 templates, validator, and SVG image fallback for icons draw.io lacks (Bedrock AgentCore resources)."
+    },
+    {
+      "name": "aws-ppt-master",
+      "source": "./plugins/aws-ppt-master",
+      "description": "Natively editable PPTX decks from documents or a topic (ppt-master fork); AI images on Amazon Bedrock only; PPTX layout + Korean copy-voice QA gate; 304 AWS service icons."
     }
   ]
 }
