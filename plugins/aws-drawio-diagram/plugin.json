@@ -1,0 +1,10 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aws-drawio-diagram",
+  "version": "1.0.0",
+  "description": "Editable AWS architecture diagrams as draw.io XML — verified stencil catalog regenerated from draw.io sources, two-pattern icon rule, layout conventions, templates, validator, and SVG fallback for icons draw.io lacks.",
+  "author": { "name": "hi-space" },
+  "keywords": ["aws diagram", "drawio", "draw.io", "architecture diagram", "aws icons", "editable diagram"],
+  "license": "MIT",
+  "repository": "https://github.com/hi-space/hi-aws-skills"
+}
