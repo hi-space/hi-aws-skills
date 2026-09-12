@@ -33,6 +33,10 @@ Produced with this skill. The skill works in three phases: ① an architecture b
 
 [brief](docs/samples/order-pipeline.brief.md) · [spec](docs/samples/order-pipeline.json) · [order-pipeline.drawio](docs/samples/order-pipeline.drawio) — shows the Step Functions fan-out (one bend) and a Korean title
 
+![IoT telemetry](docs/samples/iot-telemetry.drawio.png)
+
+[brief](docs/samples/iot-telemetry.brief.md) · [spec](docs/samples/iot-telemetry.json) · [iot-telemetry.drawio](docs/samples/iot-telemetry.drawio) — a hub Lambda fanning out up and down, and a recipient outside the cloud
+
 ## Install (Claude Code)
 
 ```

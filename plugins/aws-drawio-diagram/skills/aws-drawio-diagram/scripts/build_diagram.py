@@ -28,9 +28,11 @@ Spec (JSON):
 Grid: column i center x = 140 + 240·i; lane j center y = 260 + 170·j, plus 50 px for every group row
 boundary above lane j (derived from the groups: a lane where one group ends and another begins).
 Icons are 78 px. Groups are 200 px per column (40 px gaps), 60 px above the first icon, 46 px below
-the last. Edges between cells in the same column/lane are straight; otherwise the source leaves
-top/bottom and enters the target left/right (one bend — the fan-out pattern). `icon` names come from
-scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
+the last. Edges between cells in the same column/lane are straight; an edge to the diagonally adjacent
+cell leaves the source top/bottom and enters the target left/right (one bend — the fan-out pattern);
+anything else is a spec error (move a node). Each side of a node carries at most one edge; only
+straight edges may carry a label. `icon`
+names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
 
 Usage: build_diagram.py SPEC.json OUT.drawio [--no-validate]
 """
@@ -176,21 +178,34 @@ class Builder:
         if s["lane"] == t["lane"]:
             d = "right" if t["col"] > s["col"] else "left"
             return d, *PORTS[d], "straight"
+        if abs(t["col"] - s["col"]) != 1 or abs(t["lane"] - s["lane"]) != 1:
+            raise SpecError(f"edge {e['from']}→{e['to']}: cells ({s['col']},{s['lane']})→({t['col']},{t['lane']}) are neither "
+                            "aligned nor adjacent; a single bend only reaches the next column and lane. Move the target "
+                            "onto the source's column or lane, into the adjacent diagonal cell, or route via a node in between")
         vertical = "up" if t["lane"] < s["lane"] else "down"
         horizontal = "right" if t["col"] > s["col"] else "left"
         return f"{vertical}-{horizontal}", PORTS[vertical][0], PORTS[horizontal][1], "bend"
 
     def incident_sides(self) -> dict[str, set[str]]:
+        """Sides of each node touched by edges. One edge per side: two edges on the same side of a node
+        leave through the same port and render on top of each other (validator W8)."""
         sides: dict[str, set[str]] = {nid: set() for nid in self.nodes}
-        for e in self.spec.get("edges", []):
+        owner: dict[tuple[str, str], str] = {}
+        for i, e in enumerate(self.spec.get("edges", []), 1):
             d, _, _, kind = self.edge_geometry(e)
             if kind == "straight":
                 ss, ts = SIDES[d]
             else:
                 v, h = d.split("-")
                 ss, ts = SIDES[v][0], SIDES[h][1]
-            sides[e["from"]].add(ss)
-            sides[e["to"]].add(ts)
+            eid = e.get("id", f"e{i}")
+            for nid, side in ((e["from"], ss), (e["to"], ts)):
+                if (nid, side) in owner:
+                    name = {"T": "top", "B": "bottom", "L": "left", "R": "right"}[side]
+                    raise SpecError(f"node '{nid}': edges {owner[(nid, side)]} and {eid} both use its {name} side — they would "
+                                    "overlap. Move one neighbour to another lane/column so each side carries one edge")
+                owner[(nid, side)] = eid
+                sides[nid].add(side)
         return sides
 
     # ---- labels -------------------------------------------------------------------------------
@@ -355,6 +370,9 @@ class Builder:
                 style += "dashed=1;strokeColor=#DD344C;"
             label = e.get("label", "")
             geo_x = ""
+            if label and kind == "bend":
+                raise SpecError(f"edge {e['from']}→{e['to']}: a bent edge cannot carry a label (draw.io centres it on the "
+                                "corner). Drop the label or put the target on the source's lane/column")
             if label:
                 if kind == "straight" and d in ("right", "left"):
                     style += "verticalAlign=bottom;"
@@ -383,6 +401,26 @@ def build(spec: dict, index_path: Path = INDEX) -> str:
     return Builder(spec, json.loads(index_path.read_text())).build()
 
 
+def hints(spec: dict) -> list[str]:
+    """Non-blocking layout hints: groups with more empty cells than icons, lanes with a single icon."""
+    out: list[str] = []
+    nodes = spec.get("nodes", [])
+    for g in spec.get("groups", []):
+        cells = len(g["cols"]) * len(g["lanes"])
+        used = sum(1 for n in nodes if n.get("group") == g["id"])
+        if cells - used > max(used, 1):
+            out.append(f"hint: group '{g['id']}' has {used} icon(s) in {cells} cells ({cells - used} empty) — shrink it or "
+                       "move icons in (review-checklist.md § Grouping)")
+    lanes = {}
+    for n in nodes:
+        lanes.setdefault(n["lane"], []).append(n["id"])
+    for lane, ids in sorted(lanes.items()):
+        if len(ids) == 1 and len(nodes) > 4:
+            out.append(f"hint: lane {lane} holds only '{ids[0]}' — a whole lane for one icon leaves an empty band; "
+                       "consider another lane or sharing this one")
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     args = [a for a in (sys.argv[1:] if argv is None else argv) if not a.startswith("--")]
     flags = {a for a in (sys.argv[1:] if argv is None else argv) if a.startswith("--")}
@@ -397,6 +435,8 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     out_path.write_text(xml, encoding="utf-8")
     print(f"wrote {out_path}")
+    for h in hints(json.loads(spec_path.read_text(encoding="utf-8"))):
+        print(f"  {h}")
     if "--no-validate" in flags:
         return 0
     sys.path.insert(0, str(HERE))

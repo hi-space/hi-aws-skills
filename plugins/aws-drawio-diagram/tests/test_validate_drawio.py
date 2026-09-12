@@ -240,3 +240,43 @@ def test_w7_respects_relative_label_offset():
     shifted = mid.replace('<mxGeometry relative="1" as="geometry"/>', '<mxGeometry x="-0.4" relative="1" as="geometry"/>')
     _, warnings = vd.validate_text(wrap(CLOUD + ROLE_GROUP + users + cf + shifted), INDEX)
     assert "W7" not in codes(warnings)
+
+
+def test_w4_single_bend_only_reaches_the_adjacent_cell():
+    src = icon("s", "1", 300, 300)
+    far = icon("t", "1", 780, 130)               # two columns right, one lane up
+    _, warnings = vd.validate_text(wrap(src + far + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
+    assert codes(warnings) == ["W4"] and "adjacent" in warnings[0]
+
+
+def test_w8_two_edges_sharing_a_segment():
+    src = icon("s", "1", 300, 300)
+    up_right = icon("a", "1", 540, 130)
+    up_left = icon("b", "1", 60, 130)
+    e1 = edge_cell("e1", "s", "a", UP_THEN_RIGHT)
+    e2 = edge_cell("e2", "s", "b", "exitX=0.5;exitY=0;entryX=1;entryY=0.5;")
+    _, warnings = vd.validate_text(wrap(src + up_right + up_left + e1 + e2), INDEX)
+    assert codes(warnings) == ["W8"]
+    # Two edges into the same node from opposite sides do not share a segment.
+    left = icon("l", "1", 60, 300)
+    right = icon("r", "1", 540, 300)
+    _, warnings = vd.validate_text(wrap(src + left + right + edge_cell("e1", "l", "s", RIGHT_TO_LEFT) +
+                                        edge_cell("e2", "s", "r", RIGHT_TO_LEFT)), INDEX)
+    assert warnings == []
+
+
+def test_w7_checks_labels_on_bent_edges():
+    # s (centre 380,469) bends up then right into t (centre 620,299): path length 332, so the label sits
+    # 35 px into the horizontal leg at x≈415 — exactly where g2's left border is.
+    g1 = ('<mxCell id="g1" value="A" style="rounded=0;fillColor=#F7F8FA;strokeColor=#C9D1D9;container=1;dropTarget=1;" '
+          'vertex="1" parent="1"><mxGeometry x="280" y="160" width="200" height="390" as="geometry"/></mxCell>')
+    g2 = ('<mxCell id="g2" value="B" style="rounded=0;fillColor=#F7F8FA;strokeColor=#C9D1D9;container=1;dropTarget=1;" '
+          'vertex="1" parent="1"><mxGeometry x="415" y="160" width="300" height="220" as="geometry"/></mxCell>')
+    s = icon("s", "g1", 61, 270)          # abs (341, 430)
+    t = icon("t", "g2", 166, 100)         # abs (581, 260)
+    lbl = edge_cell("e", "s", "t", UP_THEN_RIGHT, "put")
+    _, warnings = vd.validate_text(wrap(g1 + g2 + s + t + lbl), INDEX)
+    assert codes(warnings) == ["W7"]
+    # unlabelled: clean
+    _, warnings = vd.validate_text(wrap(g1 + g2 + s + t + edge_cell("e", "s", "t", UP_THEN_RIGHT)), INDEX)
+    assert warnings == []

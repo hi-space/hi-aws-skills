@@ -1,0 +1,43 @@
+{
+  "id": "iot-telemetry",
+  "page": "IoT Telemetry",
+  "title": "IoT 텔레메트리 수집·분석 플랫폼",
+  "subtitle": "Factory sensors → hot state + data lake · hi-aws-skills sample · 2026-09-12 · v1",
+  "groups": [
+    {"id": "g_ingest", "label": "Ingestion", "cols": [1, 2], "lanes": [1]},
+    {"id": "g_proc", "label": "Processing", "cols": [3], "lanes": [1]},
+    {"id": "g_store", "label": "Storage", "cols": [4], "lanes": [0, 1]},
+    {"id": "g_analytics", "label": "Analytics", "cols": [5, 6, 7], "lanes": [0, 1]},
+    {"id": "g_obs", "label": "Observability", "cols": [2], "lanes": [2]},
+    {"id": "g_notify", "label": "Notification", "cols": [4], "lanes": [2]}
+  ],
+  "nodes": [
+    {"id": "sensors", "label": "Factory sensors", "icon": "sensor", "col": 0, "lane": 1, "outside": true},
+    {"id": "iotcore", "label": "IoT Core", "icon": "iot_core", "col": 1, "lane": 1, "group": "g_ingest"},
+    {"id": "kinesis", "label": "Kinesis Data Streams", "icon": "kinesis_data_streams", "col": 2, "lane": 1, "group": "g_ingest"},
+    {"id": "normalize", "label": "Normalize", "icon": "lambda", "col": 3, "lane": 1, "group": "g_proc"},
+    {"id": "s3lake", "label": "S3 (data lake)", "icon": "s3", "col": 4, "lane": 0, "group": "g_store"},
+    {"id": "ddb", "label": "DynamoDB (latest state)", "icon": "dynamodb", "col": 4, "lane": 1, "group": "g_store"},
+    {"id": "crawler", "label": "Glue crawler", "icon": "glue_crawlers", "col": 5, "lane": 0, "group": "g_analytics"},
+    {"id": "catalog", "label": "Glue Data Catalog", "icon": "glue_data_catalog", "col": 6, "lane": 0, "group": "g_analytics"},
+    {"id": "athena", "label": "Athena", "icon": "athena", "col": 7, "lane": 0, "group": "g_analytics"},
+    {"id": "quicksight", "label": "QuickSight dashboard", "icon": "quicksight", "col": 7, "lane": 1, "group": "g_analytics"},
+    {"id": "cw", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 2, "lane": 2, "group": "g_obs"},
+    {"id": "sns", "label": "SNS (threshold alerts)", "icon": "sns", "col": 4, "lane": 2, "group": "g_notify"},
+    {"id": "ops", "label": "Ops team", "icon": "user", "col": 8, "lane": 2, "outside": true}
+  ],
+  "edges": [
+    {"from": "sensors", "to": "iotcore", "label": "MQTT"},
+    {"from": "iotcore", "to": "kinesis"},
+    {"from": "kinesis", "to": "normalize"},
+    {"from": "normalize", "to": "ddb"},
+    {"from": "normalize", "to": "s3lake"},
+    {"from": "normalize", "to": "sns"},
+    {"from": "s3lake", "to": "crawler"},
+    {"from": "crawler", "to": "catalog"},
+    {"from": "catalog", "to": "athena"},
+    {"from": "athena", "to": "quicksight"},
+    {"from": "kinesis", "to": "cw", "dashed": true},
+    {"from": "sns", "to": "ops", "label": "notify", "dashed": true}
+  ]
+}

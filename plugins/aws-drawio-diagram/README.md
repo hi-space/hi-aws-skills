@@ -33,6 +33,10 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 [brief](docs/samples/order-pipeline.brief.md) · [spec](docs/samples/order-pipeline.json) · [order-pipeline.drawio](docs/samples/order-pipeline.drawio) — Step Functions 팬아웃(한 번 꺾임)과 한국어 제목 예시
 
+![IoT telemetry](docs/samples/iot-telemetry.drawio.png)
+
+[brief](docs/samples/iot-telemetry.brief.md) · [spec](docs/samples/iot-telemetry.json) · [iot-telemetry.drawio](docs/samples/iot-telemetry.drawio) — 한 노드에서 위·아래로 두 번 갈라지는 허브(Lambda)와 클라우드 밖 수신자 예시
+
 ## 설치 (Claude Code)
 
 ```

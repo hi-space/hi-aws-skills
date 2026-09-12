@@ -5,7 +5,7 @@ numeric on purpose: a diagram that follows them renders like an AWS reference ar
 role, every edge one straight segment or one bend, nothing overlapping. **`scripts/build_diagram.py` applies
 §1, §2, §5 and §6 for you** from a grid spec (see its header); read those sections to plan the grid and to
 understand what the builder did, and follow them literally only when writing XML by hand. The validator checks
-what it can (`W4`–`W7`); the rest is the self-check at the end of this file. Two finished examples:
+what it can (`W4`–`W8`); the rest is the self-check at the end of this file. Two finished examples:
 `docs/samples/agentic-rag-chat.*` and `docs/samples/order-pipeline.*` in the plugin root.
 
 Origin: vidanov/aws-architecture-diagram-skill (MIT) for the icon patterns and edge conventions; the grid,
@@ -141,12 +141,17 @@ error paths.
 
 - **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair
   cannot, move a node into a free cell — or use the fan-out pattern below. Never an S-shaped edge.
-- **Fan-out (the one allowed bend).** Source S on lane B fans out to targets in the **next column**: the target
-  on S's own lane gets a straight horizontal edge; a target on the lane above gets `exitX=0.5;exitY=0;` (leave
-  S's top) + `entryX=0;entryY=0.5;` (enter the target's left) — one bend at (S.x, target.y); a target on the lane
-  below leaves S's bottom the same way. Each fan-out edge uses a different side of S, so no two edges share a
-  segment. The cell directly above/below S must be empty (the vertical leg runs through it). Same ports mirrored
-  for fan-in from the left. Validator: `W4` accepts an L whose ports match its geometry and rejects anything else.
+- **Fan-out (the one allowed bend).** Source S on lane B fans out to targets in the **adjacent column**: the
+  target on S's own lane gets a straight horizontal edge; a target on the **adjacent lane above** gets
+  `exitX=0.5;exitY=0;` (leave S's top) + `entryX=0;entryY=0.5;` (enter the target's left) — one bend at
+  (S.x, target.y); a target on the lane below leaves S's bottom the same way. Same ports mirrored for fan-in
+  from the left. The cell directly above/below S must be empty (the vertical leg runs through it). A bend
+  never reaches further than the diagonally adjacent cell — if it would, move the target or add a node in
+  between (validator `W4`, builder error).
+- **One edge per node side.** Every edge owns the side it leaves or enters; a second edge on the same side
+  shares the port and draws on top of the first (validator `W8`, builder error). So a node has at most four
+  edges, and at most two of them bend (one up, one down, or one left, one right). A node that needs more is a
+  hub: put a queue/topic/bus next to it and fan out from there.
 - **Empty corridor.** No other icon on any leg of the edge; no two edges in the same corridor.
 - Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />`. No `value` when unlabeled.
 - Edges may cross group borders (that is what groups are for); they must not run along one.
@@ -164,6 +169,8 @@ error paths.
   as="geometry"/>` (−1 = at the source, 0 = midpoint, 1 = at the target). The users → first-service edge always
   needs this, because its midpoint sits on the AWS Cloud border; the builder computes the offset, by hand aim
   for the middle of the free space outside the cloud (label ≤ 7 characters there).
+- **Never on a bent edge**: draw.io centres the label on the polyline, which puts it on the corner. Name the
+  target instead (`SNS (threshold alerts)`). Builder error.
 - When two labeled edges meet at one node, at most one keeps its label.
 
 ## 6. Node label placement — keep text out of edge paths

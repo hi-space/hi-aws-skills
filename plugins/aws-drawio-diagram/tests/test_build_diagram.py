@@ -37,7 +37,7 @@ def styles(xml: str) -> dict[str, dict[str, str]]:
     return {c.get("id"): vd.parse_style(c.get("style")) for c in ET.fromstring(xml).iter("mxCell")}
 
 
-@pytest.mark.parametrize("name", ["agentic-rag-chat", "order-pipeline"])
+@pytest.mark.parametrize("name", ["agentic-rag-chat", "order-pipeline", "iot-telemetry"])
 def test_shipped_sample_specs_build_clean(name):
     xml = bd.build(json.loads((SAMPLES / f"{name}.json").read_text()))
     errors, warnings = vd.validate_text(xml, INDEX)
@@ -126,6 +126,7 @@ def test_image_node_and_no_cloud():
     (lambda s: s["nodes"][1].update(col=4), "outside group"),
     (lambda s: s["groups"].append({"id": "h", "label": "H", "cols": [2], "lanes": [1]}), "overlap"),
     (lambda s: s["edges"].append({"from": "a", "to": "zzz"}), "must name a node"),
+    (lambda s: s["edges"].append({"from": "b", "to": "c", "label": "x"}), "bent edge cannot carry a label"),
 ])
 def test_spec_errors(mutate, message):
     s = spec()
@@ -145,3 +146,27 @@ def test_cli(tmp_path):
     bad.write_text(json.dumps(spec(nodes=[])))
     r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(bad), str(out)], capture_output=True, text=True)
     assert r.returncode == 1 and "ERROR spec" in r.stdout
+
+
+def test_builder_rejects_far_bends_and_shared_sides():
+    s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2, 3, 4], "lanes": [0, 1, 2]}])
+    s["nodes"].append({"id": "far", "label": "Far", "icon": "s3", "col": 4, "lane": 0, "group": "g"})
+    s["edges"].append({"from": "b", "to": "far"})                    # (2,1) → (4,0): not adjacent
+    with pytest.raises(bd.SpecError, match="adjacent"):
+        bd.build(s)
+    s["edges"].pop()
+    s["nodes"].append({"id": "dn", "label": "Down", "icon": "sns", "col": 3, "lane": 2, "group": "g"})
+    s["nodes"].append({"id": "up", "label": "Up", "icon": "sqs", "col": 3, "lane": 0, "group": "g"})
+    s["edges"] += [{"from": "b", "to": "dn"}, {"from": "b", "to": "up"}]  # one leaves bottom, one leaves top: fine
+    assert vd.validate_text(bd.build(s), INDEX) == ([], [])
+    s["nodes"].append({"id": "dn2", "label": "Down2", "icon": "s3", "col": 1, "lane": 2, "group": "g"})
+    s["edges"].append({"from": "b", "to": "dn2"})                    # second bend leaving the bottom
+    with pytest.raises(bd.SpecError, match="both use its"):
+        bd.build(s)
+
+
+def test_builder_hints_about_sparse_groups(capsys):
+    s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2, 3], "lanes": [0, 1, 2]}])
+    bd.build(s)
+    hints = bd.hints(s)
+    assert any("g" in h and "empty" in h for h in hints)

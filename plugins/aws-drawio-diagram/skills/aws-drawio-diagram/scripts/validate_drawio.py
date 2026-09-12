@@ -13,10 +13,11 @@ Warnings:
   W1  orthogonalEdgeStyle edge without exitX/entryX (routing may wander)
   W2  aws4 icon without fillColor (renders white in PNG export)
   W3  group container without dropTarget=1
-  W4  edge that needs two bends: endpoints share neither column nor lane and the ports do not form an L
+  W4  edge that needs two bends, or a single bend to a non-adjacent cell
   W5  straight or single-bend edge whose path passes through an unconnected icon's bounding box
   W6  icon drawn inside an AWS Cloud group but not a child of a role group
   W7  edge label whose box covers a group/cloud border (drop it or shift it with mxGeometry x)
+  W8  two edges with overlapping collinear segments (one edge per node side)
 
 Usage: validate_drawio.py FILE [FILE ...]
 Adapted from vidanov/aws-architecture-diagram-skill tests/validate_drawio.py (MIT).
@@ -57,7 +58,8 @@ def _aws4_name(value: str) -> str | None:
     return m.group(1) if m else None
 
 
-ALIGN_TOLERANCE = 4.0  # px; icons on the same column/lane within this are "aligned"
+ALIGN_TOLERANCE = 4.0
+MAX_BEND_DX, MAX_BEND_DY = 260.0, 240.0   # one bend reaches the adjacent column / lane only (240 / 170+50 grid)  # px; icons on the same column/lane within this are "aligned"
 
 
 def _abs_geometry(cells: dict[str, ET.Element]) -> dict[str, tuple[float, float, float, float]]:
@@ -121,9 +123,9 @@ def _blockers(icons, geo, exclude, a, b):
 
 
 def _edge_path(style, sg, tg):
-    """Return the polyline draw.io will draw for a straight or single-bend (L) edge, or None if the
-    endpoints need two bends. Straight: aligned centers. L: exit side and entry side on different
-    axes, with the corner lying in the direction each port faces."""
+    """Return the polyline draw.io will draw for a straight or single-bend (L) edge; None if the
+    endpoints need two bends; "far" if a bend would reach beyond the adjacent cell. Straight: aligned
+    centers. L: exit side and entry side on different axes, corner in the direction each port faces."""
     sx, sy, sw, sh = sg
     tx, ty, tw, th = tg
     scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
@@ -140,6 +142,8 @@ def _edge_path(style, sg, tg):
     exit_horizontal = abs(ey - 0.5) < 0.01 and ex in (0.0, 1.0)
     entry_vertical = abs(nx - 0.5) < 0.01 and ny in (0.0, 1.0)
     entry_horizontal = abs(ny - 0.5) < 0.01 and nx in (0.0, 1.0)
+    if abs(scx - tcx) > MAX_BEND_DX or abs(scy - tcy) > MAX_BEND_DY:
+        return "far"
     if exit_vertical and entry_horizontal:
         c = (p[0], q[1])
         ok = (c[1] < p[1]) if ey == 0.0 else (c[1] > p[1])
@@ -157,6 +161,7 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     warnings: list[str] = []
     geo = _abs_geometry(cells)
     icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
+    paths: dict[str, list] = {}
     for cid, cell in cells.items():
         if cell.get("edge") != "1":
             continue
@@ -165,17 +170,50 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
             continue
         style = parse_style(cell.get("style"))
         path = _edge_path(style, geo[s], geo[t])
-        if path is None:
+        if path is None or path == "far":
             sx, sy, sw, sh = geo[s]
             tx, ty, tw, th = geo[t]
             dx, dy = abs(sx + sw / 2 - tx - tw / 2), abs(sy + sh / 2 - ty - th / 2)
-            warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane and the ports do not "
-                            f"form a single bend — align them (dx={dx:.0f}, dy={dy:.0f}) or use the fan-out ports "
-                            "(exit top/bottom, enter left/right)")
+            if path == "far":
+                warnings.append(f"W4 edge '{cid}': '{s}' → '{t}' is not aligned and the target is not in an adjacent cell "
+                                f"(dx={dx:.0f}, dy={dy:.0f}) — a single bend only reaches the next column and lane; "
+                                "move the target, or route through an intermediate node")
+            else:
+                warnings.append(f"W4 edge '{cid}': '{s}' and '{t}' share neither a column nor a lane and the ports do not "
+                                f"form a single bend — align them (dx={dx:.0f}, dy={dy:.0f}) or use the fan-out ports "
+                                "(exit top/bottom, enter left/right)")
             continue
+        paths[cid] = path
         for a, b in zip(path, path[1:]):
             for o in _blockers(icons, geo, {s, t}, a, b):
                 warnings.append(f"W5 edge '{cid}': path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
+    warnings.extend(_overlap_warnings(paths))
+    return warnings
+
+
+def _overlap_warnings(paths: dict[str, list]) -> list[str]:
+    """W8: two edges whose paths contain collinear segments that overlap (they render as one line)."""
+    def segments(path):
+        for a, b in zip(path, path[1:]):
+            if abs(a[0] - b[0]) <= ALIGN_TOLERANCE:
+                yield ("v", a[0], min(a[1], b[1]), max(a[1], b[1]))
+            else:
+                yield ("h", a[1], min(a[0], b[0]), max(a[0], b[0]))
+
+    warnings: list[str] = []
+    ids = sorted(paths)
+    for i, e1 in enumerate(ids):
+        for e2 in ids[i + 1:]:
+            for k1, c1, lo1, hi1 in segments(paths[e1]):
+                hit = False
+                for k2, c2, lo2, hi2 in segments(paths[e2]):
+                    if k1 == k2 and abs(c1 - c2) <= ALIGN_TOLERANCE and min(hi1, hi2) - max(lo1, lo2) > ALIGN_TOLERANCE:
+                        hit = True
+                        break
+                if hit:
+                    warnings.append(f"W8 edges '{e1}' and '{e2}' run on top of each other — give them different sides of the "
+                                    "node or different lanes (one edge per node side)")
+                    break
     return warnings
 
 
@@ -185,9 +223,9 @@ LABEL_HALF_H = 8
 
 
 def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
-    """W7: an edge label whose box covers a container border (group or cloud). Straight edges only:
-    the label sits at the segment midpoint, shifted by the relative mxGeometry x (-1 source … 1 target);
-    horizontal labels are drawn above the line, vertical labels to its left (align=right)."""
+    """W7: an edge label whose box covers a container border (group or cloud). Straight edges: the label
+    sits at the segment midpoint, shifted by the relative mxGeometry x (-1 source … 1 target); horizontal
+    labels are drawn above the line, vertical labels to its left (align=right). Bent edges: at half length."""
     geo = _abs_geometry(cells)
     containers = [cid for cid, c in cells.items()
                   if cid in geo and parse_style(c.get("style")).get("container") == "1"]
@@ -204,18 +242,29 @@ def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
             continue
         style = parse_style(cell.get("style"))
         path = _edge_path(style, geo[s], geo[t])
-        if path is None or len(path) != 2:
+        if not isinstance(path, list):
             continue
-        (x1, y1), (x2, y2) = path
         g = cell.find("mxGeometry")
         rel = float(g.get("x", 0) or 0) if g is not None else 0.0
         half_w = LABEL_CHAR_PX * len(text) / 2 + LABEL_PAD_PX
-        if abs(y1 - y2) <= ALIGN_TOLERANCE:                         # horizontal edge
-            cx = (x1 + x2) / 2 + rel * (x2 - x1) / 2
-            cy = y1 - LABEL_HALF_H
-        else:                                                       # vertical edge, label left of line
-            cx = x1 - half_w - 4
-            cy = (y1 + y2) / 2 + rel * (y2 - y1) / 2
+        if len(path) == 2:
+            (x1, y1), (x2, y2) = path
+            if abs(y1 - y2) <= ALIGN_TOLERANCE:                     # horizontal edge
+                cx = (x1 + x2) / 2 + rel * (x2 - x1) / 2
+                cy = y1 - LABEL_HALF_H
+            else:                                                   # vertical edge, label left of line
+                cx = x1 - half_w - 4
+                cy = (y1 + y2) / 2 + rel * (y2 - y1) / 2
+        else:                                                       # bent edge: label centred at half length
+            lens = [abs(b[0] - a[0]) + abs(b[1] - a[1]) for a, b in zip(path, path[1:])]
+            target = sum(lens) * (0.5 + rel / 2)
+            cx, cy = path[0]
+            for (a, b), ln in zip(zip(path, path[1:]), lens):
+                if target <= ln or (a, b) == (path[-2], path[-1]):
+                    f = min(max(target / ln, 0.0), 1.0) if ln else 0.0
+                    cx, cy = a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f
+                    break
+                target -= ln
         box = (cx - half_w, cy - LABEL_HALF_H, cx + half_w, cy + LABEL_HALF_H)
         for k in containers:
             gx, gy, gw, gh = geo[k]

@@ -10,7 +10,7 @@ AWS marketing name often does not match. Look here when the category file has no
 |---|---|---|---|
 | Amazon OpenSearch Service | `elasticsearch_service` | service | renamed from Elasticsearch Service in 2021 |
 | Amazon OpenSearch Serverless / cluster nodes | `opensearch_service_data_node` | resource | resource icons kept the OpenSearch name |
-| Amazon Quick Suite (was QuickSight) | `quick_suite` | service | `quicksight` is in the retired palette |
+| Amazon Quick Suite (was QuickSight) | `quick_suite` | service | added 2025; renders blank on draw.io ≤ 26.x — use retired `quicksight` there |
 | Amazon SageMaker AI | `sagemaker_2` | service | `sagemaker` is the older icon |
 | Amazon Managed Service for Apache Flink (was Kinesis Data Analytics) | `managed_service_for_apache_flink` | service | `kinesis_data_analytics` is retired |
 | Amazon Data Firehose | `kinesis_data_firehose` | service | |

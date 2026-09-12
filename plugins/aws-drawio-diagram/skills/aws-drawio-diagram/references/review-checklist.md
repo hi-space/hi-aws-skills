@@ -18,8 +18,13 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 
 ## B. Mechanically clean (validator)
 
-- [ ] `0 errors, 0 warnings`. `W4`–`W7` are layout defects, not style opinions:
-      W4 two-bend edge · W5 edge through an icon · W6 icon outside every group · W7 edge label on a border.
+- [ ] `0 errors, 0 warnings`. `W4`–`W8` are layout defects, not style opinions:
+      W4 two-bend or long bend · W5 edge through an icon · W6 icon outside every group · W7 edge label on a
+      border · W8 edges drawn on top of each other. Builder `hint:` lines (sparse group, one-icon lane) are
+      findings too unless the Drawer wrote down why not.
+- [ ] **A blank coloured square** where an icon should be is not a spec bug: the stencil is newer than the
+      installed draw.io (e.g. `quick_suite`, `bedrock_agentcore`). Say so in the report; if the user's draw.io
+      is also old, switch to the legacy alias when one exists (`quicksight`) and note it in the brief.
 
 ## C. Human-readable (look at the PNG)
 
@@ -54,4 +59,7 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 | Dead column inside a group | put the side-labelled node's neighbour in that cell, or move the side label by freeing the node's bottom side (rotate one edge to a horizontal neighbour) |
 | Empty band across the top of the cloud | move upper-lane items there (auth, static assets, memory) or drop lane 0 and fan out downward |
 | Fan-out edge runs through an icon | the source's top/bottom cell must be empty; move that icon or fan out on the other side |
+| Several edges leave one node downward as one line (W8) | one edge per side: put a queue/topic between the node and its many consumers, or move consumers to the node's other sides |
+| A bend crosses half the diagram (W4 "adjacent") | the target must be in the diagonally adjacent cell; move it, or connect via the node in between |
+| Whole lane holds one icon (`hint:`) | give that icon the main lane or its neighbour's lane; a one-icon lane is an empty band |
 | Group taller than its neighbours for one icon | split lanes: give the extra icon its own single-lane group in the next row |

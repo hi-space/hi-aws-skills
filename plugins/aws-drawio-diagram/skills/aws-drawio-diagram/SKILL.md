@@ -27,7 +27,7 @@ hand it only the files named below; otherwise do the phases yourself in order an
 |---|---|---|---|---|
 | 1 | **Architect** | the request, this file's *Icon lookup* | `<name>.brief.md` | [`references/architecture-brief.md`](references/architecture-brief.md) |
 | 2 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
-| 3 | **Reviewer** | the brief, validator output, the PNG | findings as spec changes → back to 2 | [`references/review-checklist.md`](references/review-checklist.md) |
+| 3 | **Reviewer** | the brief, builder/validator output, the PNG | findings as spec changes → back to 2 | [`references/review-checklist.md`](references/review-checklist.md) |
 
 Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout spec), `drawio`, `drawio.png`.
 
@@ -53,7 +53,8 @@ Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout s
    lane, group | outside), edges (from, to, label?, dashed?). Node ids = brief ids.
 4. Build: `python3 <skill-dir>/scripts/build_diagram.py <name>.json <name>.drawio`. The builder computes
    coordinates, ports, label sides, group rectangles, the cloud box and the canvas, then runs the validator.
-   Fix every `ERROR` and every `W4`–`W7` by changing the spec (move a node, drop a label, widen a group).
+   Fix every `ERROR` and every `W4`–`W8` by changing the spec (move a node, drop a label, widen a group);
+   read the builder's `hint:` lines too.
 5. Export (see *Export*) — always a plain preview PNG for the Reviewer, plus the `-e` embedded one for the user.
 6. Hand-written XML is the fallback only when the spec cannot express something (multi-page, VPC/subnet
    nesting): follow layout-and-style.md §1–§6 literally and validate with `scripts/validate_drawio.py`.
@@ -114,8 +115,8 @@ Quick grep when a name is on the tip of your tongue: `grep -ri "opensearch" <ski
 
 ## Samples and templates
 
-The look to match: [`docs/samples/`](../../docs/samples/) in the plugin root holds two complete output sets
-(`agentic-rag-chat`, `order-pipeline`: `.brief.md`, `.json`, `.drawio`, `.drawio.png`). Read a spec before
+The look to match: [`docs/samples/`](../../docs/samples/) in the plugin root holds three complete output sets
+(`agentic-rag-chat`, `order-pipeline`, `iot-telemetry`: `.brief.md`, `.json`, `.drawio`, `.drawio.png`). Read a spec before
 writing your first one.
 
 [`templates/`](templates/README.md) holds five upstream diagrams as a **topology** reference (which services
@@ -145,8 +146,10 @@ https://app.diagrams.net, which is always current.
 
 - `E1` unknown stencil name · `E2` wrong strokeColor for the pattern · `E3` edge without valid endpoints ·
   `E4` group without `container=1` · `E5` duplicate id · `E6` comment / DOCTYPE / compressed XML.
-- `W4` edge that needs two bends · `W5` edge through an icon · `W6` icon inside the cloud but in no group ·
-  `W7` edge label on a group border. Treat all four as defects; `W1`–`W3` are style hints.
+- `W4` edge that needs two bends or bends to a non-adjacent cell · `W5` edge through an icon · `W6` icon
+  inside the cloud but in no group · `W7` edge label on a group border · `W8` two edges drawn on top of each
+  other. Treat all five as defects; `W1`–`W3` are style hints. The builder refuses specs that would produce
+  `W4`/`W8` and prints `hint:` lines for sparse groups and single-icon lanes — act on them.
 - Not checked by the script, checked by the Reviewer's eyes: label/title collisions, read order, balance,
   faithfulness to the brief.
 
