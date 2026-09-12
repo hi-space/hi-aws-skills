@@ -1,0 +1,25 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aws-diagram-design",
+  "version": "1.3.0",
+  "description": "AWS-branded editorial diagrams as standalone HTML/SVG/PNG — Amazon Ember typography, squid ink + smile orange skin, official AWS Architecture Icons bundled. 27 visual types, draw.io and Mermaid import. Includes a Python generator (scripts/pygen) that renders spec files to bilingual (ko/en) HTML and PNG sets in the same house style.",
+  "author": {
+    "name": "hi-space"
+  },
+  "keywords": [
+    "aws diagram",
+    "architecture diagram",
+    "cloud diagram",
+    "vpc diagram",
+    "aws icons",
+    "drawio",
+    "mermaid",
+    "flowchart",
+    "sequence diagram",
+    "python generator",
+    "bilingual",
+    "png export"
+  ],
+  "license": "MIT",
+  "repository": "https://github.com/hi-space/hi-aws-skills"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "aws-diagram-design",
+  "metadata": {
+    "description": "AWS-branded editorial diagram skill (diagram-design AWS edition) — Amazon Ember, squid ink + smile orange, official AWS Architecture Icons bundled, Python generator for ko/en PNG sets."
+  },
+  "owner": {
+    "name": "hi-space"
+  },
+  "plugins": [
+    {
+      "name": "aws-diagram-design",
+      "source": "./"
+    }
+  ]
+}

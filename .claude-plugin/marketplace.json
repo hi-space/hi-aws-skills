@@ -1,0 +1,16 @@
+{
+  "name": "hi-aws-skills",
+  "metadata": {
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes. Currently: aws-diagram-design (AWS-branded editorial diagrams with official icons, plus a Python generator for bilingual PNG sets)."
+  },
+  "owner": {
+    "name": "hi-space"
+  },
+  "plugins": [
+    {
+      "name": "aws-diagram-design",
+      "source": "./plugins/aws-diagram-design",
+      "description": "AWS-branded editorial diagrams (27 types) as HTML/SVG/PNG with official AWS Architecture Icons and Amazon Ember; draw.io and Mermaid import; Python generator for ko/en PNG sets."
+    }
+  ]
+}
