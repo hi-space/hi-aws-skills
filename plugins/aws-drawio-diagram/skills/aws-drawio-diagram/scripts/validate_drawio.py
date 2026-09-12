@@ -129,29 +129,33 @@ def _edge_path(style, sg, tg):
     sx, sy, sw, sh = sg
     tx, ty, tw, th = tg
     scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
+    ex, ey, nx, ny = (_port(style, k) for k in ("exitX", "exitY", "entryX", "entryY"))
+    has_ports = None not in (ex, ey, nx, ny)
+    # exitY/entryY above 1 mean "under the node label" (builder ports); the segment starts there
     if abs(scx - tcx) <= ALIGN_TOLERANCE:
+        if has_ports:
+            return [(scx, sy + ey * sh), (scx, ty + ny * th)]
         return [(scx, sy + sh if ty > sy else sy), (scx, ty if ty > sy else ty + th)]
     if abs(scy - tcy) <= ALIGN_TOLERANCE:
         return [(sx + sw if tx > sx else sx, scy), (tx if tx > sx else tx + tw, scy)]
-    ex, ey, nx, ny = (_port(style, k) for k in ("exitX", "exitY", "entryX", "entryY"))
-    if None in (ex, ey, nx, ny):
+    if not has_ports:
         return None
     p = (sx + ex * sw, sy + ey * sh)
     q = (tx + nx * tw, ty + ny * th)
-    exit_vertical = abs(ex - 0.5) < 0.01 and ey in (0.0, 1.0)
+    exit_vertical = abs(ex - 0.5) < 0.01 and (ey <= 0.0 or ey >= 1.0)
     exit_horizontal = abs(ey - 0.5) < 0.01 and ex in (0.0, 1.0)
-    entry_vertical = abs(nx - 0.5) < 0.01 and ny in (0.0, 1.0)
+    entry_vertical = abs(nx - 0.5) < 0.01 and (ny <= 0.0 or ny >= 1.0)
     entry_horizontal = abs(ny - 0.5) < 0.01 and nx in (0.0, 1.0)
     if abs(scx - tcx) > MAX_BEND_DX or abs(scy - tcy) > MAX_BEND_DY:
         return "far"
     if exit_vertical and entry_horizontal:
         c = (p[0], q[1])
-        ok = (c[1] < p[1]) if ey == 0.0 else (c[1] > p[1])
+        ok = (c[1] < p[1]) if ey <= 0.0 else (c[1] > p[1])
         ok = ok and ((c[0] < q[0]) if nx == 0.0 else (c[0] > q[0]))
     elif exit_horizontal and entry_vertical:
         c = (q[0], p[1])
         ok = (c[0] > p[0]) if ex == 1.0 else (c[0] < p[0])
-        ok = ok and ((c[1] < q[1]) if ny == 0.0 else (c[1] > q[1]))
+        ok = ok and ((c[1] < q[1]) if ny <= 0.0 else (c[1] > q[1]))
     else:
         return None
     return [p, c, q] if ok else None

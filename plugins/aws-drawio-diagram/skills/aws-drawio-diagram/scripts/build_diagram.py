@@ -3,8 +3,8 @@
 
 The spec names *where* things go on the grid; this script does the arithmetic the layout rules in
 references/layout-and-style.md demand: icon coordinates, group rectangles, ports for straight and
-single-bend edges, node label sides that avoid edges, the AWS Cloud box, the canvas size, and the
-font on every cell. It then runs validate_drawio on the result.
+single-bend edges, node labels (always below the icon; edges that leave or enter the bottom attach below
+the label so no line crosses text), the AWS Cloud box, the canvas size, and the font on every cell. It then runs validate_drawio on the result.
 
 Spec (JSON):
 {
@@ -18,8 +18,7 @@ Spec (JSON):
     {"id": "cf", "label": "CloudFront", "icon": "cloudfront", "col": 1, "lane": 1, "group": "g_front"},
     {"id": "mem", "label": "AgentCore Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
      "col": 3, "lane": 0, "group": "g_agent"},
-    {"id": "apigw", "label": "API Gateway", "icon": "api_gateway", "col": 2, "lane": 1, "group": "g_api",
-     "label_pos": "bottomleft"}                                            # optional override
+    {"id": "apigw", "label": "API Gateway", "icon": "api_gateway", "col": 2, "lane": 1, "group": "g_api"}
   ],
   "edges": [ {"from": "users", "to": "cf", "label": "HTTPS"},
              {"from": "apigw", "to": "cognito", "dashed": true} ]
@@ -32,7 +31,8 @@ the last. Edges between cells in the same column/lane are straight; an edge to t
 cell leaves the source top/bottom and enters the target left/right (one bend — the fan-out pattern);
 anything else is a spec error (move a node). Each side of a node carries at most one edge, so a node has
 at most four edges and at most two of them bend — plan hubs and shared sinks (CloudWatch) with one
-representative edge, or put a queue/topic in between. Only straight edges may carry a label. `icon`
+representative edge, or put a queue/topic in between. Only straight edges may carry a label. Node labels
+longer than 22 characters break into two lines at the middle space. `icon`
 names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
 
 Usage: build_diagram.py SPEC.json OUT.drawio [--no-validate]
@@ -56,6 +56,7 @@ GROUP_HALF_W, GROUP_GAP = 100, 40
 GROUP_ABOVE, GROUP_BELOW = 60, 46
 CLOUD_PAD = 40
 LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_HALF_H = 6.2, 8, 8   # keep in step with validate_drawio
+LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 22       # node label: px per line, gap under the icon, chars per line
 TITLE_Y = 32
 LEGEND_W = 300
 MARGIN = 80
@@ -64,18 +65,14 @@ PTS = ("points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,
        "[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];")
 GROUP_PTS = ("points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[0,1],[0.25,1],[0.5,1],[0.75,1],[1,1],[0,0.25],"
              "[0,0.5],[0,0.75],[1,0.25],[1,0.5],[1,0.75]];")
-LABEL_POS = {
-    "bottom": "verticalLabelPosition=bottom;verticalAlign=top;align=center;",
-    "top": "verticalLabelPosition=top;verticalAlign=bottom;align=center;",
-    "right": "labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=8;",
-    "left": "labelPosition=left;verticalLabelPosition=middle;align=right;verticalAlign=middle;spacingRight=8;",
-    "bottomleft": "labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;spacingRight=6;",
-}
+LABEL_STYLE = "verticalLabelPosition=bottom;verticalAlign=top;align=center;"
+# {B} is the bottom port ratio of the node whose bottom the edge touches: (icon + label height) / icon, so a
+# vertical edge starts or ends under the label instead of running through it.
 PORTS = {
     "right": ("exitX=1;exitY=0.5;exitDx=0;exitDy=0;", "entryX=0;entryY=0.5;entryDx=0;entryDy=0;"),
     "left": ("exitX=0;exitY=0.5;exitDx=0;exitDy=0;", "entryX=1;entryY=0.5;entryDx=0;entryDy=0;"),
-    "up": ("exitX=0.5;exitY=0;exitDx=0;exitDy=0;", "entryX=0.5;entryY=1;entryDx=0;entryDy=0;"),
-    "down": ("exitX=0.5;exitY=1;exitDx=0;exitDy=0;", "entryX=0.5;entryY=0;entryDx=0;entryDy=0;"),
+    "up": ("exitX=0.5;exitY=0;exitDx=0;exitDy=0;", "entryX=0.5;entryY={B};entryDx=0;entryDy=0;entryPerimeter=0;"),
+    "down": ("exitX=0.5;exitY={B};exitDx=0;exitDy=0;exitPerimeter=0;", "entryX=0.5;entryY=0;entryDx=0;entryDy=0;"),
 }
 # side of the node an edge touches, per direction (source side, target side)
 SIDES = {"right": ("R", "L"), "left": ("L", "R"), "up": ("T", "B"), "down": ("B", "T")}
@@ -173,19 +170,20 @@ class Builder:
     def edge_geometry(self, e: dict) -> tuple[str, str, str, str]:
         """(direction, exit ports, entry ports, kind) — kind is 'straight' or 'bend'."""
         s, t = self.nodes[e["from"]], self.nodes[e["to"]]
+        ports = lambda d, n: tuple(p.replace("{B}", str(self.bottom_ratio(n))) for p in PORTS[d])
         if s["col"] == t["col"]:
             d = "up" if t["lane"] < s["lane"] else "down"
-            return d, *PORTS[d], "straight"
+            return d, *ports(d, t if d == "up" else s), "straight"
         if s["lane"] == t["lane"]:
             d = "right" if t["col"] > s["col"] else "left"
-            return d, *PORTS[d], "straight"
+            return d, *ports(d, s), "straight"
         if abs(t["col"] - s["col"]) != 1 or abs(t["lane"] - s["lane"]) != 1:
             raise SpecError(f"edge {e['from']}→{e['to']}: cells ({s['col']},{s['lane']})→({t['col']},{t['lane']}) are neither "
                             "aligned nor adjacent; a single bend only reaches the next column and lane. Move the target "
                             "onto the source's column or lane, into the adjacent diagonal cell, or route via a node in between")
         vertical = "up" if t["lane"] < s["lane"] else "down"
         horizontal = "right" if t["col"] > s["col"] else "left"
-        return f"{vertical}-{horizontal}", PORTS[vertical][0], PORTS[horizontal][1], "bend"
+        return f"{vertical}-{horizontal}", ports(vertical, s)[0], PORTS[horizontal][1], "bend"
 
     def incident_sides(self) -> dict[str, set[str]]:
         """Sides of each node touched by edges. One edge per side: two edges on the same side of a node
@@ -210,25 +208,11 @@ class Builder:
         return sides
 
     # ---- labels -------------------------------------------------------------------------------
-    def label_pos(self, n: dict, sides: set[str]) -> str:
-        if "label_pos" in n:
-            return n["label_pos"]
-        if "B" not in sides:
-            return "bottom"
-        if "T" not in sides:
-            return "top"
-        g = self.groups.get(n.get("group", ""))
-        for side, dc in (("R", 1), ("L", -1)):
-            if side in sides or g is None:
-                continue
-            cell = (n["col"] + dc, n["lane"])
-            if cell[0] in g["cols"] and cell not in self.occupied:
-                return "right" if side == "R" else "left"
-        return "bottomleft"
-
     @staticmethod
-    def two_line(label: str) -> str:
-        if "<br>" in label or len(label) <= 9 or " " not in label:
+    def wrap(label: str) -> str:
+        """Labels longer than LABEL_WRAP characters break into two lines at the space nearest the middle,
+        so a label never reaches the neighbouring column (240 px pitch, ~7 px per bold character)."""
+        if "<br>" in label or len(label) <= LABEL_WRAP or " " not in label:
             return label
         words = label.split(" ")
         best, best_diff = 1, 10 ** 6
@@ -238,8 +222,16 @@ class Builder:
                 best, best_diff = i, diff
         return " ".join(words[:best]) + "<br>" + " ".join(words[best:])
 
+    def label_h(self, n: dict) -> int:
+        """Height of the label block under the icon (gap + lines)."""
+        return LABEL_TOP_PAD + LABEL_LINE_H * (self.wrap(n["label"]).count("<br>") + 1)
+
+    def bottom_ratio(self, n: dict) -> float:
+        """exitY/entryY that puts the port under the label rather than on the icon's bottom edge."""
+        return round((ICON + self.label_h(n)) / ICON, 3)
+
     @staticmethod
-    def free_label_offset(e, d, label, node_xy, borders) -> float:
+    def free_label_offset(e, d, label, node_xy, borders, label_h) -> float:
         """Relative position (-1 source … 1 target) along a straight edge where the label box covers no
         container border; the position nearest the midpoint wins, 0 if none is free (W7 will say so)."""
         sx, sy = node_xy[e["from"]]
@@ -252,7 +244,7 @@ class Builder:
                 cx = (x1 + x2) / 2 + k * (x2 - x1) / 2 * (1 if d == "right" else -1)
                 return (cx - half_w, line_y - 2 * LABEL_HALF_H, cx + half_w, line_y), (x1 + half_w <= cx <= x2 - half_w)
         else:
-            y1, y2 = (sy + ICON, ty) if d == "down" else (ty + ICON, sy)
+            y1, y2 = (sy + ICON + label_h[e["from"]], ty) if d == "down" else (ty + ICON + label_h[e["to"]], sy)
             line_x = sx + ICON / 2
             def box(k):
                 cy = (y1 + y2) / 2 + k * (y2 - y1) / 2 * (1 if d == "down" else -1)
@@ -280,9 +272,12 @@ class Builder:
             f'<mxCell id="{cid}" value="{attr(value)}" style="{style}" vertex="1" parent="{parent}">'
             f'<mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" as="geometry"/></mxCell>')
 
-    def node_style(self, n: dict, pos: str) -> str:
+    def node_style(self, n: dict) -> str:
+        # labelBackgroundColor matches the container so the label reads as part of the node and hides
+        # nothing unless a line strays under it (which the port ratios prevent)
+        label = f"{LABEL_STYLE}labelBackgroundColor={'#F7F8FA' if n.get('group') else '#FFFFFF'};"
         base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=13;fontStyle=1;"
-                f"fontFamily={self.font};aspect=fixed;{LABEL_POS[pos]}")
+                f"fontFamily={self.font};aspect=fixed;{label}")
         if "icon" in n:
             st = self.index[n["icon"]]
             fill = st.get("fillColor") or "#232F3E"
@@ -293,7 +288,7 @@ class Builder:
             raise SpecError(f"node '{n['id']}': '{n['icon']}' is a group badge, not an icon")
         b64 = base64.b64encode((EXTRA_ICONS / n["image"]).read_bytes()).decode()
         return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=13;fontStyle=1;fontFamily={self.font};"
-                f"{LABEL_POS[pos]}image=data:image/svg+xml,{b64};")
+                f"{label}image=data:image/svg+xml,{b64};")
 
     def build(self) -> str:
         spec, font = self.spec, self.font
@@ -316,7 +311,8 @@ class Builder:
             cloud = (min(xs) - CLOUD_PAD, min(ys) - CLOUD_PAD, max(xs) - min(xs) + 2 * CLOUD_PAD, max(ys) - min(ys) + 2 * CLOUD_PAD)
 
         right = max([x + ICON for x, _ in node_xy.values()] + ([cloud[0] + cloud[2]] if cloud else []) + [r[0] + r[2] for r in rects.values()])
-        bottom = max([y + ICON + 40 for _, y in node_xy.values()] + ([cloud[1] + cloud[3]] if cloud else []) + [r[1] + r[3] for r in rects.values()])
+        label_h = {nid: self.label_h(n) for nid, n in self.nodes.items()}
+        bottom = max([y + ICON + label_h[nid] + 30 for nid, (_, y) in node_xy.items()] + ([cloud[1] + cloud[3]] if cloud else []) + [r[1] + r[3] for r in rects.values()])
         W = int(-(-(right + MARGIN) // 10) * 10)
         H = int(-(-(bottom + 45) // 10) * 10)
 
@@ -348,16 +344,14 @@ class Builder:
         for gid, (x, y, w, h) in rects.items():
             self.vertex(gid, self.groups[gid]["label"], gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
 
-        sides = self.incident_sides()
+        self.incident_sides()                                   # raises on a shared side
         for nid, n in self.nodes.items():
-            pos = self.label_pos(n, sides[nid])
-            label = self.two_line(n["label"]) if pos == "bottomleft" else n["label"]
             x, y = node_xy[nid]
             parent = n.get("group") or "1"
             if parent != "1":
                 gx, gy = rects[parent][0], rects[parent][1]
                 x, y = x - gx, y - gy
-            self.vertex(nid, label, self.node_style(n, pos), x, y, ICON, ICON, parent)
+            self.vertex(nid, self.wrap(n["label"]), self.node_style(n), x, y, ICON, ICON, parent)
 
         borders = list(rects.values()) + ([cloud] if cloud else [])
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
@@ -381,13 +375,21 @@ class Builder:
                     style += "align=right;spacingRight=4;"
                 offset = e.get("label_offset")
                 if offset is None and kind == "straight":
-                    offset = self.free_label_offset(e, d, label, node_xy, borders)
+                    offset = self.free_label_offset(e, d, label, node_xy, borders, label_h)
                 if offset:
                     geo_x = f' x="{offset}"'
             val = f' value="{attr(label)}"' if label else ""
+            # A bent edge leaves under the source label, i.e. from a point outside the shape; draw.io's router
+            # then picks the first leg's direction itself and may go sideways along the label. Pin the corner.
+            pts = ""
+            if kind == "bend":
+                cx = node_xy[e["from"]][0] + ICON // 2
+                cy = node_xy[e["to"]][1] + ICON // 2
+                pts = f'<Array as="points"><mxPoint x="{cx}" y="{cy}"/></Array>'
+            geo = f'<mxGeometry{geo_x} relative="1" as="geometry">{pts}</mxGeometry>' if pts else f'<mxGeometry{geo_x} relative="1" as="geometry"/>'
             self.cells.append(
                 f'<mxCell id="{e.get("id", f"e{i}")}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
-                f'<mxGeometry{geo_x} relative="1" as="geometry"/></mxCell>')
+                f'{geo}</mxCell>')
 
         name = spec.get("page", spec.get("title", "Page-1"))
         return ('<mxfile host="app.diagrams.net">'

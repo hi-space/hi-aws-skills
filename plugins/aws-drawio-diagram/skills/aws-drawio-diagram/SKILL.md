@@ -87,7 +87,7 @@ hand, swap the strokeColor rules and the glyph disappears. Standard vertex (chil
 relative to it, `fontFamily` on every cell):
 
 ```xml
-<mxCell id="lambda1" value="Order handler" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;fontSize=13;fontStyle=1;fontFamily=Amazon Ember;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="g_order">
+<mxCell id="lambda1" value="Order handler" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F7F8FA;html=1;fontSize=13;fontStyle=1;fontFamily=Amazon Ember;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="g_order">
   <mxGeometry x="61" y="60" width="78" height="78" as="geometry" />
 </mxCell>
 ```
@@ -155,7 +155,7 @@ https://app.diagrams.net, which is always current.
   inside the cloud but in no group · `W7` edge label on a group border · `W8` two edges drawn on top of each
   other. Treat all five as defects; `W1`–`W3` are style hints. The builder refuses specs that would produce
   `W4`/`W8` and prints `hint:` lines for sparse groups and single-icon lanes — act on them.
-- Not checked by the script, checked by the Reviewer's eyes: label/title collisions, read order, balance,
+- Not checked by the script, checked by the Reviewer's eyes: label length, read order, balance,
   faithfulness to the brief.
 
 ## Related skill

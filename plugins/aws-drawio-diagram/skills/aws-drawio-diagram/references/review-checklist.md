@@ -32,7 +32,8 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 ## C. Human-readable (look at the PNG)
 
 - [ ] **Nothing overlaps**: no text on a line, no line through an icon, no label across a group border, no
-      node label touching a group title. Zoom in on every edge label and every top-placed node label.
+      node label touching the group's bottom border. Every node label is *below* its icon; a vertical edge
+      starts under the label, never through it. Zoom in on every edge label.
 - [ ] **Read order**: main request path runs left → right on one lane; auxiliary paths hang below (or above);
       the eye finds the entry point in the first second.
 - [ ] **Grouping**: 2–7 role groups, each titled, each with 1–4 icons; no group with more empty cells than
@@ -57,9 +58,9 @@ Two rounds is normal; a third means the brief or the group plan is wrong — go 
 | Finding | Spec fix |
 |---|---|
 | Label on a group border | remove `label`, or move the node so the segment crosses a row gap, or set `label_offset` |
-| Node label collides with a group title | node is in lane 0 with an edge from below → fine (builder puts label on top and the group has a 60 px header); if it still touches, the label is too long — shorten |
-| Hub label overflows the group's left border | shorten the label to two short words (builder splits into two lines) or move one neighbour to free the bottom side |
-| Dead column inside a group | put the side-labelled node's neighbour in that cell, or move the side label by freeing the node's bottom side (rotate one edge to a horizontal neighbour) |
+| Node label runs into the neighbouring column | label > 22 characters and the builder could not split it (no space) — shorten or add a space before the qualifier |
+| Line disappears behind a node label | hand-written XML without the `B` port — use `exitY`/`entryY` = (78 + 4 + 18·lines)/78 with `*Perimeter=0` (layout-and-style.md §5) |
+| Dead column inside a group | move a neighbour into that cell or shrink the group's `cols` |
 | Empty band across the top of the cloud | move upper-lane items there (auth, static assets, memory) or drop lane 0 and fan out downward |
 | Fan-out edge runs through an icon | the source's top/bottom cell must be empty; move that icon or fan out on the other side |
 | Several edges leave one node downward as one line (W8) | one edge per side: put a queue/topic between the node and its many consumers, or move consumers to the node's other sides |

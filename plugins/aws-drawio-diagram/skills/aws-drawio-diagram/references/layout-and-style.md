@@ -137,15 +137,22 @@ error paths.
 |---|---|
 | → right | `exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;` |
 | ← left | `exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;` |
-| ↑ up | `exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;` |
-| ↓ down | `exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
+| ↑ up | `exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=B;entryDx=0;entryDy=0;entryPerimeter=0;` |
+| ↓ down | `exitX=0.5;exitY=B;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
+
+`B` is the **under-the-label** port: `(78 + 4 + 18 × lines) / 78` → `1.282` for a one-line label, `1.513` for two
+lines. A vertical edge therefore starts or ends below the node's label instead of running through it; the
+arrowhead of an edge arriving from below sits just under the text. `exitPerimeter=0` / `entryPerimeter=0` are
+required, otherwise draw.io snaps the point back onto the icon.
 
 - **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair
   cannot, move a node into a free cell — or use the fan-out pattern below. Never an S-shaped edge.
 - **Fan-out (the one allowed bend).** Source S on lane B fans out to targets in the **adjacent column**: the
   target on S's own lane gets a straight horizontal edge; a target on the **adjacent lane above** gets
   `exitX=0.5;exitY=0;` (leave S's top) + `entryX=0;entryY=0.5;` (enter the target's left) — one bend at
-  (S.x, target.y); a target on the lane below leaves S's bottom the same way. Same ports mirrored for fan-in
+  (S.x, target.y); a target on the lane below leaves S's bottom with the `B` port. **Pin the corner** with a
+  waypoint (`<Array as="points"><mxPoint x="S.cx" y="target.cy"/></Array>` inside the geometry): a port outside
+  the shape lets draw.io's router pick the first leg's direction, and it will run sideways along the label. Same ports mirrored for fan-in
   from the left. The cell directly above/below S must be empty (the vertical leg runs through it). A bend
   never reaches further than the diagonally adjacent cell — if it would, move the target or add a node in
   between (validator `W4`, builder error).
@@ -174,23 +181,27 @@ error paths.
   target instead (`SNS (threshold alerts)`). Builder error.
 - When two labeled edges meet at one node, at most one keeps its label.
 
-## 6. Node label placement — keep text out of edge paths
+## 6. Node labels — always below the icon
 
-Default is below the icon. Ports are at icon centers, so an edge entering from below runs through a bottom
-label; move the label to the free side. In every case **delete the base style's later `align=center;`** — a later
-key wins in draw.io and the text lands on the icon.
+Every node label sits under its icon, centred, 13 bold, with a background the colour of its container:
 
-| Edges on the node | Label position | style fragment |
-|---|---|---|
-| none / left / right / top only | below (default) | `verticalLabelPosition=bottom;verticalAlign=top;align=center;` |
-| bottom (and any of left/right) | above | `verticalLabelPosition=top;verticalAlign=bottom;align=center;` |
-| top **and** bottom (a pass-through node) | first choice: **avoid it** — move one neighbour to the side so the edge is horizontal and the bottom stays free (DynamoDB → S3 archive to its left instead of below). If both vertical edges must stay: right (or left) | `labelPosition=right;verticalLabelPosition=middle;align=left;verticalAlign=middle;spacingLeft=8;` (mirror: `labelPosition=left;…;align=right;spacingRight=8;`) — needs an **empty cell** beside the node inside the same group |
-| top, bottom and a side (hub), or no free cell beside | bottom-left corner | `labelPosition=left;verticalLabelPosition=bottom;align=right;verticalAlign=top;spacingRight=6;` — ≤ 55 px wide: break into two lines with `<br>` (`API<br>Gateway`, `Chat<br>agent`) |
+```
+verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F7F8FA;   (inside a role group)
+verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (outside the cloud)
+```
 
-Labels must stay inside their group rectangle; if a side label does not fit, free the node's bottom side, shorten
-the text, or widen the group by one column — do not overflow the border. The builder picks the side from the
-incident edges in this order (bottom → top → right/left if the cell is free → bottom-left two-line);
-`"label_pos"` in the spec overrides it.
+No side labels, no top labels, no `label_pos` switches: the reader always finds the name in the same place.
+Edges keep out of the text by construction — anything that leaves or enters the node's bottom uses the `B` port
+(§5), which is under the label, so the line is continuous from the text down. The background colour is a
+safety net, not a routing tool: if a line still disappears behind a label, the layout is wrong (fix the spec).
+
+- **Length.** ≤ 22 characters on one line (~7 px per bold character; the column pitch is 240 px). Longer labels
+  break into two lines at the space nearest the middle (`OpenSearch Serverless<br>(vector index)`); the builder
+  does this. Never three lines — shorten instead.
+- **Room below.** One line needs 22 px under the icon, two lines 40 px; the group keeps 46 px below the last
+  icon and lanes are 170 px apart, so labels never touch the next lane or the group border.
+- **Delete the base style's later `align=center;`** when writing XML by hand — a later key wins in draw.io and
+  the text lands on the icon.
 
 ## 7. Multi-page
 
@@ -228,7 +239,7 @@ key design decisions (including any icon substitutions).
 
 ## 11. Self-check (Drawer, before handing to the Reviewer)
 
-For every node: which group? which column, which lane? label side free of edges? label inside the group? For
+For every node: which group? which column, which lane? label ≤ 22 characters or split in two? For
 every edge: same column or lane, or a proper fan-out? corridor empty? label only in a free gap? For the canvas:
 white background, title, legend if two edge types, no half-empty page, no empty band. Then run the validator
 and **look at the PNG** — the Reviewer's checklist (`review-checklist.md`) is what you will be measured against.

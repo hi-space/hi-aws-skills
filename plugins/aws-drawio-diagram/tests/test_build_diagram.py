@@ -75,29 +75,28 @@ def test_node_labels_are_bold_13():
     assert st["b"]["fontSize"] == "13" and st["b"]["fontStyle"] == "1"
 
 
-def test_label_sides_follow_incident_edges():
-    st = styles(bd.build(spec()))
-    assert st["a"]["verticalLabelPosition"] == "bottom"         # left, right, top used; bottom free
-    assert st["c"]["verticalLabelPosition"] == "top"            # edge arrives from below
-    assert st["u"]["verticalLabelPosition"] == "bottom"
-    # hub: left + right + top + bottom → bottom-left, two lines
-    s = spec()
-    s["groups"] = [{"id": "g", "label": "G", "cols": [1, 2], "lanes": [0, 1, 2]}]
-    s["nodes"].append({"id": "d", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 1, "lane": 2, "group": "g"})
-    s["edges"].append({"from": "a", "to": "d"})
-    xml = bd.build(s)
+def test_labels_always_below_with_container_background():
+    xml = bd.build(spec())
     st = styles(xml)
-    assert st["a"]["labelPosition"] == "left" and st["a"]["verticalLabelPosition"] == "bottom"
-    assert 'value="API&lt;br&gt;Gateway"' in xml
-    # top + bottom only, free cell to the right inside the group → right label
-    s["edges"] = [{"from": "c", "to": "a"}, {"from": "a", "to": "d"}]
-    s["nodes"][2]["lane"] = 2                                   # b moves away so (2,1) is free
-    st = styles(bd.build(s))
-    assert st["a"]["labelPosition"] == "right"
-    # same, but the right cell is occupied → bottom-left fallback
-    s["nodes"][2]["lane"] = 1
-    st = styles(bd.build(s))
-    assert st["a"]["labelPosition"] == "left" and st["a"]["verticalLabelPosition"] == "bottom"
+    for nid in ("u", "a", "b", "c"):
+        assert st[nid]["verticalLabelPosition"] == "bottom" and st[nid]["align"] == "center", nid
+        assert "labelPosition" not in st[nid]
+    assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud
+    assert st["a"]["labelBackgroundColor"] == "#F7F8FA"           # inside a role group
+    # bottom-touching edges attach under the label, not on the icon edge
+    e_ac = styles(xml)["e3"]                                        # a (lane 1) → c (lane 0): enters c's bottom
+    assert e_ac["entryY"] == "1.282" and e_ac["entryPerimeter"] == "0"
+    assert e_ac["exitY"] == "0"
+
+
+def test_long_labels_wrap_and_lower_the_bottom_port():
+    s = spec()
+    s["nodes"][3]["label"] = "OpenSearch Serverless (vector index)"
+    xml = bd.build(s)
+    assert 'value="OpenSearch Serverless&lt;br&gt;(vector index)"' in xml
+    assert styles(xml)["e3"]["entryY"] == "1.513"
+    assert bd.Builder.wrap("Kinesis Data Streams") == "Kinesis Data Streams"   # 20 chars: one line
+    assert bd.Builder.wrap("Amazon OpenSearch Service domain") == "Amazon OpenSearch<br>Service domain"
 
 
 def test_fan_out_uses_vertical_exit_and_horizontal_entry():
@@ -109,6 +108,8 @@ def test_fan_out_uses_vertical_exit_and_horizontal_entry():
     st = styles(xml)
     fan = st["e4"]
     assert (fan["exitX"], fan["exitY"], fan["entryX"], fan["entryY"]) == ("0.5", "0", "0", "0.5")
+    # corner pinned at (source centre x, target centre y) so the first leg is always vertical
+    assert '<Array as="points"><mxPoint x="620" y="260"/></Array>' in xml
     errors, warnings = vd.validate_text(xml, INDEX)
     assert errors == [] and warnings == []
 
