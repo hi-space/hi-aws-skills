@@ -467,7 +467,7 @@ def test_counts_meet_floors(built):
         kinds[s["kind"]] = kinds.get(s["kind"], 0) + 1
     assert kinds["service"] >= 300
     assert kinds["resource"] >= 500
-    assert kinds["group"] == 16
+    assert kinds["group"] == 15                      # 15 distinct grIcons (subnets share group_security_group)
     assert kinds["legacy"] >= 50
 
 
@@ -515,7 +515,7 @@ def test_markdown_files_and_headers(built):
     assert "Do not edit by hand" in compute
     assert "fillColor: `#ED7100`" in compute
     assert "| `lambda` | Lambda |" in compute
-    assert "| `lambda_function` | Lambda Function |" in compute
+    assert "| `lambda_function` | Lambda Function |" in compute   # if the sidebar label differs, assert the real label
     groups = (out / "aws-icons-groups.md").read_text()
     assert "| `group_vpc2` | `#8C4FFF` | VPC |" in groups
     assert "Availability Zone" in groups           # boundary style without grIcon
@@ -661,7 +661,15 @@ def build_index(data: dict, stencil_names: set[str]) -> tuple[dict, list[dict]]:
                 if slug == "groups":
                     boundaries.append({"label": label, "style": e["style"]})
                 continue
-            if name in stencils:          # first palette wins
+            if name in stencils:          # first palette wins …
+                prev = stencils[name]
+                if kind == "group" and label and label not in prev["label"]:
+                    # … except group badges reused with a different meaning (Private/Public subnet
+                    # both use group_security_group): keep every label and stroke color.
+                    prev["label"] = f"{prev['label']} / {label}"
+                    stroke = _first(RE_STROKE, e["style"])
+                    if stroke and stroke not in (prev["strokeColor"] or ""):
+                        prev["strokeColor"] = f"{prev['strokeColor']} / {stroke}"
                 continue
             stencils[name] = {
                 "kind": kind,
@@ -824,10 +832,10 @@ Expected: 7 passed. If `test_every_template_stencil_is_in_index` fails, print `m
 - [ ] **Step 5: Generate the real references and index**
 
 Run: `python3 plugins/aws-drawio-diagram/skills/aws-drawio-diagram/scripts/build_icon_catalog.py`
-Expected output: `wrote 31 reference files` (or the actual count; 27 categories + general + groups + retired + legacy), `counts: {'service': 4xx, 'resource': 6xx, 'group': 16, 'legacy': 6x}`, and no WARNING line (only `group` is a JS shape and is excluded before the check).
+Expected output: `wrote 30 reference files` (26 categories + general + groups + retired + legacy), `counts: {'service': 4xx, 'resource': 6xx, 'group': 16, 'legacy': 6x}`, and no WARNING line (only `group` is a JS shape and is excluded before the check).
 
 Run: `ls plugins/aws-drawio-diagram/skills/aws-drawio-diagram/references | wc -l && grep -c '^| `' plugins/aws-drawio-diagram/skills/aws-drawio-diagram/references/aws-icons-compute.md`
-Expected: 31 files; compute has ~130 rows.
+Expected: 30 files; compute has ~130 rows.
 
 - [ ] **Step 6: Commit**
 
@@ -2164,5 +2172,5 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ## Self-review notes
 
 - **Spec coverage:** directory structure (T1, T3, T5), catalog generator with failure floors (T3), extra icons with allow list and `--report` (T5), validator changes incl. isometric false-positive removal and new E1/E2 checks (T6), SKILL.md with Korean triggers, lookup order, no 3D (T7), packaging/licensing/marketplace/root README (T1, T8), tests 1–3 (T3, T6, T9). Spec's "validator checks references/*.md" is implemented via the generated `stencil-index.json` written alongside the markdown; same data, machine-readable.
-- **Deviation from spec, deliberate:** the generator executes `Sidebar-AWS4.js` in Node instead of parsing JS text in Python. Planning verified that this captures all 31 palettes (service 406, resource 610, group 16) including the retired palette's function-built styles, which a regex cannot resolve. Node is a build-time dependency only.
+- **Deviation from spec, deliberate:** the generator executes `Sidebar-AWS4.js` in Node instead of parsing JS text in Python. Planning verified that this captures all 31 palettes (service 406, resource 610, 15 distinct group badges) including the retired palette's function-built styles, which a regex cannot resolve. Node is a build-time dependency only.
 - **Type consistency:** `classify` returns `(kind, name)`; `build_index` returns `(stencils, boundaries)`; `load_index` returns `{"names", "js_shapes"}`; `read_allow_list` returns `list[tuple[str, str]]` — used identically across T3/T4/T5/T6 tests.
