@@ -36,20 +36,13 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 draw.io 데스크톱 CLI가 필요합니다. 헤드리스 리눅스는 `xvfb-run -a` 를 앞에 붙입니다.
 
 ```bash
-xvfb-run -a drawio -x -f png -e -b 10 -o name.drawio.png name.drawio
+drawio -x -f png -e -b 10 -o name.drawio.png name.drawio
 ```
 
-**알려진 제약사항 (draw.io Desktop 26.2.2로 검증)**
+**알려진 제약사항**
 
-- `--no-sandbox` / `--disable-gpu` 를 앞에 붙이지 마세요. 이 버전의 drawio CLI 인자 파서는 두 플래그를 모르는
-  옵션으로 취급해 위치 인자로 세다가 `error: too many arguments` 로 즉시 종료합니다 (렌더 시도 자체가 안 됨).
-  비루트 사용자로 `xvfb-run -a` 아래에서 실행하면 sandbox 플래그 없이도 정상 동작합니다.
-- `bedrock_agentcore` 서비스 아이콘(`resIcon=mxgraph.aws4.bedrock_agentcore`)은 이 스킬의 스텐실 카탈로그에는
-  존재하지만(검증기 통과), draw.io Desktop 26.2.2에 번들된 스텐실에는 아직 없어서 내보낸 PNG에서 글리프 없는
-  단색 정사각형으로 렌더링됩니다. 카탈로그는 draw.io GitHub 최신본에서 생성되는데, 설치된 데스크톱 앱은 그보다
-  오래된 릴리스이기 때문입니다. `references/aws-icons-extra.md`의 이미지 폴백 아이콘(예: AgentCore Memory)은
-  이 문제와 무관하게 정상 렌더링됩니다. draw.io Desktop을 최신 버전으로 업데이트하거나 https://app.diagrams.net
-  에서 확인하세요.
+- 루트 권한 또는 CI 환경이라면 먼저 `drawio --version` 을 확인하세요. 최신 데스크톱 빌드는 `drawio` 바로 뒤에 `--no-sandbox` 가 필요하지만, 26.x 이하 빌드는 이 플래그를 모르는 인자로 취급해 `error: too many arguments` 로 종료합니다 — 이 경우 플래그를 빼고 비루트 사용자로 실행하세요.
+- 설치된 draw.io보다 나중에 추가된 스텐실(예: `bedrock_agentcore`)은 단색 정사각형으로 렌더링됩니다. draw.io 데스크톱을 업데이트하거나 항상 최신 상태인 https://app.diagrams.net 에서 열어보세요. `shape=image` 폴백 아이콘은 영향받지 않습니다.
 
 ## 구성
 

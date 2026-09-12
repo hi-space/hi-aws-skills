@@ -36,21 +36,13 @@ To use just the skill, symlink `skills/aws-drawio-diagram` into `~/.claude/skill
 Requires the draw.io desktop CLI. On headless Linux, prefix with `xvfb-run -a`.
 
 ```bash
-xvfb-run -a drawio -x -f png -e -b 10 -o name.drawio.png name.drawio
+drawio -x -f png -e -b 10 -o name.drawio.png name.drawio
 ```
 
-**Known limitations (verified against draw.io Desktop 26.2.2)**
+**Known limitations**
 
-- Don't prepend `--no-sandbox` or `--disable-gpu`. This CLI version's own argument parser doesn't recognize
-  either flag, counts them as extra positional arguments, and exits immediately with `error: too many arguments`
-  — no render is even attempted. Running as a non-root user under `xvfb-run -a` works fine without any sandbox
-  flag.
-- The `bedrock_agentcore` service icon (`resIcon=mxgraph.aws4.bedrock_agentcore`) is a valid entry in this
-  skill's generated stencil catalog (the validator accepts it), but draw.io Desktop 26.2.2 does not yet bundle
-  that stencil, so the exported PNG shows a blank, glyph-less colored square for it. The catalog is generated
-  from draw.io's GitHub HEAD, which is ahead of the installed desktop release. The image-fallback icons in
-  `references/aws-icons-extra.md` (e.g. AgentCore Memory) are unaffected and render correctly. Update draw.io
-  Desktop, or verify at https://app.diagrams.net instead.
+- Root or CI: check `drawio --version` first. Current builds need `--no-sandbox` right after `drawio`; builds 26.x and earlier reject it with `error: too many arguments` — drop the flag and run as non-root instead.
+- A stencil newer than your installed draw.io build (e.g. `bedrock_agentcore`) renders as a blank colored square. Update draw.io desktop, or open the file at https://app.diagrams.net, which is always current; `shape=image` fallbacks are unaffected.
 
 ## Layout
 
