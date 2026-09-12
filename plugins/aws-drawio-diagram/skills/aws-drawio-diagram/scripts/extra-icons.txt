@@ -13,6 +13,3 @@ resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Policy-Engine_48.s
 resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Evaluations_48.svg|AgentCore Evaluations
 resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Browser-Tool_48.svg|AgentCore Browser Tool
 resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Code-Interpreter_48.svg|AgentCore Code Interpreter
-# AWS Application Migration Service (MGN) — no draw.io stencil under this or the "MGN" name;
-# database_migration_service and server_migration_service are different (DMS, SMS) services.
-service/Migration-Modernization/Arch_AWS-Application-Migration-Service_48.svg|AWS Application Migration Service
