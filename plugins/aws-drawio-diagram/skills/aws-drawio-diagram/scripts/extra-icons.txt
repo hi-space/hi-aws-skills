@@ -1,0 +1,18 @@
+# Official-pack icons with no draw.io stencil. Format: relative/path.svg|Display Name
+# Paths are relative to the --icons directory (default: sibling aws-diagram-design plugin's assets/aws-icons).
+# Amazon Bedrock AgentCore resource icons — traced from PNG artwork, NOT from the official package
+# (see THIRD_PARTY_LICENSES.md). draw.io ships only the service icon `bedrock_agentcore`.
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_AgentCore_48.svg|AgentCore (resource)
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_AI-Agent_48.svg|AgentCore AI Agent
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Runtime_48.svg|AgentCore Runtime
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Gateway_48.svg|AgentCore Gateway
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Memory_48.svg|AgentCore Memory
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Identity_48.svg|AgentCore Identity
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Observability_48.svg|AgentCore Observability
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Policy-Engine_48.svg|AgentCore Policy Engine
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Evaluations_48.svg|AgentCore Evaluations
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Browser-Tool_48.svg|AgentCore Browser Tool
+resource/Artificial-Intelligence/Res_Amazon-Bedrock-AgentCore_Code-Interpreter_48.svg|AgentCore Code Interpreter
+# AWS Application Migration Service (MGN) — no draw.io stencil under this or the "MGN" name;
+# database_migration_service and server_migration_service are different (DMS, SMS) services.
+service/Migration-Modernization/Arch_AWS-Application-Migration-Service_48.svg|AWS Application Migration Service
