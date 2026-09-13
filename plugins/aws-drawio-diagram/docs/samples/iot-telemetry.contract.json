@@ -1,0 +1,31 @@
+{
+  "components": {
+    "sensors": "drawn",
+    "iotcore": "drawn",
+    "kinesis": "drawn",
+    "normalize": "drawn",
+    "s3lake": "drawn",
+    "ddb": "drawn",
+    "crawler": "drawn",
+    "catalog": "drawn",
+    "athena": "drawn",
+    "quicksight": "drawn",
+    "cw": "drawn",
+    "sns": "drawn",
+    "ops": "drawn"
+  },
+  "relationships": {
+    "sensors → iotcore": "primary",
+    "iotcore → kinesis": "primary",
+    "kinesis → normalize": "primary",
+    "normalize → ddb": "primary",
+    "normalize → s3lake": "primary",
+    "normalize → sns": "primary",
+    "s3lake → crawler": "primary",
+    "crawler → catalog": "primary",
+    "catalog → athena": "primary",
+    "athena → quicksight": "primary",
+    "kinesis → cw": "aux",
+    "sns → ops": "primary"
+  }
+}

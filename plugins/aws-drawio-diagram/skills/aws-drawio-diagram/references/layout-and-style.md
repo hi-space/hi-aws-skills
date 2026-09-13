@@ -169,21 +169,39 @@ required, otherwise draw.io snaps the point back onto the icon.
 - Edges may cross group borders (that is what groups are for); they must not run along one.
 - Left-to-right for the request path: users left, models/data right. Auxiliary (logs, alarms) below.
 
-**Edge labels.** Most edges need none (Lambda → DynamoDB is self-explanatory). When one helps:
+**Edge labels.** A label carries the brief's *Label on diagram* — the what-flows phrase — so a reader can follow
+the request path without the guide. Every primary relationship gets one in the brief; the picture keeps the ones
+that have room, and `scripts/layout.py` prints a `note:` naming each label it dropped and why. What fits
+(`LABEL_MAX_*` in `layout.py`, 6.2 px per 11 pt character + 16 px padding):
+
+| Placed edge | Max label | Room |
+|---|---|---|
+| Straight, horizontal, inside one group box or across an empty column | **16 characters** | 162 px clear between two icons on a lane |
+| Straight, horizontal, between two adjacent group boxes — also users → first service across the cloud border | **6 characters** | two 61 px pockets either side of the 40 px gap; the label sits in one of them (`HTTPS`, `MQTT`, `events`) |
+| Straight, vertical | **12 characters** | hangs left of the line; must stay inside the 100 px to the group's left border and **below the target group's title row** (top 28 px — the builder slides it there, the validator's `W7` names the title). A vertical edge between two group rows is the roomiest place for a label (`retrieve`, `embed`) |
+| Bent (one L) | none | draw.io centres the label on the polyline, i.e. on the corner. Name the target instead (`SNS (threshold alerts)`) — the guide explains the hop. Builder error |
+
+**Number badges.** Every edge also carries its relationship number from the brief's `#` column as a small badge
+(dark pill, white 11 pt bold digits — an `edgeLabel` child cell of the edge, `connectable="0"`, relative
+geometry). The badge is the link between the picture and `<name>.guide.md`: step 3 of the guide is badge ③. The
+builder places it *on* the line — beside the text label on a straight edge (before it in reading order), at the
+corner of a bent edge, at the freest point otherwise — and the validator's `W7` refuses a badge on a border, a
+title row, an icon or the edge's own label. A badge fits everywhere a line runs, so bent edges keep their number
+even though they cannot keep text.
+
+```xml
+<mxCell id="e3_n" value="3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Amazon Ember;fontSize=11;fontStyle=1;fontColor=#FFFFFF;labelBackgroundColor=#232F3E;labelBorderColor=#232F3E;" vertex="1" connectable="0" parent="e3"><mxGeometry x="-0.35" y="0" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
+```
 
 - Horizontal edge: `verticalAlign=bottom;` (label above the line). Vertical edge: `align=right;spacingRight=4;`
   (label left of the line).
-- Only where the segment has ≥ 60 px of free space: the run from users into the cloud, a vertical edge crossing
-  the gap between two group rows (`retrieve`, `embed`), or an edge inside one group. **Never on an edge between
-  two adjacent groups** — the 40 px gap cannot hold a label, and the white label background bites a hole in the
-  group border (`W7`).
 - **Slide the label along the edge** when the midpoint is on a border: `<mxGeometry x="-0.6" relative="1"
   as="geometry"/>` (−1 = at the source, 0 = midpoint, 1 = at the target). The users → first-service edge always
-  needs this, because its midpoint sits on the AWS Cloud border; the builder computes the offset, by hand aim
-  for the middle of the free space outside the cloud (label ≤ 7 characters there).
-- **Never on a bent edge**: draw.io centres the label on the polyline, which puts it on the corner. Name the
-  target instead (`SNS (threshold alerts)`). Builder error.
-- When two labeled edges meet at one node, at most one keeps its label.
+  needs this, because its midpoint sits on the AWS Cloud border; the builder computes the offset in 4 px steps
+  and refuses (`W7`) when no free position exists, by hand aim for the middle of the pocket outside the cloud.
+- A label that does not fit on a **primary (solid) edge** stops the build (`ERROR label`): shorten it in the brief
+  (`token validation` → `verify JWT`, `PostgreSQL 5432` → `SQL`) or write `—` when the pair explains itself. On
+  dashed edges it is a `note:` and the drop is allowed — the guide carries the full sentence either way.
 
 ## 6. Node labels — always below the icon
 
@@ -235,8 +253,9 @@ Ask "Technical audience or executive/non-technical?" when unclear.
 
 ## 9. Companion guide
 
-Next to `name.drawio`, write `name.md`: title, numbered flow matching the edge labels, service list with purpose,
-key design decisions (including any icon substitutions).
+Next to `name.drawio`, write `name.guide.md` — the step-by-step companion the reader opens beside the picture.
+Template and rules: [`architecture-guide.md`](architecture-guide.md). The brief stays the Drawer's contract;
+the guide is where every relationship — labeled on the picture or not — is explained in sentences.
 
 ## 10. Writing the file
 

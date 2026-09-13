@@ -244,22 +244,79 @@ def _overlap_warnings(paths: dict[str, list], ends: dict[str, tuple[str, str]] |
 LABEL_CHAR_PX = 6.2      # ~11 px Amazon Ember / Helvetica average glyph advance
 LABEL_PAD_PX = 8
 LABEL_HALF_H = 8
+TITLE_BAND = 28          # px: a container's title row (13 pt bold + spacingTop) — an edge label there reads as part of the title
+
+
+BADGE_H = 18             # px: edge number badge (11 pt bold on a dark pill)
+
+
+def _badge_w(text: str) -> float:
+    return 10 + 7 * len(text)
+
+
+def _point_along(path, rel):
+    """(x, y) at relative position rel (-1 source … 1 target) along a polyline, by length."""
+    lens = [abs(b[0] - a[0]) + abs(b[1] - a[1]) for a, b in zip(path, path[1:])]
+    total = sum(lens)
+    target = total * (0.5 + rel / 2)
+    for (a, b), ln in zip(zip(path, path[1:]), lens):
+        if target <= ln or (a, b) == (path[-2], path[-1]):
+            f = min(max(target / ln, 0.0), 1.0) if ln else 0.0
+            return a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f
+        target -= ln
+    return path[-1]
+
+
+def _label_box(path, rel, half_w, spacing_right=4.0):
+    """Box of an edge's text label: above the line on a horizontal straight, left of it on a vertical straight,
+    centred on the polyline at half length (shifted by rel) on a bend."""
+    if len(path) == 2:
+        (x1, y1), (x2, y2) = path
+        if abs(y1 - y2) <= ALIGN_TOLERANCE:                         # horizontal edge
+            cx = (x1 + x2) / 2 + rel * (x2 - x1) / 2
+            cy = y1 - LABEL_HALF_H
+        else:                                                       # vertical edge, label left of line
+            cx = x1 - half_w - spacing_right
+            cy = (y1 + y2) / 2 + rel * (y2 - y1) / 2
+    else:
+        cx, cy = _point_along(path, rel)
+    return (cx - half_w, cy - LABEL_HALF_H, cx + half_w, cy + LABEL_HALF_H)
+
+
+def _hits_container(box, gx, gy, gw, gh, titled):
+    """'border' / 'title' / None for a box against one container rectangle."""
+    hit_v = any(box[0] <= bx <= box[2] for bx in (gx, gx + gw)) and box[1] < gy + gh and box[3] > gy
+    hit_h = any(box[1] <= by <= box[3] for by in (gy, gy + gh)) and box[0] < gx + gw and box[2] > gx
+    if hit_v or hit_h:
+        return "border"
+    if titled and box[0] < gx + gw and box[2] > gx and box[1] < gy + TITLE_BAND and box[3] > gy:
+        return "title"
+    return None
 
 
 def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
-    """W7: an edge label whose box covers a container border (group or cloud). Straight edges: the label
-    sits at the segment midpoint, shifted by the relative mxGeometry x (-1 source … 1 target); horizontal
-    labels are drawn above the line, vertical labels to its left (align=right). Bent edges: at half length."""
+    """W7: an edge label or number badge whose box covers a container border or title row, or (badges) an icon
+    or the edge's own text label. Straight edges: the label sits at the segment midpoint, shifted by the relative
+    mxGeometry x (-1 source … 1 target); horizontal labels are drawn above the line, vertical labels to its left
+    (align=right). Bent edges: at half length. Badges (`edgeLabel` children of an edge) sit on the line."""
     geo = _abs_geometry(cells)
     containers = [cid for cid, c in cells.items()
                   if cid in geo and parse_style(c.get("style")).get("container") == "1"]
-    if not containers:
-        return []
     icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
     warnings: list[str] = []
+    paths: dict[str, list] = {}
+    text_boxes: dict[str, tuple] = {}
+
+    def container_hit(box):
+        for k in containers:
+            gx, gy, gw, gh = geo[k]
+            kind = _hits_container(box, gx, gy, gw, gh, bool((cells[k].get("value") or "").strip()))
+            if kind:
+                return kind, k
+        return None, None
+
     for cid, cell in cells.items():
-        text = re.sub(r"<[^>]+>", "", cell.get("value") or "").strip()
-        if cell.get("edge") != "1" or not text:
+        if cell.get("edge") != "1":
             continue
         s, t = cell.get("source"), cell.get("target")
         if s not in icons or t not in icons:
@@ -268,38 +325,52 @@ def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
         path = _edge_path(style, geo[s], geo[t])
         if not isinstance(path, list):
             continue
+        paths[cid] = path
+        text = re.sub(r"<[^>]+>", "", cell.get("value") or "").strip()
+        if not text:
+            continue
         g = cell.find("mxGeometry")
         rel = float(g.get("x", 0) or 0) if g is not None else 0.0
-        half_w = LABEL_CHAR_PX * len(text) / 2 + LABEL_PAD_PX
-        if len(path) == 2:
-            (x1, y1), (x2, y2) = path
-            if abs(y1 - y2) <= ALIGN_TOLERANCE:                     # horizontal edge
-                cx = (x1 + x2) / 2 + rel * (x2 - x1) / 2
-                cy = y1 - LABEL_HALF_H
-            else:                                                   # vertical edge, label left of line
-                cx = x1 - half_w - 4
-                cy = (y1 + y2) / 2 + rel * (y2 - y1) / 2
-        else:                                                       # bent edge: label centred at half length
-            lens = [abs(b[0] - a[0]) + abs(b[1] - a[1]) for a, b in zip(path, path[1:])]
-            target = sum(lens) * (0.5 + rel / 2)
-            cx, cy = path[0]
-            for (a, b), ln in zip(zip(path, path[1:]), lens):
-                if target <= ln or (a, b) == (path[-2], path[-1]):
-                    f = min(max(target / ln, 0.0), 1.0) if ln else 0.0
-                    cx, cy = a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f
-                    break
-                target -= ln
-        box = (cx - half_w, cy - LABEL_HALF_H, cx + half_w, cy + LABEL_HALF_H)
-        for k in containers:
-            gx, gy, gw, gh = geo[k]
-            hit_v = any(box[0] <= bx <= box[2] for bx in (gx, gx + gw)) and box[1] < gy + gh and box[3] > gy
-            hit_h = any(box[1] <= by <= box[3] for by in (gy, gy + gh)) and box[0] < gx + gw and box[2] > gx
-            if hit_v or hit_h:
-                warnings.append(f"W7 edge '{cid}': label '{text}' lands on the border of '{k}' — drop the label or "
-                                "shift it along the edge (mxGeometry x=-0.4 toward the source) into free space")
-                break
-    return warnings
+        spacing = float(style.get("spacingRight", 4) or 4)
+        box = _label_box(path, rel, LABEL_CHAR_PX * len(text) / 2 + LABEL_PAD_PX, spacing)
+        text_boxes[cid] = box
+        kind, k = container_hit(box)
+        if kind == "border":
+            warnings.append(f"W7 edge '{cid}': label '{text}' lands on the border of '{k}' — drop the label or "
+                            "shift it along the edge (mxGeometry x=-0.4 toward the source) into free space")
+        elif kind == "title":
+            warnings.append(f"W7 edge '{cid}': label '{text}' lands on the title of '{k}' — shift it along the edge "
+                            "below the title row (mxGeometry x toward the target) or drop it")
 
+    # number badges: edgeLabel vertices parented to an edge, centred on the line at relative x
+    for cid, cell in cells.items():
+        style = parse_style(cell.get("style"))
+        parent = cell.get("parent")
+        if "edgeLabel" not in (cell.get("style") or "") or parent not in paths:
+            continue
+        text = (cell.get("value") or "").strip()
+        g = cell.find("mxGeometry")
+        rel = float(g.get("x", 0) or 0) if g is not None else 0.0
+        cx, cy = _point_along(paths[parent], rel)
+        hw = _badge_w(text) / 2
+        box = (cx - hw, cy - BADGE_H / 2, cx + hw, cy + BADGE_H / 2)
+        kind, k = container_hit(box)
+        if kind:
+            warnings.append(f"W7 edge '{parent}': badge '{text}' lands on the {kind} of '{k}' — move it along the edge "
+                            "(mxGeometry x) into free space")
+            continue
+        s, t = cells[parent].get("source"), cells[parent].get("target")
+        for o in icons:
+            ox, oy, ow, oh = geo[o]
+            if box[0] < ox + ow and box[2] > ox and box[1] < oy + oh and box[3] > oy:
+                warnings.append(f"W7 edge '{parent}': badge '{text}' covers icon '{o}' — move it along the edge (mxGeometry x)")
+                break
+        else:
+            tb = text_boxes.get(parent)
+            if tb and box[0] < tb[2] and box[2] > tb[0] and box[1] < tb[3] and box[3] > tb[1]:
+                warnings.append(f"W7 edge '{parent}': badge '{text}' overlaps the edge's label — place it beside the label, "
+                                "not under it (mxGeometry x)")
+    return warnings
 
 def _grouping_warnings(cells: dict[str, ET.Element]) -> list[str]:
     """W6: an icon drawn inside an AWS Cloud badge group but parented to the canvas or to the cloud itself.

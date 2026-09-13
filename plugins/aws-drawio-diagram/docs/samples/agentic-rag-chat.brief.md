@@ -2,6 +2,7 @@
 
 A chat assistant that answers from an organisation's documents, keeps long-term memory per user, and runs
 serverless end to end. Audience: technical.
+Language: ko
 
 ## Components
 | id | Service (stencil) | Role in this system | Group |

@@ -4,7 +4,9 @@
 Reads `## Components` (id, "Service (`stencil`)" or "(image `file.svg`)", Group) and `## Relationships`
 (`from → to`, Kind, Label) from `<name>.brief.md` and writes `<name>.json` with nodes, edges and groups. Rows
 marked "not drawn" are skipped. Edges whose Kind contains `async`, `aux` or `dashed` are dashed; labels come
-from the Label column unless it is "—". Unknown stencil names are reported and left for you to fix (the builder
+from the Label column unless it is "—" — every label is passed through, and layout.py decides per placed edge
+whether it fits (16 characters on one lane, 7 across a group border, 12 on a vertical edge, none on a bend) and
+prints a `note:` naming the ones it dropped. Unknown stencil names are reported and left for you to fix (the builder
 refuses them anyway). When the brief has a `Repo: /abs/path` line, every path in the Evidence column is checked
 to exist there — a missing path is an error (exit 1): evidence must be a file the Architect opened.
 
@@ -21,7 +23,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_diagram import _table_rows, EXTRA_ICONS  # noqa: E402
+from build_diagram import _table_rows, EXTRA_ICONS, contract_check, contract_path_for  # noqa: E402
+from layout import LABEL_MAX_LANE  # noqa: E402
 
 
 def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
@@ -92,11 +95,17 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
             continue
         kind = row[k_i] if k_i is not None and k_i < len(row) else ""
         edge = {"from": pair[0], "to": pair[1]}
+        if row and row[0].strip().isdigit():
+            edge["num"] = int(row[0].strip())            # the brief's # — drawn as the badge on the edge, cited by the guide
         if re.search(r"aux|async|dashed", kind, re.I):
             edge["dashed"] = True
         label = row[l_i].strip() if l_i is not None and l_i < len(row) else ""
-        if label and label not in ("—", "-", "–") and len(label) <= 12 and not re.search(r"[(), ]", label):
-            edge["label"] = label                       # short, one word: anything longer lands on a border
+        if label and label not in ("—", "-", "–"):
+            edge["label"] = label                       # layout.py keeps it where the placed edge has room (LABEL_MAX_*)
+            if not edge.get("dashed") and len(label) > LABEL_MAX_LANE:
+                # no placement can hold it: say so here, before layout luck decides whether the edge bends
+                warnings.append(f"label '{label}' ({len(label)} characters) on primary relationship {pair[0]} → {pair[1]} "
+                                f"can never fit (max {LABEL_MAX_LANE} on a lane) — shorten it in the brief or write —")
         edges.append(edge)
     warnings += check_evidence(brief_text, comp_rows)
     spec = {"title": title, "layout": "auto", "groups": [groups[g] for g in order], "nodes": nodes, "edges": edges}
@@ -139,12 +148,22 @@ def main(argv: list[str] | None = None) -> int:
         print(__doc__)
         return 2
     index = set(json.loads((HERE / "stencil-index.json").read_text())["stencils"])
-    spec, warnings = scaffold(Path(args[0]).read_text(encoding="utf-8"), index)
+    brief_path = Path(args[0])
+    brief_text = brief_path.read_text(encoding="utf-8")
+    # the first run freezes ids and From → To pairs; a later run with changed ones stops here
+    c_errors, c_notes = contract_check(brief_text, contract_path_for(brief_path))
+    for n in c_notes:
+        print(f"  {n}")
+    for err in c_errors:
+        print(f"ERROR contract: {err}")
+    if c_errors:
+        return 1
+    spec, warnings = scaffold(brief_text, index)
     Path(args[1]).write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {args[1]}: {len(spec['nodes'])} nodes, {len(spec['edges'])} edges, {len(spec['groups'])} groups")
     for w in warnings:
         print(f"  warn: {w}")
-    return 1 if any(k in w for w in warnings for k in ("unknown stencil", "no stencil", "does not exist", "Repo:")) else 0
+    return 1 if any(k in w for w in warnings for k in ("unknown stencil", "no stencil", "does not exist", "Repo:", "can never fit")) else 0
 
 
 if __name__ == "__main__":

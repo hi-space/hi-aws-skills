@@ -2,6 +2,7 @@
 
 Factory sensors stream telemetry into AWS; the latest state is kept hot in DynamoDB, everything lands in an
 S3 data lake for SQL analytics and dashboards, and threshold breaches page the ops team. Audience: technical.
+Language: ko
 
 ## Components
 | id | Service (stencil) | Role in this system | Group |

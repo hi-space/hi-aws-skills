@@ -25,6 +25,16 @@ from pathlib import Path
 
 HARD = 1000.0
 
+# Longest edge label (characters) per straight-edge situation, derived from the builder's geometry (6.2 px per
+# character + 16 px padding, 240 px column pitch, 78 px icon, 40 px gap between groups):
+#   lane      162 px clear between two icons on one lane                                → 16 characters
+#   border    a horizontal edge between adjacent groups (or users → first service) crosses a 40 px gap; the label
+#             sits in one of the two 61 px pockets either side of it, and the builder slides it in 4 px steps,
+#             so the box must leave a few px of slack                                   → 6 characters
+#   vertical  the label hangs left of the line and must stay inside the 100 px to the group's left border → 12
+# Bent edges carry no label at all (draw.io centres it on the corner). Keep in step with layout-and-style.md §5.
+LABEL_MAX_LANE, LABEL_MAX_BORDER, LABEL_MAX_VERTICAL = 16, 6, 12
+
 
 def layering(nodes: dict, edges: list) -> dict[str, int]:
     """Longest path from any source, ignoring back edges found by DFS so cycles do not matter."""
@@ -181,6 +191,14 @@ class Placement:
                 hard += 1
                 notes.append(f"'{cells[c]}' and '{nid}' share cell {c}")
             cells[c] = nid
+        # the rectangles the groups will be drawn as (see boxes()); a label's room depends on them, not on the
+        # logical group — one group split into two boxes puts a border between two of its own members
+        boxes = self.boxes(col, lane)
+        box_of: dict[str, int] = {}
+        for i, (gid, c0, c1, l0, l1) in enumerate(boxes):
+            for nid, d in self.nodes.items():
+                if d.get("group") == gid and c0 <= col[nid] <= c1 and l0 <= lane[nid] <= l1:
+                    box_of[nid] = i
         sides: dict[tuple[str, str], list[tuple[str, str]]] = defaultdict(list)   # (node, side) -> [(kind, role)]
         segs: list[tuple[str, float, float, float, str, str, str]] = []           # (orient, coord, lo, hi, leg, s, t)
         for e in self.edges:
@@ -190,6 +208,23 @@ class Placement:
             solid = not e.get("dashed")
             if (s, t) in self.spine and sl != tl:
                 soft += 80.0                                        # the request path stays on one lane
+            label = e.get("label")
+            if label and (sc == tc or sl == tl):                    # straight edge: will the label fit this geometry?
+                if sc == tc:
+                    limit = LABEL_MAX_VERTICAL
+                elif box_of.get(s) != box_of.get(t) and abs(sc - tc) == 1:
+                    limit = LABEL_MAX_BORDER
+                else:
+                    limit = LABEL_MAX_LANE
+                if len(label) > limit:
+                    if solid and len(label) <= LABEL_MAX_LANE:
+                        # it fits on a lane or a vertical edge somewhere — making that room is the planner's job,
+                        # otherwise an unrelated change elsewhere would decide whether this label survives
+                        hard += 1
+                        notes.append(f"edge {s}→{t}: label '{label}' does not fit here (max {limit}) — needs a cell "
+                                     "where the edge stays inside one group box or runs vertically")
+                    else:
+                        soft += 20.0 if solid else 4.0              # can fit nowhere: the builder's ERROR label says shorten
             if sc == tc:                                            # vertical straight
                 soft += 1.0 if solid else 0.0
                 segs.append(("v", sc, min(sl, tl), max(sl, tl), "only", s, t))
@@ -212,7 +247,7 @@ class Placement:
                 sides[(s, "R" if step > 0 else "L")].append(("straight", "out"))
                 sides[(t, "L" if step > 0 else "R")].append(("straight", "in"))
             else:                                                   # one bend, either orientation
-                soft += (3.0 if solid else 0.0) + (4.0 if e.get("label") else 0.0)   # a bend drops its label
+                soft += (3.0 if solid else 0.0) + (8.0 if e.get("label") else 0.0)   # a bend drops its label
                 step = 1 if tl > sl else -1
                 cstep = 1 if tc > sc else -1
                 v_cells = [(sc, l) for l in range(sl + step, tl + step, step)] + [(c, tl) for c in range(sc + cstep, tc, cstep)]
@@ -252,7 +287,6 @@ class Placement:
                 notes.append(f"node '{nid}': {len(uses)} edges on its {side} side that cannot share it")
         # groups are drawn as one or more rectangles that hold only their own members (see boxes());
         # fewer rectangles per group is better
-        boxes = self.boxes(col, lane)
         for gid in self.groups:
             n_boxes = sum(1 for b in boxes if b[0] == gid)
             soft += 12.0 * max(0, n_boxes - 1)
@@ -398,15 +432,6 @@ class Placement:
         spec = json.loads(json.dumps(self.spec))
         for n in spec["nodes"]:
             n["col"], n["lane"] = self.col[n["id"]], self.lane[n["id"]]
-        self.dropped_labels = []
-        for e in spec.get("edges", []):
-            s, t = e["from"], e["to"]
-            gs, gt = self.nodes[s].get("group"), self.nodes[t].get("group")
-            between_groups = gs and gt and gs != gt and abs(self.col[s] - self.col[t]) == 1
-            if e.get("label") and (self.lane[s] != self.lane[t] or between_groups):
-                # labels only on horizontal straights with room: a vertical one lands on a group title, one between
-                # two adjacent groups lands on the 40 px border gap (W7)
-                self.dropped_labels.append(f"{s} → {t} ('{e.pop('label')}')")
         groups_out, counter = [], defaultdict(int)
         for gid, c0, c1, l0, l1 in self.boxes(self.col, self.lane):
             counter[gid] += 1
@@ -417,8 +442,37 @@ class Placement:
                 if n.get("group") == gid and c0 <= n["col"] <= c1 and l0 <= n["lane"] <= l1:
                     n["group"] = bid
         spec["groups"] = groups_out
+        # labels are judged against the *drawn* boxes: one logical group may have become two boxes with a border
+        box_of = {n["id"]: n.get("group") for n in spec["nodes"]}
+        self.dropped_labels, self.too_long_primary = [], []
+        for e in spec.get("edges", []):
+            label = e.get("label")
+            if label:
+                problem = self.label_problem(e["from"], e["to"], label, box_of)
+                if problem:
+                    e.pop("label")
+                    text = f"{e['from']} → {e['to']} ('{label}'): {problem}"
+                    self.dropped_labels.append(text)
+                    # a primary (solid) relationship keeps its label or says "—" explicitly; the builder refuses the rest
+                    if "too long" in problem and not e.get("dashed"):
+                        self.too_long_primary.append(text)
         spec.pop("layout", None)
         return spec
+
+    def label_problem(self, s: str, t: str, label: str, box_of: dict[str, str | None]) -> str | None:
+        """Why `label` cannot stay on the placed edge s → t, or None when it fits (LABEL_MAX_* above)."""
+        if self.col[s] != self.col[t] and self.lane[s] != self.lane[t]:
+            return "bent edge — name the target instead; the guide carries the meaning"
+        if self.col[s] == self.col[t]:
+            limit, where = LABEL_MAX_VERTICAL, "a vertical edge"
+        elif box_of[s] != box_of[t] and abs(self.col[s] - self.col[t]) == 1:
+            limit, where = LABEL_MAX_BORDER, "an edge between adjacent groups"
+        else:
+            limit, where = LABEL_MAX_LANE, "an edge on one lane"
+        if len(label) > limit:
+            return (f"{len(label)} characters is too long for {where} (max {limit}) — shorten the Label in the brief, "
+                    "or write — when the pair explains itself")
+        return None
 
 
 def needs_layout(spec: dict) -> bool:
@@ -436,7 +490,8 @@ def plan(spec: dict, seed: int = 7, steps: int = 9000) -> tuple[dict, list[str]]
         c, notes = p.cost()
         if best_cost is None or c < best_cost:
             best_spec, best_cost = p.apply(), c
-            best_notes = list(notes) + [f"label dropped on bent edge {d} — name the target instead" for d in p.dropped_labels]
+            best_notes = list(notes) + [("label too long: " if d in p.too_long_primary else "label dropped: ") + d
+                                        for d in p.dropped_labels]
     return best_spec, best_notes
 
 
@@ -451,9 +506,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {args[1]}")
     for n in placed["nodes"]:
         print(f"  {n['id']:<24} col {n['col']:>2}  lane {n['lane']:>2}  {n.get('group') or 'outside'}")
-    hard = [n for n in notes if not n.startswith("label dropped")]
+    hard = [n for n in notes if not n.startswith("label dropped")]          # "label too long" is hard too
     for n in notes:
-        print(f"  {'unresolved' if not n.startswith('label dropped') else 'note'}: {n}")
+        tag = "note" if n.startswith("label dropped") else "ERROR label" if n.startswith("label too long") else "unresolved"
+        print(f"  {tag}: {n}")
     return 1 if hard else 0
 
 

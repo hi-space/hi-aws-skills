@@ -1,0 +1,33 @@
+{
+  "components": {
+    "mobile": "drawn",
+    "apigw": "drawn",
+    "cognito": "drawn",
+    "sqs": "drawn",
+    "dlq": "drawn",
+    "handler": "drawn",
+    "ddb": "drawn",
+    "sfn": "drawn",
+    "payment": "drawn",
+    "inventory": "drawn",
+    "sns": "drawn",
+    "customer": "drawn",
+    "cw": "drawn",
+    "s3": "drawn"
+  },
+  "relationships": {
+    "mobile → apigw": "primary",
+    "apigw → sqs": "primary",
+    "apigw → cognito": "aux",
+    "sqs → handler": "primary",
+    "handler → ddb": "primary",
+    "handler → sfn": "primary",
+    "sfn → payment": "primary",
+    "sfn → inventory": "primary",
+    "sfn → sns": "primary",
+    "sns → customer": "primary",
+    "apigw → cw": "aux",
+    "ddb → s3": "aux",
+    "sqs → dlq": "aux"
+  }
+}

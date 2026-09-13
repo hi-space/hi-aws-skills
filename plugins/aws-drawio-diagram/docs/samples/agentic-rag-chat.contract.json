@@ -1,0 +1,33 @@
+{
+  "components": {
+    "users": "drawn",
+    "s3web": "drawn",
+    "cf": "drawn",
+    "cognito": "drawn",
+    "apigw": "drawn",
+    "memory": "drawn",
+    "lambda": "drawn",
+    "bedrock": "drawn",
+    "sns": "drawn",
+    "cw": "drawn",
+    "oss": "drawn",
+    "s3docs": "drawn",
+    "eb": "drawn",
+    "ingest": "drawn"
+  },
+  "relationships": {
+    "users → cf": "primary",
+    "cf → s3web": "primary",
+    "cf → apigw": "primary",
+    "apigw → cognito": "aux",
+    "apigw → lambda": "primary",
+    "lambda → memory": "primary",
+    "lambda → bedrock": "primary",
+    "lambda → oss": "primary",
+    "apigw → cw": "aux",
+    "cw → sns": "primary",
+    "s3docs → eb": "primary",
+    "eb → ingest": "primary",
+    "ingest → oss": "primary"
+  }
+}

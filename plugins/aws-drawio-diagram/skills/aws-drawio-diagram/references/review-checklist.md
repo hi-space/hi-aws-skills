@@ -1,8 +1,9 @@
 # Phase 4 — Review checklist
 
-The Reviewer gets three things: the brief, the validator output, and the rendered PNG (plain export, no `-e`,
-so the Read tool can display it). The Reviewer does **not** get the spec or the XML first — judge the picture the
-way the user will, then open the spec to explain what to change.
+The Reviewer gets three things: the brief, the validator output, and the rendered PNG (`<name>.preview.png` —
+plain export, no `-e`, so the Read tool can display it; it is the same picture as `<name>.drawio.png` and is
+deleted once the verdict is `ready`, § E). The Reviewer does **not** get the spec or the XML first — judge the
+picture the way the user will, then open the spec to explain what to change.
 
 Report as a list of findings; each finding names the fix **as a spec change** (move node X to lane 2, drop the
 label on edge Y, widen group Z to cols [3,4]). The Drawer applies them and re-exports; the Reviewer looks again.
@@ -40,6 +41,10 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       log with `brief check SKIPPED` / `skipped`, is `not ready` whatever the Drawer's report says.
 - [ ] When the unit was split (from-source-code.md § 1): the split briefs' Components together equal the unit's
       inventory in Scope. Pages that add up to a fraction of the inventory are `not ready`.
+- [ ] **The contract held**: `<name>.contract.json` exists, the build log has no `ERROR contract`, and every
+      `note: … newly marked aux / not drawn` row names something the picture cannot show (an IAM role, a VPC, an
+      endpoint) — a relationship re-pointed at another service, or a service hidden so the layout converges, is
+      `not ready`. A brief that was rewritten and had its contract deleted without a Decisions line is `not ready`.
 - [ ] The builder exited 0 and the summary reads `0 errors, 0 warnings`. Read the codes, do not guess them:
       `W4`–`W9` are layout defects and the builder prints `Layout defects … NOT CLEAN` for them —
       W4 two-bend or long bend · W5 edge through an icon · W6 icon outside every group · W7 edge label on a
@@ -63,7 +68,12 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       (roughly equal margins); no half-empty page.
 - [ ] **Edges**: every edge is straight or has one bend; fan-out bends are all on the same side of the source;
       no two edges share a segment.
-- [ ] **Labels**: ≤ 5 edge labels for ~15 nodes; each in free space; each ≤ 2 words. Node labels ≤ 3 words.
+- [ ] **Edge labels**: every straight primary edge shows its brief label; each sits in free space, ≤ 16
+      characters, never on a corner. Compare the brief's Label column with the picture: a label missing on a
+      *straight* edge is a finding; a label missing on a *bent* edge is expected (the guide explains it). The
+      builder refuses (`ERROR label`) a primary label that does not fit, so a build that passed has none — a review
+      that reads "too long, acceptable" next to a solid edge describes a build that did not pass, and is `not
+      ready`. `note: label dropped … too long` on a dashed edge is allowed. Node labels ≤ 3 words.
 - [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
       group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend.
 - [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
@@ -79,11 +89,29 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       each a Decisions line; the `## Architecture review` header states the MCP call count and every source in
       a finding appears in *Sources consulted*.
 
+## E. Hand-off (after `ready`, before telling the user)
+
+- [ ] `<name>.guide.md` exists next to the `.drawio`, written from the template in `architecture-guide.md`, in the
+      brief's `Language:` (Korean prose with English service names for `ko`). Its step-by-step section has **one
+      numbered step per row of the brief's Relationships, numbered like the brief's `#`** — the same number as the
+      badge on that edge in the picture; aux rows not drawn say so. Its Services table has one row per Components
+      row, and Design decisions carries every Decisions line, every accepted review finding with its source, every
+      icon substitution and every trimmed aux edge.
+- [ ] `python3 <skill-dir>/scripts/check_guide.py <name>.guide.md <name>.brief.md` exits 0 (`guide check … ✓`).
+      It refuses the wrong language, a missing or mis-numbered step, a step that names the wrong endpoints, and a
+      component missing from Services. A guide that fails it is `not ready`, whatever it reads like.
+- [ ] Every edge on the picture shows its number badge and the numbers match the brief's `#` column (spot-check
+      three); a text label, where present, sits beside its badge, not under it.
+- [ ] `<name>.preview.png` has been deleted. The delivered image is `<name>.drawio.png` alone (XML embedded);
+      `ls` the directory and check — two identical-looking PNGs is a finding.
+
 ## Typical findings → spec fixes
 
 | Finding | Spec fix |
 |---|---|
 | Label on a group border | remove `label`, or move the node so the segment crosses a row gap, or set `label_offset` |
+| `note: label dropped … too long` | Architect shortens the brief's Label to the limit named (16 on a lane, 6 across a border, 12 vertical) and reruns the scaffold; or accepts the drop — the guide carries the full text |
+| Straight primary edge with no label although the brief has one | the label was dropped by hand — restore it in the spec; if it W7s, move the node so the segment crosses a row gap |
 | Node label runs into the neighbouring column | label > 22 characters and the builder could not split it (no space) — shorten or add a space before the qualifier |
 | Line disappears behind a node label | hand-written XML without the `B` port — use `exitY`/`entryY` = (78 + 4 + 18·lines)/78 with `*Perimeter=0` (layout-and-style.md §5) |
 | Dead column inside a group | move a neighbour into that cell or shrink the group's `cols` |

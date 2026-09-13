@@ -41,6 +41,60 @@ def test_phased_procedure_and_builder():
     assert (SKILL / "references" / "architecture-review.md").exists()
 
 
+def test_output_set_has_a_guide_and_a_single_final_png():
+    skill = SKILL_MD.read_text()
+    # the step-by-step companion is its own deliverable, written from a template
+    assert ".guide.md" in skill and "references/architecture-guide.md" in skill
+    guide = (SKILL / "references" / "architecture-guide.md").read_text()
+    for needle in ("## Step-by-step", "## Services", "## Design decisions", "Language:",
+                   "One step per row of the brief's Relationships"):
+        assert needle in guide, needle
+    # the preview PNG is a Reviewer working file: it is deleted once the verdict is `ready`
+    assert ".preview.png" in skill and "delete" in skill.lower()
+    review = (SKILL / "references" / "review-checklist.md").read_text()
+    assert ".guide.md" in review and ".preview.png" in review
+    # layout-and-style no longer describes a different companion file than SKILL.md does
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    assert "architecture-guide.md" in style and "name.md" not in style
+
+
+def test_relationship_labels_are_kept_when_they_fit():
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    assert "16 characters" in style and "6 characters" in style and "12 characters" in style
+    brief = (SKILL / "references" / "architecture-brief.md").read_text()
+    assert "Label on diagram" in brief and "≤ 16" in brief
+    review = (SKILL / "references" / "review-checklist.md").read_text()
+    assert "≤ 5 edge labels" not in review
+
+
+def test_contract_lock_and_title_band_are_documented():
+    skill = SKILL_MD.read_text()
+    assert ".contract.json" in skill
+    brief = (SKILL / "references" / "architecture-brief.md").read_text()
+    assert ".contract.json" in brief
+    review = (SKILL / "references" / "review-checklist.md").read_text()
+    assert ".contract.json" in review and "newly marked" in review
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    assert "title" in style.split("## 5.")[1].split("## 6.")[0].lower()
+    # a primary label that does not fit stops the build; "acceptable" is not a Reviewer verdict for it
+    assert "ERROR label" in skill and "ERROR label" in review and "ERROR label" in style
+
+
+def test_guide_is_numbered_in_the_users_language_and_checked_mechanically():
+    skill = SKILL_MD.read_text()
+    assert "Language:" in skill and "scripts/check_guide.py" in skill
+    guide = (SKILL / "references" / "architecture-guide.md").read_text()
+    for needle in ("Language:", "badge", "## 단계별 흐름", "## 서비스", "## 설계 결정", "step per relationship"):
+        assert needle in guide, needle
+    brief = (SKILL / "references" / "architecture-brief.md").read_text()
+    assert "Language:" in brief
+    review = (SKILL / "references" / "review-checklist.md").read_text()
+    assert "check_guide.py" in review and "badge" in review
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    assert "badge" in style.split("## 5.")[1].split("## 6.")[0]
+    assert (SKILL / "scripts" / "check_guide.py").exists()
+
+
 def test_architecture_review_is_evidence_only():
     text = (SKILL / "references" / "architecture-review.md").read_text()
     for needle in ("No source → no finding", "knowledge-mcp.global.api.aws", "retrieve_skill",

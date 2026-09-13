@@ -1,9 +1,9 @@
 ---
 name: aws-drawio-diagram
-description: "Generate editable AWS architecture diagrams as draw.io (.drawio) XML using draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio' — including 'analyse this repo / codebase and draw its AWS architecture' (source code is read as evidence, one detailed diagram per deployable unit). Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘, 코드 분석해서 아키텍처 그려줘. Not for HTML/SVG/PNG editorial diagrams — use the aws-diagram-design skill for those; use this one when the output must be opened and edited in draw.io."
+description: "Generate editable draw.io (.drawio) files you open and modify in diagrams.net — the output is an editable file, not a finished image (for a ready-to-embed picture, use the aws-diagram-design skill). Builds AWS architecture diagrams from draw.io's built-in official AWS icon stencils, with an optional PNG/SVG/PDF export that keeps the XML embedded. Use when the user asks for a draw.io / diagrams.net file, an editable diagram, or says 'drawio' — including 'analyse this repo / codebase and draw its AWS architecture' (source code is read as evidence, one detailed diagram per deployable unit). Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, drawio 파일로 만들어줘, 수정할 수 있는 아키텍처, 코드 분석해서 아키텍처 그려줘."
 license: MIT
 metadata:
-  version: "1.3.1"
+  version: "1.4.0"
   base: "vidanov/aws-architecture-diagram-skill 29c1bab (MIT) + regenerated stencil catalog, grid builder, validator, image fallbacks"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
@@ -27,10 +27,13 @@ hand it only the files named below; otherwise do the phases yourself in order an
 |---|---|---|---|---|
 | 1 | **Architect** | the request (or the codebase), this file's *Icon lookup* | `<name>.brief.md` (one per deployable unit) | [`references/architecture-brief.md`](references/architecture-brief.md); codebase input: [`references/from-source-code.md`](references/from-source-code.md) |
 | 2 | **Assessor** | the brief + AWS docs/skills via MCP | `## Architecture review` section in the brief | [`references/architecture-review.md`](references/architecture-review.md) |
-| 3 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
-| 4 | **Reviewer** | the brief, builder/validator output, the PNG | findings as spec changes → back to 3 | [`references/review-checklist.md`](references/review-checklist.md) |
+| 3 | **Drawer** | the brief | `<name>.json` → `<name>.drawio` (+ `.drawio.png`, `.preview.png`) | [`references/layout-and-style.md`](references/layout-and-style.md) |
+| 4 | **Reviewer** | the brief, builder/validator output, the preview PNG | findings as spec changes → back to 3; on `ready`: `<name>.guide.md`, preview deleted | [`references/review-checklist.md`](references/review-checklist.md), [`references/architecture-guide.md`](references/architecture-guide.md) |
 
-Output set for `<name>`: `brief.md` (also the companion guide), `json` (layout spec), `drawio`, `drawio.png`.
+Output set for `<name>`: `brief.md` (the contract), `guide.md` (step-by-step companion for the reader), `json` +
+`layout.json` (layout spec), `contract.json` (the brief's frozen ids and pairs), `drawio`, `drawio.png` (XML
+embedded — the one image that ships). `preview.png` is the Reviewer's working copy of the same picture and is
+deleted once the verdict is `ready`.
 A repo with several deployable units produces several output sets — never one diagram of abstract boxes.
 
 **Drawer and Reviewer are different contexts.** A Drawer that reviews its own picture passes it; every trial that
@@ -44,9 +47,13 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    an `Evidence` and `Provenance` column per row, relationships from IAM/env/event wiring. The brief must be as
    detailed as the code; a repo with 40 resources does not become a 6-box picture.
 1. Clarify only what changes the drawing: audience (technical vs executive), services in scope, PNG wanted?
-   One question at most; otherwise assume and record the assumption.
-2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, what,
-   sync/async, label or —), numbered flow, 2–7 role groups, the AWS sanity checklist, decisions.
+   One question at most; otherwise assume and record the assumption. Write `Language: ko` (or `en`, …) under the
+   title — **the language the user typed the request in**, not the language of the code or of this brief; the
+   guide is written in it later by a hat that never saw the request.
+2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, what
+   flows, sync/async, **Label on diagram**: the what-flows phrase in ≤ 16 characters for every primary
+   relationship, `—` only when the pair explains itself — architecture-brief.md § Labels), numbered flow, 2–7
+   role groups, the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
 4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): hubs keep their own column free
    above/below so their neighbours can stack beside them (bus edges), one representative edge into
@@ -79,7 +86,14 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 2. **Do not place nodes by hand.** Run `python3 <skill-dir>/scripts/scaffold_spec.py <name>.brief.md <name>.json`:
    it turns the brief's Components and Relationships tables into a coordinate-free spec (nodes with icon/image and
    group, edges with dashed/label). Fix any `warn:` it prints (unknown stencil → look it up; a relationship naming
-   an undrawn component → mark that row "not drawn" or add the component) by editing the **brief**, then rerun.
+   an undrawn component → mark that row "not drawn" or add the component; a primary Label that `can never fit`
+   — longer than 16 characters — shorten it or write `—`) by editing the **brief**, then rerun.
+   The first run also writes `<name>.contract.json` — the brief's component ids and `From → To` pairs, frozen.
+   From here the Drawer edits only Label text and "not drawn" markers; a changed id or pair fails the scaffold
+   and the build (`ERROR contract`), and every row newly marked aux / not drawn is printed as a `note:` for the
+   Reviewer. Only the Architect deletes the file, when the architecture itself changed, and says so under
+   Decisions. Re-pointing a relationship at a different service so the picture converges is the defect this
+   catches — a Bedrock endpoint does not become a Bedrock model because it was easier to draw.
 3. Build: `python3 <skill-dir>/scripts/build_diagram.py <name>.json <name>.drawio`. Nodes without coordinates are
    placed automatically (`scripts/layout.py`: request path left → right on one lane, hubs with their neighbours
    stacked beside them, groups as rectangles, users outside) and the placed spec is saved as
@@ -89,7 +103,12 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 4. Read the builder's output to the end. `unresolved:` lines mean two nodes cannot be joined with one bend in
    this placement — move one of them in `<name>.layout.json`; if a node has neighbours spread over four or more
    columns, that is the signal to split the diagram by request path (from-source-code.md § 1). `note: label
-   dropped` is fine (bent edges carry no label).
+   dropped … bent edge` is fine (the guide carries that relationship's meaning). **`ERROR label: label too long …`
+   stops the build**: a primary (solid) relationship's label does not fit the edge it landed on — shorten that Label
+   in the brief to the limit named (16 characters on a lane, 6 across a group border, 12 on a vertical edge), or
+   write `—` when the pair explains itself, and rerun the scaffold. Editing Label text is the Drawer's job, not a
+   brief change; "acceptable, the guide explains it" is not a verdict for a primary edge. On dashed (async/aux)
+   edges the same situation is only a `note:`.
    **Exit status 0 is the only pass**: any `ERROR` or `W4`–`W9` prints `Layout defects … NOT CLEAN` and exits 1
    — fix it by changing the spec (move a node, drop a label, widen a group, stack a hub's neighbours beside it);
    read the builder's `hint:` lines too. Never export, and never call the diagram done, on a non-zero exit.
@@ -102,7 +121,9 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 5. `W9 icon has no edge` means the brief lists a component with no relationship: either the Architect forgot the
    relationship (add the row) or the component does not belong in the picture (mark its row "not drawn" — VPC,
    NAT, ECR, IAM roles usually). The Drawer never solves it by deleting the node from the spec.
-6. Export (see *Export*) — always a plain preview PNG for the Reviewer, plus the `-e` embedded one for the user.
+6. Export (see *Export*) — `<name>.preview.png` (plain; the Read tool can open it) for the Reviewer and
+   `<name>.drawio.png` (`-e`, XML embedded; the Read tool cannot open it) for the user. Same picture, two files;
+   only the second one ships — Phase 4 deletes the preview.
 7. Hand-written XML is the fallback only when the spec cannot express something (multi-page, VPC/subnet
    nesting): follow layout-and-style.md §1–§6 literally and validate with `scripts/validate_drawio.py`.
 
@@ -116,11 +137,24 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    brief over-specified instrumentation (five edges into CloudWatch, a sink drawn from every service), trim the
    brief's relationship table to the representative edge, record why under Decisions, and continue.
 3. Done when: `brief check … ✓`, `0 errors, 0 warnings`, and a fresh look at the PNG finds nothing to fix.
-   Then tell the user the paths and any substitutions or assumptions from the brief. **Briefs alone are not a
-   deliverable**: the request was a diagram, so the run ends only when every output set named in `## Scope` has
-   its `.drawio` and PNGs — a "final report" with specs "ready for export" is an unfinished run. The brief is the
-contract, not "supporting documentation": a diagram whose rebuild fails the brief check is not deliverable even
-if its own validator line is clean.
+   Then, in this order:
+   - Write `<name>.guide.md` — the step-by-step companion, template and rules in
+     [`references/architecture-guide.md`](references/architecture-guide.md), in the brief's `Language:` (the
+     user's language — Korean prose with English service names for `ko`). **One numbered step per row of the
+     brief's Relationships, numbered like the brief's `#`** — that number is the badge the builder draws on the
+     edge, so the reader finds ③ on the picture and reads step 3. Text labels sit only on edges with room; the
+     guide explains every hop, in sentences, with the why.
+   - Run `python3 <skill-dir>/scripts/check_guide.py <name>.guide.md <name>.brief.md` — it refuses a guide in the
+     wrong language, a missing or mis-numbered step, a step that does not name both endpoints, or a component
+     absent from Services. Exit 0 is the only pass.
+   - **Delete `<name>.preview.png`.** The user receives one image, `<name>.drawio.png`; the preview was the
+     Reviewer's copy of the same picture.
+   - Tell the user the paths (`.drawio`, `.drawio.png`, `.guide.md`, `.brief.md`) and any substitutions or
+     assumptions from the brief.
+   **Briefs alone are not a deliverable**: the request was a diagram, so the run ends only when every output set
+   named in `## Scope` has its `.drawio`, `.drawio.png` and `.guide.md` — a "final report" with specs "ready for
+   export" is an unfinished run. The brief is the contract, not "supporting documentation": a diagram whose
+   rebuild fails the brief check is not deliverable even if its own validator line is clean.
 
 ## Two icon patterns — the rule that decides whether icons render
 
@@ -174,7 +208,8 @@ Quick grep when a name is on the tip of your tongue: `grep -ri "opensearch" <ski
 
 The look to match: [`docs/samples/`](../../docs/samples/) in the plugin root holds three complete output sets
 (`agentic-rag-chat`, `order-pipeline`, `iot-telemetry`: `.brief.md`, `.json`, `.drawio`, `.drawio.png`). Read a spec before
-writing your first one.
+writing your first one. `order-pipeline` also shows the finished `.guide.md` and a Label column filled for every
+primary relationship — 12 of its 13 edges carry their label on the picture.
 
 [`templates/`](templates/README.md) holds five upstream diagrams as a **topology** reference (which services
 connect to which). They predate the grid rules; do not copy their coordinates.
@@ -183,13 +218,15 @@ connect to which). They predate the grid rules; do not copy their coordinates.
 
 Install Amazon Ember before exporting when you can (layout-and-style.md §3); otherwise the PNG falls back to
 Helvetica/Arial. The `-e` export keeps the XML inside the PNG so it reopens in draw.io; the plain export is the
-one to look at with the Read tool. `-f svg` / `-f pdf` work the same way. If no CLI is available, say so and point
-to https://app.diagrams.net (File → Import). Never claim a PNG was produced without the file existing.
+one to look at with the Read tool (it cannot open the embedded one). The two files are the same picture — the
+preview exists only for the review and is deleted in Phase 4. `-f svg` / `-f pdf` work the same way. If no CLI is
+available, say so and point to https://app.diagrams.net (File → Import). Never claim a PNG was produced without
+the file existing.
 
 ```bash
 # Linux (drawio CLI on PATH). Headless servers: prefix with `xvfb-run -a`.
-drawio -x -f png -e -b 10 -o name.drawio.png name.drawio     # deliverable, XML embedded
-drawio -x -f png -b 10 -o name.preview.png name.drawio        # for review with the Read tool
+drawio -x -f png -e -b 10 -o name.drawio.png name.drawio     # deliverable, XML embedded — the one image that ships
+drawio -x -f png -b 10 -o name.preview.png name.drawio        # Reviewer's copy for the Read tool — deleted after `ready`
 # macOS
 /Applications/draw.io.app/Contents/MacOS/draw.io -x -f png -e -b 10 -o name.drawio.png name.drawio
 ```

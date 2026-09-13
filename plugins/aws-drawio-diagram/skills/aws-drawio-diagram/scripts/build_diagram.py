@@ -72,6 +72,8 @@ GROUP_HALF_W, GROUP_GAP = 100, 40
 GROUP_ABOVE, GROUP_BELOW = 60, 46
 CLOUD_PAD = 40
 LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_HALF_H = 6.2, 8, 8   # keep in step with validate_drawio
+TITLE_BAND = 28                                          # px: a container's title row — no edge label sits on it (validate_drawio)
+BADGE_H = 18                                             # px: edge number badge (11 pt bold on a dark pill); width 10 + 7/digit
 LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 22       # node label: px per line, gap under the icon, chars per line
 TITLE_Y = 32
 LEGEND_W = 300
@@ -286,40 +288,61 @@ class Builder:
         return round((ICON + self.label_h(n)) / ICON, 3)
 
     @staticmethod
-    def free_label_offset(e, d, label, node_xy, borders, label_h) -> float:
-        """Relative position (-1 source … 1 target) along a straight edge where the label box covers no
-        container border; the position nearest the midpoint wins, 0 if none is free (W7 will say so)."""
+    def badge_x_at_corner(leg1: float, leg2: float) -> float:
+        """draw.io relative x (-1 source … 1 target, measured by length) of the corner of an L edge."""
+        total = leg1 + leg2
+        return round(2 * leg1 / total - 1, 3) if total else 0.0
+
+    @staticmethod
+    def edge_run(e, d, node_xy, label_h):
+        """(a, b, line, horizontal): the free run of a straight edge between its two icons — x-range a..b on a
+        horizontal edge (line = its y), y-range on a vertical one (line = its x); the vertical run starts under
+        the upper node's label."""
         sx, sy = node_xy[e["from"]]
         tx, ty = node_xy[e["to"]]
-        half_w = LABEL_CHAR_PX * len(label) / 2 + LABEL_PAD_PX
         if d in ("right", "left"):
-            x1, x2 = (sx + ICON, tx) if d == "right" else (tx + ICON, sx)
-            line_y = sy + ICON / 2
-            def box(k):
-                cx = (x1 + x2) / 2 + k * (x2 - x1) / 2 * (1 if d == "right" else -1)
-                return (cx - half_w, line_y - 2 * LABEL_HALF_H, cx + half_w, line_y), (x1 + half_w <= cx <= x2 - half_w)
-        else:
-            y1, y2 = (sy + ICON + label_h[e["from"]], ty) if d == "down" else (ty + ICON + label_h[e["to"]], sy)
-            line_x = sx + ICON / 2
-            def box(k):
-                cy = (y1 + y2) / 2 + k * (y2 - y1) / 2 * (1 if d == "down" else -1)
-                cx = line_x - half_w - 4
-                return (cx - half_w, cy - LABEL_HALF_H, cx + half_w, cy + LABEL_HALF_H), (y1 + LABEL_HALF_H <= cy <= y2 - LABEL_HALF_H)
+            a, b = (sx + ICON, tx) if d == "right" else (tx + ICON, sx)
+            return a, b, sy + ICON / 2, True
+        a, b = (sy + ICON + label_h[e["from"]], ty) if d == "down" else (ty + ICON + label_h[e["to"]], sy)
+        return a, b, sx + ICON / 2, False
 
-        def clear(b):
+    @staticmethod
+    def box_at(e, d, k, half_w, half_h, place, node_xy, label_h):
+        """Box of a label-like thing at relative position k along a straight edge: `above` the line (text on a
+        horizontal edge), `left` of it (text on a vertical edge) or `on` it (a number badge). Also whether its
+        centre still lies within the free run."""
+        a, b, line, horizontal = Builder.edge_run(e, d, node_xy, label_h)
+        sign = 1 if d in ("right", "down") else -1
+        c = (a + b) / 2 + k * (b - a) / 2 * sign
+        if horizontal:
+            cy = line - half_h if place == "above" else line
+            return (c - half_w, cy - half_h, c + half_w, cy + half_h), a + half_w <= c <= b - half_w
+        cx = line - half_w - 4 if place == "left" else line
+        return (cx - half_w, c - half_h, cx + half_w, c + half_h), a + half_h <= c <= b - half_h
+
+    @staticmethod
+    def free_offset(e, d, half_w, half_h, place, node_xy, borders, label_h, avoid=(), prefer=None):
+        """Relative position along a straight edge where the box covers no container border or title row and none
+        of the `avoid` boxes: `prefer` first, then the midpoint, then outwards in 1/20 steps. None if nothing is
+        free (the validator's W7 will say so)."""
+        def clear(bx):
             for gx, gy, gw, gh in borders:
-                hit_v = any(b[0] <= bx <= b[2] for bx in (gx, gx + gw)) and b[1] < gy + gh and b[3] > gy
-                hit_h = any(b[1] <= by <= b[3] for by in (gy, gy + gh)) and b[0] < gx + gw and b[2] > gx
-                if hit_v or hit_h:
+                hit_v = any(bx[0] <= x <= bx[2] for x in (gx, gx + gw)) and bx[1] < gy + gh and bx[3] > gy
+                hit_h = any(bx[1] <= y <= bx[3] for y in (gy, gy + gh)) and bx[0] < gx + gw and bx[2] > gx
+                on_title = bx[0] < gx + gw and bx[2] > gx and bx[1] < gy + TITLE_BAND and bx[3] > gy
+                if hit_v or hit_h or on_title:
+                    return False
+            for o in avoid:
+                if bx[0] < o[2] and bx[2] > o[0] and bx[1] < o[3] and bx[3] > o[1]:
                     return False
             return True
 
-        for step in range(0, 20):
-            for k in ((0.0,) if step == 0 else (-step / 20, step / 20)):
-                b, inside = box(k)
-                if inside and clear(b):
-                    return round(k, 2)
-        return 0.0
+        candidates = ([prefer] if prefer is not None else []) + [0.0] + [s * k / 20 for k in range(1, 20) for s in (-1, 1)]
+        for k in candidates:
+            bx, inside = Builder.box_at(e, d, k, half_w, half_h, place, node_xy, label_h)
+            if inside and clear(bx):
+                return round(k, 2)
+        return None
 
     # ---- emit ---------------------------------------------------------------------------------
     def vertex(self, cid, value, style, x, y, w, h, parent="1"):
@@ -412,6 +435,7 @@ class Builder:
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"fontFamily={font};fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;")
         for i, e in enumerate(edges, 1):
+            eid = e.get("id", f"e{i}")
             d, exit_p, entry_p, kind = self.edge_geometry(e)
             style = base_edge + exit_p + entry_p
             if e.get("dashed"):
@@ -419,36 +443,74 @@ class Builder:
             if e.get("error"):
                 style += "dashed=1;strokeColor=#DD344C;"
             label = e.get("label", "")
-            geo_x = ""
+            geo_x, text_box = "", None
             if label and kind != "straight":
                 raise SpecError(f"edge {e['from']}→{e['to']}: a bent edge cannot carry a label (draw.io centres it on the "
                                 "corner). Drop the label or put the target on the source's lane/column")
             if label:
-                if kind == "straight" and d in ("right", "left"):
-                    style += "verticalAlign=bottom;"
-                elif kind == "straight":
-                    style += "align=right;spacingRight=4;"
+                place = "above" if d in ("right", "left") else "left"
+                style += "verticalAlign=bottom;" if place == "above" else "align=right;spacingRight=4;"
+                half_w = LABEL_CHAR_PX * len(label) / 2 + LABEL_PAD_PX
                 offset = e.get("label_offset")
-                if offset is None and kind == "straight":
-                    offset = self.free_label_offset(e, d, label, node_xy, borders, label_h)
+                if offset is None:
+                    offset = self.free_offset(e, d, half_w, LABEL_HALF_H, place, node_xy, borders, label_h)
+                    if offset is None:
+                        offset = 0.0                                 # nothing free: W7 will name it
                 if offset:
                     geo_x = f' x="{offset}"'
+                text_box, _ = self.box_at(e, d, offset, half_w, LABEL_HALF_H, place, node_xy, label_h)
             val = f' value="{attr(label)}"' if label else ""
             # A bent edge leaves under the source label, i.e. from a point outside the shape; draw.io's router
             # then picks the first leg's direction itself and may go sideways along the label. Pin the corner.
-            pts = ""
+            pts, corner = "", None
+            sx, sy = node_xy[e["from"]]
+            tx, ty = node_xy[e["to"]]
             if kind == "bend":                                   # corner on the source's column, target's lane
-                cx = node_xy[e["from"]][0] + ICON // 2
-                cy = node_xy[e["to"]][1] + ICON // 2
-                pts = f'<Array as="points"><mxPoint x="{cx}" y="{cy}"/></Array>'
+                corner = (sx + ICON // 2, ty + ICON // 2)
             elif kind == "bend-h":                               # corner on the source's lane, target's column
-                cx = node_xy[e["to"]][0] + ICON // 2
-                cy = node_xy[e["from"]][1] + ICON // 2
-                pts = f'<Array as="points"><mxPoint x="{cx}" y="{cy}"/></Array>'
+                corner = (tx + ICON // 2, sy + ICON // 2)
+            if corner:
+                pts = f'<Array as="points"><mxPoint x="{corner[0]}" y="{corner[1]}"/></Array>'
             geo = f'<mxGeometry{geo_x} relative="1" as="geometry">{pts}</mxGeometry>' if pts else f'<mxGeometry{geo_x} relative="1" as="geometry"/>'
             self.cells.append(
-                f'<mxCell id="{e.get("id", f"e{i}")}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
+                f'<mxCell id="{eid}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
                 f'{geo}</mxCell>')
+
+            # the relationship number as a badge on the line — the link between the picture and the guide's steps
+            num = e.get("num")
+            if num is None:
+                continue
+            badge_hw = (10 + 7 * len(str(num))) / 2
+            if kind == "straight":
+                prefer = None
+                if text_box is not None:                         # beside the text: before it in reading order
+                    a, b, line, horizontal = self.edge_run(e, d, node_xy, label_h)
+                    sign = 1 if d in ("right", "down") else -1
+                    mid, half_run = (a + b) / 2, (b - a) / 2
+                    if horizontal:
+                        centre = (text_box[0] + text_box[2]) / 2 - ((text_box[2] - text_box[0]) / 2 + badge_hw + 4)
+                    else:
+                        centre = (text_box[1] + text_box[3]) / 2 - (LABEL_HALF_H + BADGE_H / 2 + 2)
+                    prefer = round((centre - mid) / half_run / sign, 2) if half_run else None
+                bx = self.free_offset(e, d, badge_hw, BADGE_H / 2, "on", node_xy, borders, label_h,
+                                      avoid=[text_box] if text_box else (), prefer=prefer)
+                if bx is None:
+                    bx = 0.0
+            else:                                                # at the corner of the L
+                if kind == "bend":
+                    p = (sx + ICON // 2, sy if corner[1] < sy else sy + ICON + label_h[e["from"]])
+                    q = (tx if corner[0] < tx else tx + ICON, ty + ICON // 2)
+                else:
+                    p = (sx if corner[0] < sx else sx + ICON, sy + ICON // 2)
+                    q = (tx + ICON // 2, ty if corner[1] < ty else ty + ICON + label_h[e["to"]])
+                leg1 = abs(corner[0] - p[0]) + abs(corner[1] - p[1])
+                leg2 = abs(q[0] - corner[0]) + abs(q[1] - corner[1])
+                bx = self.badge_x_at_corner(leg1, leg2)
+            self.cells.append(
+                f'<mxCell id="{eid}_n" value="{num}" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;'
+                f'points=[];fontFamily={font};fontSize=11;fontStyle=1;fontColor=#FFFFFF;labelBackgroundColor=#232F3E;'
+                f'labelBorderColor=#232F3E;" vertex="1" connectable="0" parent="{eid}">'
+                f'<mxGeometry x="{bx}" y="0" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>')
 
         name = spec.get("page", spec.get("title", "Page-1"))
         return ('<mxfile host="app.diagrams.net">'
@@ -502,6 +564,110 @@ def _table_rows(text: str, heading: str) -> list[list[str]]:
             continue
         rows.append(cells)
     return rows[1:] if rows else []
+
+
+def _kind_column(brief_text: str) -> int | None:
+    """Index of the Kind column in the Relationships table header, if any."""
+    import re
+    m = re.search(r"^##\s+Relationships\b.*?$", brief_text, re.M)
+    if not m:
+        return None
+    for line in brief_text[m.end():].splitlines():
+        if line.lstrip().startswith("|"):
+            cells = [c.strip().lower() for c in line.strip().strip("|").split("|")]
+            return next((i for i, c in enumerate(cells) if c.startswith("kind")), None)
+    return None
+
+
+def brief_contract(brief_text: str) -> dict:
+    """The part of a brief the Drawer may never change: component ids and `From → To` pairs, each with its
+    drawn / aux / not-drawn status (statuses may only move towards 'drawn' without a note)."""
+    import re
+    comps = {}
+    for row in _table_rows(brief_text, "Components"):
+        cid = row[0].strip("`* ")
+        if cid:
+            comps[cid] = "not drawn" if re.search(r"not drawn", " ".join(row), re.I) else "drawn"
+    rels, k_i = {}, _kind_column(brief_text)
+    for row in _table_rows(brief_text, "Relationships"):
+        pair = None
+        for cell in row:
+            mm = re.search(r"([A-Za-z0-9_\-]+)\s*(?:→|->)\s*([A-Za-z0-9_\-]+)", cell)
+            if mm:
+                pair = f"{mm.group(1)} → {mm.group(2)}"
+                break
+        if not pair:
+            continue
+        kind = row[k_i] if k_i is not None and k_i < len(row) else " ".join(row)
+        rels[pair] = ("not drawn" if re.search(r"not drawn", kind, re.I)
+                      else "aux" if re.search(r"\baux\b", kind, re.I) else "primary")
+    return {"components": comps, "relationships": rels}
+
+
+def contract_path_for(brief_path: Path) -> Path:
+    name = brief_path.name
+    return brief_path.with_name(name[:-len(".brief.md")] + ".contract.json") if name.endswith(".brief.md") \
+        else brief_path.with_suffix(".contract.json")
+
+
+def contract_check(brief_text: str, contract_path: Path) -> tuple[list[str], list[str]]:
+    """Freeze the brief's ids and pairs on the first Phase 3 run; afterwards refuse a brief whose ids or
+    `From → To` pairs changed (the Drawer edits Label text and 'not drawn' markers, nothing else) and report
+    rows that were newly marked aux / not drawn so the Reviewer sees the shrinkage. Returns (errors, notes)."""
+    now = brief_contract(brief_text)
+    if not contract_path.exists():
+        contract_path.write_text(json.dumps(now, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        return [], [f"contract written: {contract_path.name} ({len(now['components'])} components, "
+                    f"{len(now['relationships'])} relationships) — ids and From → To pairs are frozen from here; only the "
+                    "Architect deletes this file, when the architecture itself changed, and says so under Decisions"]
+    old = json.loads(contract_path.read_text(encoding="utf-8"))
+    errors, notes = [], []
+    hint = (f" — the Drawer does not edit ids or From → To; if the Architect changed the architecture, delete "
+            f"{contract_path.name} and record the change under Decisions")
+    removed_c = sorted(set(old["components"]) - set(now["components"]))
+    added_c = sorted(set(now["components"]) - set(old["components"]))
+    if removed_c or added_c:
+        errors.append(f"brief contract: components changed since {contract_path.name}"
+                      + (f" — removed: {', '.join(removed_c)}" if removed_c else "")
+                      + (f" — added: {', '.join(added_c)}" if added_c else "") + hint)
+    removed_r = [p for p in old["relationships"] if p not in now["relationships"]]
+    added_r = [p for p in now["relationships"] if p not in old["relationships"]]
+    hard_removed = [p for p in removed_r if old["relationships"][p] == "primary"]
+    soft_removed = [p for p in removed_r if old["relationships"][p] != "primary"]
+    if hard_removed or added_r:
+        errors.append(f"brief contract: relationships changed since {contract_path.name}"
+                      + (f" — removed: {'; '.join(hard_removed)}" if hard_removed else "")
+                      + (f" — added: {'; '.join(added_r)}" if added_r else "") + hint)
+    if soft_removed:
+        notes.append(f"note: aux relationships removed from the brief since the contract: {'; '.join(soft_removed)} "
+                     "(the Reviewer's trim — record it under Decisions)")
+    rank = {"drawn": 0, "primary": 0, "aux": 1, "not drawn": 2}
+    shrunk = [f"{k} ({old['components'][k]} → {v})" for k, v in now["components"].items()
+              if k in old["components"] and rank[v] > rank[old["components"][k]]]
+    shrunk += [f"{k} ({old['relationships'][k]} → {v})" for k, v in now["relationships"].items()
+               if k in old["relationships"] and rank[v] > rank[old["relationships"][k]]]
+    if shrunk:
+        notes.append(f"note: {len(shrunk)} row(s) newly marked aux / not drawn since the contract: {'; '.join(shrunk)} — "
+                     "the Reviewer checks each is something the picture cannot show, not a layout shortcut")
+    return errors, notes
+
+
+def fill_nums(spec: dict, brief_text: str) -> None:
+    """Give edges that have no `num` the brief's # for their From → To pair (hand-written specs; scaffolded ones
+    carry it already). The number becomes the badge on the edge and the step number in the guide."""
+    import re
+    nums: dict[tuple[str, str], int] = {}
+    for row in _table_rows(brief_text, "Relationships"):
+        if not (row and row[0].strip().isdigit()):
+            continue
+        for cell in row:
+            mm = re.search(r"([A-Za-z0-9_\-]+)\s*(?:→|->)\s*([A-Za-z0-9_\-]+)", cell)
+            if mm:
+                nums[(mm.group(1), mm.group(2))] = int(row[0])
+                break
+    for e in spec.get("edges", []):
+        if "num" not in e and (e["from"], e["to"]) in nums:
+            e["num"] = nums[(e["from"], e["to"])]
 
 
 def brief_check(brief_text: str, spec: dict) -> tuple[list[str], str]:
@@ -599,17 +765,35 @@ def main(argv: list[str] | None = None) -> int:
               f"{max(n['lane'] for n in spec['nodes']) + 1} lanes, {len(spec['groups'])} group boxes → {planned.name} "
               "(edit that file and rebuild from it to adjust)")
         for n in notes:
-            print(f"  {'note' if n.startswith('label dropped') else 'unresolved'}: {n}")
+            tag = "note" if n.startswith("label dropped") else "ERROR label" if n.startswith("label too long") else "unresolved"
+            print(f"  {tag}: {n}")
+        too_long = [n for n in notes if n.startswith("label too long")]
+        if too_long:
+            print(f"NOT CLEAN: {len(too_long)} primary relationship label(s) do not fit — shorten each in the brief's Label "
+                  "column to the limit named, or write — when the pair explains itself, then re-run the scaffold. A primary "
+                  "edge without its label is not an accepted trade-off; the placed spec is in the .layout.json for inspection")
+            return 1
+    if brief_path is None and "--no-brief" not in flags:
+        candidate = spec_path.with_suffix(".brief.md")
+        brief_path = candidate if candidate.exists() else None
+    if brief_path is not None:
+        fill_nums(spec, brief_path.read_text(encoding="utf-8"))
     try:
         xml = build(spec)
     except SpecError as exc:
         print(f"ERROR spec: {exc}")
         return 1
-    if brief_path is None and "--no-brief" not in flags:
-        candidate = spec_path.with_suffix(".brief.md")
-        brief_path = candidate if candidate.exists() else None
     if brief_path is not None:
-        errors, summary = brief_check(brief_path.read_text(encoding="utf-8"), spec)
+        brief_text = brief_path.read_text(encoding="utf-8")
+        c_errors, c_notes = contract_check(brief_text, contract_path_for(brief_path))
+        for n in c_notes:
+            print(f"  {n}")
+        for err in c_errors:
+            print(f"ERROR contract: {err}")
+        if c_errors:
+            print("NOT CLEAN: the brief's ids or From → To pairs changed after the contract was written — restore the brief")
+            return 1
+        errors, summary = brief_check(brief_text, spec)
         for err in errors:
             print(f"ERROR brief: {err}")
         if errors:

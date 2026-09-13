@@ -17,6 +17,7 @@ Phase 1, not a stylistic choice.
 # <Title>
 
 <One sentence: what the system does and for whom.>  Audience: technical | executive.
+Language: ko   <!-- the language the USER wrote the request in — the guide is written in it; service names stay English -->
 
 ## Components
 | id | Service (stencil) | Role in this system | Group |
@@ -30,9 +31,10 @@ Phase 1, not a stylistic choice.
 | # | From → To | What flows | Kind | Label on diagram |
 |---|---|---|---|---|
 | 1 | users → cf | HTTPS requests | sync | HTTPS |
-| 2 | cf → s3web | static assets | sync | — |
-| 3 | apigw → cognito | token validation | async/aux (dashed) | — |
+| 2 | cf → s3web | static assets | sync | static assets |
+| 3 | apigw → cognito | token validation | async/aux (dashed) | verify JWT |
 | 4 | lambda → oss | vector query | sync | retrieve |
+| 5 | lambda → ddb | session read/write | sync | — |
 
 ## Flow (numbered, matches the relationships)
 1. Users reach CloudFront over HTTPS; …
@@ -55,6 +57,28 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 - No Guardrails icon in draw.io: guardrails are described, not drawn.
 - R1 (WAF in front of API Gateway) accepted for v1 — source: Serverless Applications Lens, <url>.
 ```
+
+## The `#` column is the badge on the edge
+
+Every relationship's `#` is drawn on its edge as a small number badge and is the step number in `<name>.guide.md`
+— the reader's link between picture and text. Number rows 1…n in flow order and **never renumber after Phase 3
+starts** (a renumbered brief makes the picture disagree with the guide). Aux rows keep their numbers even when not
+drawn; their step in the guide says so.
+
+## Labels — the picture carries what fits, the guide carries the rest
+
+The *Label on diagram* column is filled for **every primary relationship**: the *What flows* phrase, ≤ 16
+characters, no commas (`static assets`, `verify JWT`, `StartExecution`, `publish status`). Write `—` only when the
+pair already says it (Lambda → DynamoDB with nothing to add). Aux rows take a label too when one word names
+them (`metrics`, `export`).
+
+The Drawer's tools decide per placed edge whether the label has room — 16 characters on one lane, 6 across a
+group border (`HTTPS`), 12 on a vertical edge, none on a bent edge (layout-and-style.md § 5) — and print a
+`note:` for every label they drop on a bent or dashed edge. A too-long label on a **primary** relationship stops
+the build (`ERROR label`) until it is shortened to the limit named or replaced by `—` — so write them short from
+the start (`SQL`, `verify JWT`, `invoke`), not as protocol strings (`PostgreSQL 5432 (via bedrock Lambda)`). What
+the picture cannot show, `<name>.guide.md` explains step by step (architecture-guide.md); nothing in this table is
+lost, it only moves.
 
 ## Diagram budget — decide it here, not in the drawing
 
@@ -114,6 +138,12 @@ than the brief (and a brief whose `Components: N · Relationships: M` line no lo
 thing a picture cannot show — a Cognito domain, an IAM role), every `From → To` in Relationships must be an edge
 with that direction unless its Kind contains `aux`, and the spec may hold nothing the brief does not list. So
 write ids the Drawer can use verbatim, and put the aux marker where you mean "optional in the picture".
+
+The first scaffold run also freezes the brief: `<name>.contract.json` records every component id and every
+`From → To` pair with its status (drawn / aux / not drawn). Afterwards the scaffold and the builder refuse a brief
+whose ids or pairs differ (`ERROR contract`) and print a `note:` for every row newly marked aux or not drawn. The
+Drawer's licence is Label text and "not drawn" markers — never the target of a relationship. When *you* change
+the architecture after Phase 3 started, delete the contract file and write the reason under Decisions.
 
 ## What the Drawer needs from the brief
 

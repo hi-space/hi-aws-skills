@@ -290,3 +290,49 @@ def test_cli_runs_the_brief_check_when_the_brief_sits_next_to_the_spec(tmp_path)
     r = subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(p), str(tmp_path / "s.drawio"), "--no-brief"],
                        capture_output=True, text=True)
     assert r.returncode == 0
+
+
+def test_vertical_label_between_group_rows_clears_the_title_band():
+    # a (row 1) → c (row 2, same column) with an 11-character label: the only free pocket is inside the
+    # lower group, and the builder must put the label BELOW that group's title row, not on it.
+    s = {
+        "title": "t",
+        "groups": [{"id": "g", "label": "Compute", "cols": [1], "lanes": [0]},
+                   {"id": "h", "label": "Data", "cols": [1], "lanes": [1]}],
+        "nodes": [{"id": "u", "label": "Users", "icon": "users", "col": 0, "lane": 0, "outside": True},
+                  {"id": "a", "label": "API Gateway", "icon": "api_gateway", "col": 1, "lane": 0, "group": "g"},
+                  {"id": "c", "label": "ElastiCache", "icon": "elasticache", "col": 1, "lane": 1, "group": "h"}],
+        "edges": [{"from": "u", "to": "a"}, {"from": "a", "to": "c", "label": "Valkey 6379"}],
+    }
+    xml = bd.build(s)
+    assert 'value="Valkey 6379"' in xml                      # the label survived
+    assert vd.validate_text(xml, INDEX) == ([], [])          # and lands on neither a border nor a title
+
+
+def test_every_numbered_edge_gets_a_badge_child_and_the_picture_stays_clean():
+    import xml.etree.ElementTree as ET
+    s = spec()
+    for i, e in enumerate(s["edges"], 1):
+        e["num"] = i
+    s["edges"].append({"from": "b", "to": "c", "num": 9})          # an L: badge goes to the corner
+    xml = bd.build(s)
+    cells = {c.get("id"): c for c in ET.fromstring(xml).iter("mxCell")}
+    badges = [c for c in cells.values() if "edgeLabel" in (c.get("style") or "")]
+    assert len(badges) == len(s["edges"])
+    for b in badges:
+        parent = cells[b.get("parent")]
+        assert parent.get("edge") == "1" and b.get("vertex") == "1" and b.get("connectable") == "0"
+        g = b.find("mxGeometry")
+        assert g.get("relative") == "1" and -1 <= float(g.get("x")) <= 1
+    by_edge = {cells[b.get("parent")].get("source") + "→" + cells[b.get("parent")].get("target"): b for b in badges}
+    assert by_edge["u→a"].get("value") == "1" and by_edge["b→c"].get("value") == "9"
+    # the badge next to a text label sits beside it, not under it: different position along the edge
+    e1 = cells[by_edge["u→a"].get("parent")]
+    assert float(by_edge["u→a"].find("mxGeometry").get("x")) != float(e1.find("mxGeometry").get("x") or 0)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+
+
+def test_corner_fraction_maps_to_drawio_relative_x():
+    # relative x runs -1 (source) … 1 (target) along the whole polyline; the corner is at leg1 / (leg1 + leg2)
+    assert bd.Builder.badge_x_at_corner(100, 100) == 0.0
+    assert bd.Builder.badge_x_at_corner(131, 201) == round(2 * 131 / 332 - 1, 3)

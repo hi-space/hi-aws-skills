@@ -4,42 +4,268 @@
   "title": "이벤트 기반 주문 처리 파이프라인",
   "subtitle": "Event-driven order processing · hi-aws-skills sample · 2026-09-12 · v1",
   "groups": [
-    {"id": "g_api", "label": "API & Ingestion", "cols": [1, 2], "lanes": [0, 1]},
-    {"id": "g_order", "label": "Order processing", "cols": [3], "lanes": [1, 2]},
-    {"id": "g_wf", "label": "Payment & inventory workflow", "cols": [4, 5], "lanes": [0, 1]},
-    {"id": "g_notify", "label": "Notification", "cols": [4], "lanes": [2]},
-    {"id": "g_obs", "label": "Observability", "cols": [1], "lanes": [2]},
-    {"id": "g_archive", "label": "Archive", "cols": [2], "lanes": [2]}
+    {
+      "id": "g_api",
+      "label": "API & Ingestion",
+      "cols": [
+        1,
+        2
+      ],
+      "lanes": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "g_order",
+      "label": "Order processing",
+      "cols": [
+        3
+      ],
+      "lanes": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": "g_wf",
+      "label": "Payment & inventory workflow",
+      "cols": [
+        4,
+        5
+      ],
+      "lanes": [
+        0,
+        1
+      ]
+    },
+    {
+      "id": "g_notify",
+      "label": "Notification",
+      "cols": [
+        4
+      ],
+      "lanes": [
+        2
+      ]
+    },
+    {
+      "id": "g_obs",
+      "label": "Observability",
+      "cols": [
+        1
+      ],
+      "lanes": [
+        2
+      ]
+    },
+    {
+      "id": "g_archive",
+      "label": "Archive",
+      "cols": [
+        2
+      ],
+      "lanes": [
+        2
+      ]
+    }
   ],
   "nodes": [
-    {"id": "mobile", "label": "Mobile app", "icon": "mobile_client", "col": 0, "lane": 1, "outside": true},
-    {"id": "apigw", "label": "API Gateway", "icon": "api_gateway", "col": 1, "lane": 1, "group": "g_api"},
-    {"id": "cognito", "label": "Cognito", "icon": "cognito", "col": 1, "lane": 0, "group": "g_api"},
-    {"id": "sqs", "label": "SQS (orders)", "icon": "sqs", "col": 2, "lane": 1, "group": "g_api"},
-    {"id": "dlq", "label": "SQS (DLQ)", "icon": "sqs", "col": 2, "lane": 0, "group": "g_api"},
-    {"id": "handler", "label": "Order handler", "icon": "lambda", "col": 3, "lane": 1, "group": "g_order"},
-    {"id": "ddb", "label": "DynamoDB (orders)", "icon": "dynamodb", "col": 3, "lane": 2, "group": "g_order"},
-    {"id": "sfn", "label": "Step Functions", "icon": "step_functions", "col": 4, "lane": 1, "group": "g_wf"},
-    {"id": "payment", "label": "Payment", "icon": "lambda", "col": 5, "lane": 0, "group": "g_wf"},
-    {"id": "inventory", "label": "Inventory", "icon": "lambda", "col": 5, "lane": 1, "group": "g_wf"},
-    {"id": "sns", "label": "SNS (order status)", "icon": "sns", "col": 4, "lane": 2, "group": "g_notify"},
-    {"id": "customer", "label": "Customer", "icon": "user", "col": 6, "lane": 2, "outside": true},
-    {"id": "cw", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 1, "lane": 2, "group": "g_obs"},
-    {"id": "s3", "label": "S3 (order archive)", "icon": "s3", "col": 2, "lane": 2, "group": "g_archive"}
+    {
+      "id": "mobile",
+      "label": "Mobile app",
+      "icon": "mobile_client",
+      "col": 0,
+      "lane": 1,
+      "outside": true
+    },
+    {
+      "id": "apigw",
+      "label": "API Gateway",
+      "icon": "api_gateway",
+      "col": 1,
+      "lane": 1,
+      "group": "g_api"
+    },
+    {
+      "id": "cognito",
+      "label": "Cognito",
+      "icon": "cognito",
+      "col": 1,
+      "lane": 0,
+      "group": "g_api"
+    },
+    {
+      "id": "sqs",
+      "label": "SQS (orders)",
+      "icon": "sqs",
+      "col": 2,
+      "lane": 1,
+      "group": "g_api"
+    },
+    {
+      "id": "dlq",
+      "label": "SQS (DLQ)",
+      "icon": "sqs",
+      "col": 2,
+      "lane": 0,
+      "group": "g_api"
+    },
+    {
+      "id": "handler",
+      "label": "Order handler",
+      "icon": "lambda",
+      "col": 3,
+      "lane": 1,
+      "group": "g_order"
+    },
+    {
+      "id": "ddb",
+      "label": "DynamoDB (orders)",
+      "icon": "dynamodb",
+      "col": 3,
+      "lane": 2,
+      "group": "g_order"
+    },
+    {
+      "id": "sfn",
+      "label": "Step Functions",
+      "icon": "step_functions",
+      "col": 4,
+      "lane": 1,
+      "group": "g_wf"
+    },
+    {
+      "id": "payment",
+      "label": "Payment",
+      "icon": "lambda",
+      "col": 5,
+      "lane": 0,
+      "group": "g_wf"
+    },
+    {
+      "id": "inventory",
+      "label": "Inventory",
+      "icon": "lambda",
+      "col": 5,
+      "lane": 1,
+      "group": "g_wf"
+    },
+    {
+      "id": "sns",
+      "label": "SNS (order status)",
+      "icon": "sns",
+      "col": 4,
+      "lane": 2,
+      "group": "g_notify"
+    },
+    {
+      "id": "customer",
+      "label": "Customer",
+      "icon": "user",
+      "col": 6,
+      "lane": 2,
+      "outside": true
+    },
+    {
+      "id": "cw",
+      "label": "CloudWatch",
+      "icon": "cloudwatch_2",
+      "col": 1,
+      "lane": 2,
+      "group": "g_obs"
+    },
+    {
+      "id": "s3",
+      "label": "S3 (order archive)",
+      "icon": "s3",
+      "col": 2,
+      "lane": 2,
+      "group": "g_archive"
+    }
   ],
   "edges": [
-    {"from": "mobile", "to": "apigw", "label": "HTTPS"},
-    {"from": "apigw", "to": "sqs"},
-    {"from": "apigw", "to": "cognito", "dashed": true},
-    {"from": "sqs", "to": "handler"},
-    {"from": "handler", "to": "ddb"},
-    {"from": "handler", "to": "sfn"},
-    {"from": "sfn", "to": "payment"},
-    {"from": "sfn", "to": "inventory"},
-    {"from": "sfn", "to": "sns", "label": "on completion"},
-    {"from": "sns", "to": "customer", "label": "notify", "dashed": true},
-    {"from": "apigw", "to": "cw", "label": "metrics", "dashed": true},
-    {"from": "ddb", "to": "s3", "dashed": true},
-    {"from": "sqs", "to": "dlq", "dashed": true}
+    {
+      "from": "mobile",
+      "to": "apigw",
+      "label": "HTTPS",
+      "num": 1
+    },
+    {
+      "from": "apigw",
+      "to": "sqs",
+      "label": "order message",
+      "num": 2
+    },
+    {
+      "from": "apigw",
+      "to": "cognito",
+      "label": "verify JWT",
+      "dashed": true,
+      "num": 3
+    },
+    {
+      "from": "sqs",
+      "to": "handler",
+      "label": "poll",
+      "num": 4
+    },
+    {
+      "from": "handler",
+      "to": "ddb",
+      "label": "put order",
+      "num": 5
+    },
+    {
+      "from": "handler",
+      "to": "sfn",
+      "label": "start",
+      "num": 6
+    },
+    {
+      "from": "sfn",
+      "to": "payment",
+      "num": 7
+    },
+    {
+      "from": "sfn",
+      "to": "inventory",
+      "label": "invoke task",
+      "num": 8
+    },
+    {
+      "from": "sfn",
+      "to": "sns",
+      "label": "on complete",
+      "num": 9
+    },
+    {
+      "from": "sns",
+      "to": "customer",
+      "label": "notify",
+      "dashed": true,
+      "num": 10
+    },
+    {
+      "from": "apigw",
+      "to": "cw",
+      "label": "metrics",
+      "dashed": true,
+      "num": 11
+    },
+    {
+      "from": "ddb",
+      "to": "s3",
+      "label": "export",
+      "dashed": true,
+      "num": 12
+    },
+    {
+      "from": "sqs",
+      "to": "dlq",
+      "label": "redrive",
+      "dashed": true,
+      "num": 13
+    }
   ]
 }

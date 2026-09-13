@@ -2,6 +2,7 @@
 
 Mobile orders are accepted by an API, queued, persisted, and settled by a payment/inventory workflow that
 notifies the customer. Audience: technical.
+Language: ko
 
 ## Components
 | id | Service (stencil) | Role in this system | Group |
@@ -25,18 +26,18 @@ notifies the customer. Audience: technical.
 | # | From → To | What flows | Kind | Label |
 |---|---|---|---|---|
 | 1 | mobile → apigw | order requests | sync | HTTPS |
-| 2 | apigw → sqs | order message | sync | — |
-| 3 | apigw → cognito | token validation | aux (dashed) | — |
-| 4 | sqs → handler | batch poll | sync | — |
-| 5 | handler → ddb | put order | sync | — |
-| 6 | handler → sfn | StartExecution | sync | — |
+| 2 | apigw → sqs | order message | sync | order message |
+| 3 | apigw → cognito | token validation | aux (dashed) | verify JWT |
+| 4 | sqs → handler | batch poll | sync | poll |
+| 5 | handler → ddb | put order | sync | put order |
+| 6 | handler → sfn | StartExecution | sync | start |
 | 7 | sfn → payment | task invoke | sync | — |
-| 8 | sfn → inventory | task invoke | sync | — |
-| 9 | sfn → sns | publish status | sync | on completion |
+| 8 | sfn → inventory | task invoke | sync | invoke task |
+| 9 | sfn → sns | publish status | sync | on complete |
 | 10 | sns → customer | email / push | async (dashed) | notify |
 | 11 | apigw → cw | metrics, logs | aux (dashed) | metrics |
-| 12 | ddb → s3 | periodic export | aux (dashed) | — |
-| 13 | sqs → dlq | messages that exceed `maxReceiveCount` | aux (dashed) | — |
+| 12 | ddb → s3 | periodic export | aux (dashed) | export |
+| 13 | sqs → dlq | messages that exceed `maxReceiveCount` | aux (dashed) | redrive |
 
 ## Flow
 1. The mobile app calls API Gateway over HTTPS; Cognito validates the token.
@@ -58,7 +59,7 @@ API & Ingestion · Order processing · Payment & inventory workflow · Notificat
 ## Layout notes (Drawer)
 - Main lane 1: mobile → apigw → sqs → handler → sfn → inventory. Fan-out: sfn → payment (lane 0, one bend). DLQ above SQS (lane 0), filling the group's empty cell.
 - Row 2 (lane 2): CloudWatch under API Gateway, S3 left of DynamoDB, SNS under Step Functions, customer outside.
-- Labels: `HTTPS` (shifted into the space before the cloud), `metrics`, `on completion` (both in row gaps), `notify` (inside the cloud, clear of the border). Nothing between adjacent groups.
+- Labels: every straight edge carries its brief label — `HTTPS` (shifted into the pocket before the cloud), `order message` (lane, inside the API group), `verify JWT` / `redrive` / `metrics` / `put order` / `on complete` (vertical), `poll` / `start` / `export` (≤ 6 characters across a group border), `invoke task` (lane, inside the workflow group), `notify`. The fan-out `sfn → payment` bends and carries none — the guide explains it.
 
 ## Architecture review
 Lens: Serverless Applications Lens (read: landing page "welcome.html", "RESTful microservices" scenario —
