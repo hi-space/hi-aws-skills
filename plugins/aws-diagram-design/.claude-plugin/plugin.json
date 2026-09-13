@@ -1,6 +1,6 @@
 {
   "name": "aws-diagram-design",
-  "description": "AWS-branded editorial diagrams: architecture, flowchart, sequence, ER, timeline, swimlane, quadrant, radar, loop, nested, tree, org chart, layers, Venn, pyramid, bar, line, Gantt, scatter, high-level, process, medallion, data-flow and DP diagrams as standalone HTML/SVG/PNG — Amazon Ember typography, squid ink + smile orange skin, official AWS Architecture Icons (07312026) bundled. Redraws .drawio and Mermaid sources. Korean triggers: AWS 아키텍처 다이어그램, 구성도, 흐름도, 시퀀스 다이어그램. Includes a Python generator (scripts/pygen) that renders spec files to bilingual (ko/en) HTML and PNG sets in the same house style.",
+  "description": "Finished, presentation-ready AWS diagram images (HTML/SVG/PNG) to embed in docs and slides — a rendered picture, not an editable draw.io file (for that, use aws-drawio-diagram). Covers architecture, flowchart, sequence, ER, timeline, swimlane, quadrant, radar, loop, nested, tree, org chart, layers, Venn, pyramid, bar, line, Gantt, scatter, high-level, process, medallion, data-flow and DP diagrams — Amazon Ember typography, squid ink + smile orange skin, official AWS Architecture Icons (07312026) bundled. Redraws .drawio and Mermaid sources. Korean triggers: AWS 아키텍처 다이어그램, 구성도, 흐름도, 시퀀스 다이어그램, 이미지로 뽑아줘. Includes a Python generator (scripts/pygen) that renders spec files to bilingual (ko/en) HTML and PNG sets in the same house style.",
   "version": "1.3.0",
   "author": {
     "name": "hi-space"
