@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 PLUGIN = Path(__file__).resolve().parents[1]
 SKILL = PLUGIN / "skills" / "aws-drawio-diagram"
 
@@ -35,7 +37,12 @@ def test_templates_copied():
 
 def test_marketplace_registers_plugin():
     root = PLUGIN.parents[1]
-    mp = json.loads((root / ".claude-plugin" / "marketplace.json").read_text())
+    mp_file = root / ".claude-plugin" / "marketplace.json"
+    if not mp_file.exists():
+        # an installed copy is the plugin dir alone, without the repo's marketplace.json / README;
+        # this registration check is meaningful only in the source checkout
+        pytest.skip("not in the source repo (installed plugin copy has no marketplace.json)")
+    mp = json.loads(mp_file.read_text())
     names = {p["name"]: p for p in mp["plugins"]}
     assert "aws-drawio-diagram" in names
     assert names["aws-drawio-diagram"]["source"] == "./plugins/aws-drawio-diagram"
