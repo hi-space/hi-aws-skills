@@ -4,7 +4,7 @@ Authoring contract for PowerPoint-native click hyperlinks on complete objects an
 
 ## 1. Trigger and Ownership
 
-**Trigger**: a user instruction, source fact, or page plan requires an external destination or a jump to another slide in the same deck.
+**Trigger**: a user instruction, source fact, or page plan requires an external destination or a jump to another slide in the same deck. A cited fact's `source_url` (from `sources/*.facts.json`) is a source-backed destination under this trigger whenever that citation appears on a slide; the plan records it per [`plan-core.md`](./plan-core.md) §3, and it is authored exactly like any other external link.
 
 | Layer | Ownership |
 |---|---|

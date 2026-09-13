@@ -1,7 +1,7 @@
 {
   "name": "aws-ppt-master",
   "description": "AWS-flavoured fork of ppt-master: generate natively editable PPTX decks (real DrawingML shapes, text, charts, animations) from Markdown, documents, URLs or a topic. Image generation runs on Amazon Bedrock (Stability AI Stable Image) only; no other API keys. Adds a PPTX layout and Korean copy-voice QA gate and a 304-icon AWS service icon library. Korean triggers: 발표자료, 슬라이드 만들어, AWS 기술 발표, PPT 만들어.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": { "name": "hi-space" },
   "license": "MIT",
   "keywords": ["pptx", "presentation", "powerpoint", "aws", "bedrock", "stability", "svg", "drawingml", "korean", "qa"],

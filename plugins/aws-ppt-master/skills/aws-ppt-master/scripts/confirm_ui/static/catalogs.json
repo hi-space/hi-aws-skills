@@ -1531,10 +1531,10 @@
       "label_zh_tw": "文字型 · 近讀",
       "label_en": "text / read-close",
       "label_ja": "文書型・近距離閲覧",
-      "desc_zh": "页面脱离讲者也能独立读懂：使用完整句、短段落、图注、表格和必要细节；bullet 只用于真正并列的项目。",
-      "desc_zh_tw": "頁面脫離講者也能獨立讀懂：使用完整句、短段落、圖說、表格和必要細節；bullet 只用於真正並列的項目。",
-      "desc_en": "The page stands alone without a presenter: use complete sentences, short prose, captions, tables, and necessary detail; reserve bullets for genuinely parallel items.",
-      "desc_ja": "話者なしでもページ単体で理解できる構成。完全な文、短い段落、注釈、表、必要な細部を用い、箇条書きは本当に並列な項目だけに使う。"
+      "desc_zh": "页面脱离讲者也能独立读懂：使用完整句、短段落、图注、表格和必要细节；bullet 只用于真正并列的项目。选它时，具体措辞、数字和步骤会写进页面本身，而不只是标题。",
+      "desc_zh_tw": "頁面脫離講者也能獨立讀懂：使用完整句、短段落、圖說、表格和必要細節；bullet 只用於真正並列的項目。選它時，具體措辭、數字和步驟會寫進頁面本身，而不只是標題。",
+      "desc_en": "The page stands alone without a presenter: use complete sentences, short prose, captions, tables, and necessary detail; reserve bullets for genuinely parallel items. Pick this when the slide itself must carry the specific wording, figures, and steps, not just headings.",
+      "desc_ja": "話者なしでもページ単体で理解できる構成。完全な文、短い段落、注釈、表、必要な細部を用い、箇条書きは本当に並列な項目だけに使う。具体的な文言・数値・手順をページ自体に載せたいときに選ぶ。"
     },
     {
       "id": "balanced",

@@ -38,6 +38,9 @@ Checks:
                     outright, spaced or tight. Hyphenated compounds
                     (cloud-native, m5.xlarge) are never touched: the rule
                     is about dash as punctuation, not the hyphen glyph.
+                  * a middot (·) or bullet (•) used as an inline separator
+                    between phrases ("자동화 · 관측 · 회수"). A leading list
+                    bullet is fine; a dot between words is the tell.
                   * meta-commentary labels that occupy the slot where the
                     answer belongs ("왜 중요한가", "핵심 시사점",
                     "Why this matters", "Key takeaway").
@@ -634,6 +637,16 @@ import re
 # use U+002D HYPHEN-MINUS, which is a different character and never matches.
 _BANNED_DASH = re.compile(r"[—–]")
 
+# BANNED. A middle dot (U+00B7) or bullet (U+2022) used as an INLINE SEPARATOR
+# between phrases ("빠르고 · 저렴하고 · 안전한", "자동화·관측·회수") is one of the
+# most reliable machine fingerprints of AI-drafted slide copy, like the em dash.
+# Requiring a non-space on BOTH sides of the dot is what distinguishes a
+# separator from a legitimate leading list bullet: _slide_lines strips each
+# paragraph, so a leading "• 항목" / "· 항목" has the dot at index 0 with nothing
+# before it and never matches. Genuine PowerPoint bullets are paragraph
+# properties (buChar), not run text, so they never reach this check either.
+_BANNED_MIDDOT_SEP = re.compile(r"\S[ \t]*[·•][ \t]*\S")
+
 # An ASCII hyphen with a space on both sides, doing a colon's job. Softer than
 # the above (it is also how some people legitimately type a range), so warning.
 _SPACED_HYPHEN = re.compile(r"\S\s(?:-|--)\s\S")
@@ -759,6 +772,7 @@ def check_ai_copy(prs):
     """
     issues = []
     dash_total, dash_slides = 0, []
+    middot_total, middot_slides = 0, []
     contrast_total, contrast_slides, contrast_examples = 0, [], []
 
     for idx, slide in enumerate(prs.slides, 1):
@@ -781,6 +795,27 @@ def check_ai_copy(prs):
                     f"banned. Use a period, a colon, a line break, or ~ for a "
                     f"range. Offending line(s): "
                     + " | ".join(h[:70] for h in hits[:3]),
+                    count=n,
+                )
+            )
+
+        # ── critical: middot / bullet-dot inline separator ──
+        mhits = [ln for ln in lines if _BANNED_MIDDOT_SEP.search(ln)]
+        if mhits:
+            n = sum(len(_BANNED_MIDDOT_SEP.findall(ln)) for ln in mhits)
+            middot_total += n
+            middot_slides.append(idx)
+            issues.append(
+                Issue(
+                    "critical",
+                    idx,
+                    "ai_copy",
+                    f"Slide {idx}: {n} middot/bullet separator(s) ('·' or '•' "
+                    f"between phrases) in slide copy, which is banned. Use a "
+                    f"comma, a line break, or a real list item instead. A "
+                    f"leading list bullet is fine; a dot between words is the "
+                    f"tell. Offending line(s): "
+                    + " | ".join(h[:70] for h in mhits[:3]),
                     count=n,
                 )
             )
@@ -881,6 +916,20 @@ def check_ai_copy(prs):
                 f"(references/copy-voice.md) and rebuild before delivery.",
                 count=dash_total,
                 slides=dash_slides,
+            )
+        )
+
+    if middot_total:
+        issues.append(
+            Issue(
+                "critical",
+                0,
+                "ai_copy",
+                f"Deck-wide: {middot_total} banned middot/bullet separator(s) "
+                f"across {len(middot_slides)} slide(s). Run the copy pass "
+                f"(references/copy-voice.md) and rebuild before delivery.",
+                count=middot_total,
+                slides=middot_slides,
             )
         )
 

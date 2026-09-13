@@ -53,7 +53,7 @@ Use the search and fetch tools available in the research context; an isolated wo
 
 Orient (map authoritative sources to the gaps) → deep fetch (read the highest-signal primary pages in full) → targeted fill (search only for gaps still unsupported). Prefer primary sources (an encyclopedia page is a pointer — chase its claim one level to the source it cites and record that source), official sites, institutional releases, standards, and original research; then authoritative reference works and academic sources; then reputable reporting; avoid unsourced reposts, unverifiable summaries, and stock-aggregator pages.
 
-**Adopted webpage boundary**: record a URL only in the matching fact's `source_url`, and only when it materially supports that fact — never because its images may be useful, and never from unopened search results. Stop when every declared gap has enough sourced evidence for the content owner to decide inclusion; do not add overview/history/outlook sections to look complete.
+**Adopted webpage boundary**: record a URL only in the matching fact's `source_url`, and only when it materially supports that fact — never because its images may be useful, and never from unopened search results. Stop when every declared gap has enough sourced evidence for the content owner to decide inclusion; do not add overview/history/outlook sections to look complete. A recorded `source_url` stays provenance here, but it becomes a clickable slide hyperlink downstream when that fact's citation is shown on a page ([`plan-core.md`](../../references/plan-core.md) §3); keep each `source_url` exact so that link resolves.
 
 ---
 

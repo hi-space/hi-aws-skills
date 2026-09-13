@@ -221,6 +221,30 @@ character.
 Also a tic, though less severe: an ASCII hyphen with a space on both sides
 (` - `) doing a colon's job. Same fix.
 
+## Rule 3b: the middot and bullet dot as an inline separator are banned too
+
+A middle dot (`·`) or a bullet (`•`) placed between phrases on one line
+(`빠르고 · 저렴하고 · 안전한`, `자동화·관측·회수`, `A • B • C`) is the same tell as
+the em dash: it manufactures the look of a tidy list without committing to real
+structure, and it reads as machine drafted. This is a hard rule, and
+`pptx_qa_check.py --checks copy` fails the deck on it rather than warning.
+
+| Instead of | Write |
+|---|---|
+| `빠르고 · 저렴하고 · 안전한 아키텍처` | `배포는 하루 단위, 비용은 42% 절감.` (state the two that matter) |
+| `자동화 · 관측 · 회수` | Put the three on their own lines, or `자동화, 관측, 회수` (comma) |
+| `서울 · 도쿄 · 싱가포르 리전` | `서울, 도쿄, 싱가포르 리전` (comma) |
+
+Replacements, in order of preference: a real list item on its own line (when the
+items are genuinely parallel), a comma (a short in-line series), or a period
+(two short sentences). The fix is the same one the dash rule reaches for.
+
+Not affected, and never flagged: a **leading** list bullet at the start of a
+line (`· 유휴 리소스 비용 절감`, `• 배포가 하루 단위로`). The ban is about the dot
+as a *separator between words*, not the dot as a list marker. Native PowerPoint
+bullets set through paragraph properties never contain the dot as text, so they
+are outside this rule entirely.
+
 ## Rule 4: Korean 번역투 sweep
 
 Default to 존댓말 throughout. Beyond tone, the recurring field correction on
@@ -331,6 +355,9 @@ Fix, in priority order:
    "not just X but Y". Delete A, state B.
 3. Em dash and en dash: banned outright in slide copy. Use a period, colon,
    line break, or ~ for ranges. Keep hyphenated compounds (cloud-native).
+   Also banned: a middot (·) or bullet (•) used as a separator between phrases
+   ("자동화 · 관측 · 회수"). Use a real list item, a comma, or a period. A
+   leading list bullet is fine.
 4. Korean 번역투: 여정 / 오버헤드 / 내재화 / 노브 / 상주, Latin-script product
    and pricing terms on a Korean slide (Pay-per-use, TCO), noun piles and
    stacked ~에 대한 / ~를 통해 where a verb is natural. Default 존댓말. One

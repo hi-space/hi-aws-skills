@@ -12,7 +12,7 @@ description: >
   AWS 기술 발표, or mentions aws-ppt-master or ppt-master.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   base: "ppt-master 6.3.2 (https://github.com/hugohe3/ppt-master, MIT, Hugo He)"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
