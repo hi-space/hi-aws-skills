@@ -3,12 +3,14 @@
 
     python3 check_guide.py <name>.guide.md <name>.brief.md
 
-Three things a guide must get right, all checked mechanically:
+Four things a guide must get right, all checked mechanically:
   1. Language — the brief's `Language:` line is the language the user wrote in. `ko` → the guide body is Korean
      (Hangul share of letters ≥ 0.3); `en` → not Korean. Service names stay English either way.
-  2. Steps — the step-by-step section has one numbered item per Relationships row, numbered like the brief's `#`
-     (= the badge on the picture), and each item names both endpoints (component id or its service name).
-  3. Services — every Components row (drawn or not) is mentioned somewhere in the guide.
+  2. Steps — the step-by-step section has one numbered item per Relationships row, numbered like the brief's `#`,
+     and each item names both endpoints (component id or its service name).
+  3. Edge text — each step quotes the row's *What flows* phrase, the text drawn on that arrow, so the reader can
+     find the step's arrow on the picture (rows with `—` or marked "not drawn" are exempt).
+  4. Services — every Components row (drawn or not) is mentioned somewhere in the guide.
 Exit 1 on any error; prints `guide check: …` on success.
 """
 from __future__ import annotations
@@ -58,6 +60,15 @@ def check_guide(guide_text: str, brief_text: str) -> tuple[list[str], str]:
         cid = row[0].strip("`* ")
         if cid and len(row) > 1:
             comps[cid] = _service_name(row[1])
+    header: list[str] = []
+    m = re.search(r"^##\s+Relationships\b.*?$", brief_text, re.M)
+    if m:
+        for line in brief_text[m.end():].splitlines():
+            if line.lstrip().startswith("|"):
+                header = [c.strip().lower() for c in line.strip().strip("|").split("|")]
+                break
+    w_i = next((i for i, c in enumerate(header) if c.startswith("what")), None)
+    k_i = next((i for i, c in enumerate(header) if c.startswith("kind")), None)
     rels = []
     for row in _table_rows(brief_text, "Relationships"):
         num = int(row[0]) if row and row[0].strip().isdigit() else None
@@ -67,8 +78,12 @@ def check_guide(guide_text: str, brief_text: str) -> tuple[list[str], str]:
             if mm:
                 pair = (mm.group(1), mm.group(2))
                 break
-        if pair:
-            rels.append((num, pair))
+        if not pair:
+            continue
+        text = " ".join(row[w_i].replace("`", "").split()) if w_i is not None and w_i < len(row) else ""
+        kind = row[k_i] if k_i is not None and k_i < len(row) else ""
+        drawn_text = text if text not in ("", "—", "-", "–") and not re.search(r"not drawn", kind, re.I) else ""
+        rels.append((num, pair, drawn_text))
 
     steps_text = _section(guide_text, STEP_HEADINGS)
     if not steps_text:
@@ -82,18 +97,28 @@ def check_guide(guide_text: str, brief_text: str) -> tuple[list[str], str]:
         name = comps.get(cid, "")
         return cid.lower() in low or (bool(name) and name.lower() in low)
 
-    for num, (a, b) in rels:
+    def normal(s: str) -> str:
+        return " ".join(s.replace("`", "").split()).lower()
+
+    for num, (a, b), text in rels:
         if num is None:
             continue
         step = steps.get(num)
         if step is None:
             errors.append(f"no step {num} in the guide for relationship {a} → {b} — one numbered step per relationship, "
-                          "numbered like the brief's # (the badge on the picture)")
+                          "numbered like the brief's #")
             continue
         missing = [comps.get(c) or c for c in (a, b) if not mentions(step, c)]
         if missing:
             errors.append(f"step {num} does not name {' / '.join(missing)} (relationship {a} → {b}) — write the hop as "
                           "**From → To** with the brief's names")
+        if text and normal(text) not in normal(step):
+            errors.append(f"step {num} does not quote the edge text '{text}' (relationship {a} → {b}) — the What flows phrase is "
+                          f"what the reader sees on that arrow; write it as drawn, e.g. (라벨 `{text}`)")
+
+    numbered = sum(1 for n, _, _ in rels if n is not None)
+    summary = (f"guide check: {numbered} relationships → {len([n for n, _, _ in rels if n in steps])} steps ✓ · "
+               f"{len(comps)} components ✓ · language {lang} ✓")
 
     services_text = _section(guide_text, SERVICE_HEADINGS) or guide_text
     for cid, name in comps.items():
@@ -101,9 +126,6 @@ def check_guide(guide_text: str, brief_text: str) -> tuple[list[str], str]:
             errors.append(f"component '{cid}' ({name}) is missing from the guide's Services section — every Components "
                           "row appears there, 'not drawn' ones marked so")
 
-    numbered = sum(1 for n, _ in rels if n is not None)
-    summary = (f"guide check: {numbered} relationships → {len([n for n, _ in rels if n in steps])} steps ✓ · "
-               f"{len(comps)} components ✓ · language {lang} ✓")
     return errors, summary
 
 

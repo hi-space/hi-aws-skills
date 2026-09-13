@@ -200,73 +200,82 @@
     {
       "from": "users",
       "to": "cf",
-      "label": "HTTPS",
-      "num": 1
+      "num": 1,
+      "label": "HTTPS"
     },
     {
       "from": "cf",
       "to": "s3web",
-      "num": 2
+      "num": 2,
+      "label": "static assets"
     },
     {
       "from": "cf",
       "to": "apigw",
-      "num": 3
+      "num": 3,
+      "label": "/api calls"
     },
     {
       "from": "apigw",
       "to": "cognito",
       "dashed": true,
-      "num": 4
+      "num": 4,
+      "label": "token validation"
     },
     {
       "from": "apigw",
       "to": "lambda",
-      "num": 5
+      "num": 5,
+      "label": "invoke"
     },
     {
       "from": "lambda",
       "to": "memory",
-      "num": 6
+      "num": 6,
+      "label": "read/write memory"
     },
     {
       "from": "lambda",
       "to": "bedrock",
-      "num": 7
+      "num": 7,
+      "label": "LLM prompt"
     },
     {
       "from": "lambda",
       "to": "oss",
-      "label": "retrieve",
-      "num": 8
+      "num": 8,
+      "label": "vector query"
     },
     {
       "from": "apigw",
       "to": "cw",
       "dashed": true,
-      "num": 9
+      "num": 9,
+      "label": "execution logs"
     },
     {
       "from": "cw",
       "to": "sns",
-      "label": "alarm",
-      "num": 10
+      "num": 10,
+      "label": "alarm"
     },
     {
       "from": "s3docs",
       "to": "eb",
-      "num": 11
+      "num": 11,
+      "label": "object created"
     },
     {
       "from": "eb",
       "to": "ingest",
-      "num": 12
+      "num": 12,
+      "label": "rule target"
     },
     {
       "from": "ingest",
       "to": "oss",
-      "label": "embed",
-      "num": 13
+      "num": 13,
+      "label": "upsert vectors"
     }
   ]
 }

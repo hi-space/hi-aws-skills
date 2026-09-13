@@ -314,39 +314,39 @@ def test_w7_catches_a_vertical_label_on_a_group_title():
     assert warnings == [], warnings
 
 
-def badge(edge_id, num, x):
-    return (f'<mxCell id="{edge_id}_n" value="{num}" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;'
-            f'points=[];fontSize=11;fontStyle=1;fontColor=#FFFFFF;labelBackgroundColor=#232F3E;" vertex="1" connectable="0" '
-            f'parent="{edge_id}"><mxGeometry x="{x}" y="0" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>')
-
-
-def test_w7_checks_edge_number_badges_too():
-    a = icon("a", "1", 300, 300)
-    b = icon("b", "1", 540, 300)                                   # same lane, 162 px clear between the icons
-    e = edge_cell("e", "a", "b", RIGHT_TO_LEFT)
-    _, warnings = vd.validate_text(wrap(a + b + e + badge("e", 4, 0.0)), INDEX)
-    assert warnings == [], warnings                                # mid-run: clean
-    _, warnings = vd.validate_text(wrap(a + b + e + badge("e", 4, 0.97)), INDEX)
-    assert codes(warnings) == ["W7"] and "badge" in warnings[0] and "icon" in warnings[0], warnings
-    # a badge under the edge's own text label is a collision as well
-    labelled = edge_cell("e", "a", "b", RIGHT_TO_LEFT, "HTTPS")
-    _, warnings = vd.validate_text(wrap(a + b + labelled + badge("e", 4, 0.0)), INDEX)
-    assert codes(warnings) == ["W7"] and "label" in warnings[0], warnings
-    _, warnings = vd.validate_text(wrap(a + b + labelled + badge("e", 4, -0.6)), INDEX)
-    assert warnings == [], warnings
-
-
-def test_w7_badge_on_a_group_border():
+def test_w7_measures_wrapped_labels_and_follows_the_alignment():
     g1 = ('<mxCell id="g1" value="A" style="rounded=0;fillColor=#F7F8FA;strokeColor=#C9D1D9;container=1;dropTarget=1;" '
           'vertex="1" parent="1"><mxGeometry x="280" y="160" width="200" height="220" as="geometry"/></mxCell>')
     g2 = ('<mxCell id="g2" value="B" style="rounded=0;fillColor=#F7F8FA;strokeColor=#C9D1D9;container=1;dropTarget=1;" '
           'vertex="1" parent="1"><mxGeometry x="520" y="160" width="200" height="220" as="geometry"/></mxCell>')
-    a = icon("a", "g1", 61, 100)     # abs (341, 260)
+    a = icon("a", "g1", 61, 100)     # abs (341, 260); right edge 419 — g1's border at 480: a 61 px pocket
     b = icon("b", "g2", 61, 100)     # abs (581, 260)
-    e = edge_cell("e", "a", "b", RIGHT_TO_LEFT)
-    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + e + badge("e", 2, 0.0)), INDEX)      # midpoint x=500: a 17 px badge fits the 40 px gap
+    # 'put order' on one line (72 px) cannot sit in the pocket: centred at x=-0.6 → 449 it covers the border
+    one_line = edge_cell("e", "a", "b", RIGHT_TO_LEFT + "verticalAlign=bottom;", "put order").replace(
+        '<mxGeometry relative="1" as="geometry"/>', '<mxGeometry x="-0.6" relative="1" as="geometry"/>')
+    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + one_line), INDEX)
+    assert codes(warnings) == ["W7"] and "border" in warnings[0], warnings
+    # wrapped into two lines (47 px wide) at the same spot it fits — the validator measures the longest LINE
+    two_lines = one_line.replace('value="put order"', 'value="put&lt;br&gt;order"')
+    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + two_lines), INDEX)
     assert warnings == [], warnings
-    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + e + badge("e", 2, -0.25)), INDEX)    # centred on g1's right border (x=480)
-    assert codes(warnings) == ["W7"] and "badge" in warnings[0] and "border" in warnings[0], warnings
-    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + e + badge("e", 2, -0.6)), INDEX)     # inside g1's pocket
-    assert warnings == [], warnings
+    # a label centred ON the line (no alignment flag) that another edge runs through is a W7 too
+    c = icon("c", "g1", 61, 30)      # abs (341, 190), above a
+    down = edge_cell("f", "c", "a", "exitX=0.5;exitY=1.282;exitPerimeter=0;entryX=0.5;entryY=0;")
+    across = edge_cell("e", "a", "b", RIGHT_TO_LEFT, "x").replace(
+        '<mxGeometry relative="1" as="geometry"/>', '<mxGeometry x="-0.9" relative="1" as="geometry"/>')
+    _, warnings = vd.validate_text(wrap(g1 + g2 + a + b + c + down + across), INDEX)
+    assert any(w.startswith("W7") and ("icon" in w or "line of edge" in w) for w in warnings), warnings
+
+
+def test_w7_label_covering_an_icon_or_another_label():
+    a = icon("a", "1", 300, 300)
+    b = icon("b", "1", 540, 300)                                   # same lane, 162 px clear between the icons
+    near_b = edge_cell("e", "a", "b", RIGHT_TO_LEFT + "verticalAlign=bottom;", "HTTPS").replace(
+        '<mxGeometry relative="1" as="geometry"/>', '<mxGeometry x="0.97" relative="1" as="geometry"/>')
+    _, warnings = vd.validate_text(wrap(a + b + near_b), INDEX)
+    assert codes(warnings) == ["W7"] and "icon" in warnings[0], warnings
+    c = icon("c", "1", 300, 60)                                    # above a: a vertical edge c → a beside the horizontal one
+    down = edge_cell("f", "c", "a", "exitX=0.5;exitY=1.282;exitPerimeter=0;entryX=0.5;entryY=0;align=right;spacingRight=4;", "session lookup")
+    _, warnings = vd.validate_text(wrap(a + b + c + down + edge_cell("e", "a", "b", RIGHT_TO_LEFT + "verticalAlign=bottom;", "HTTPS")), INDEX)
+    assert warnings == [], warnings                                # two labels, different places: clean

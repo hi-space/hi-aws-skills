@@ -2,13 +2,15 @@
 """Turn a brief into a logical spec for build_diagram.py (no coordinates — layout.py assigns them).
 
 Reads `## Components` (id, "Service (`stencil`)" or "(image `file.svg`)", Group) and `## Relationships`
-(`from → to`, Kind, Label) from `<name>.brief.md` and writes `<name>.json` with nodes, edges and groups. Rows
-marked "not drawn" are skipped. Edges whose Kind contains `async`, `aux` or `dashed` are dashed; labels come
-from the Label column unless it is "—" — every label is passed through, and layout.py decides per placed edge
-whether it fits (16 characters on one lane, 7 across a group border, 12 on a vertical edge, none on a bend) and
-prints a `note:` naming the ones it dropped. Unknown stencil names are reported and left for you to fix (the builder
-refuses them anyway). When the brief has a `Repo: /abs/path` line, every path in the Evidence column is checked
-to exist there — a missing path is an error (exit 1): evidence must be a file the Architect opened.
+(`from → to`, What flows, Kind) from `<name>.brief.md` and writes `<name>.json` with nodes, edges and groups. Rows
+marked "not drawn" are skipped. Edges whose Kind contains `async`, `aux` or `dashed` are dashed. **The edge text is
+the What flows phrase** — every phrase is passed through (unless it is "—"), and build_diagram.py draws it on the
+edge, wrapped into at most 3 lines of 24 characters, on the leg with room; a phrase that cannot fit even there (a
+word longer than 24 characters, or more than 3 lines) is refused here for a primary relationship, before layout
+luck decides. A leftover "Label on diagram" column (briefs from 1.4) is ignored with a warning. Unknown stencil
+names are reported and left for you to fix (the builder refuses them anyway). When the brief has a
+`Repo: /abs/path` line, every path in the Evidence column is checked to exist there — a missing path is an error
+(exit 1): evidence must be a file the Architect opened.
 
     python3 scaffold_spec.py <name>.brief.md <name>.json
     python3 build_diagram.py <name>.json <name>.drawio          # places nodes automatically, checks the brief
@@ -23,8 +25,10 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_diagram import _table_rows, EXTRA_ICONS, contract_check, contract_path_for  # noqa: E402
-from layout import LABEL_MAX_LANE  # noqa: E402
+from build_diagram import (_table_rows, EXTRA_ICONS, LABEL_MAX_LINE_CHARS, LABEL_MAX_LINES,  # noqa: E402
+                           contract_check, contract_path_for, label_lines)
+
+NO_LABEL = ("", "—", "-", "–")
 
 
 def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
@@ -79,7 +83,12 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
                 header = [c.strip().lower() for c in line.strip().strip("|").split("|")]
                 break
     k_i = next((i for i, c in enumerate(header or []) if c.startswith("kind")), None)
-    l_i = next((i for i, c in enumerate(header or []) if c.startswith("label")), None)
+    w_i = next((i for i, c in enumerate(header or []) if c.startswith("what")), None)
+    if header is not None and any(c.startswith("label") for c in header):
+        warnings.append("the Relationships table has a 'Label' column — it is ignored: the edge shows the What flows phrase "
+                        "(architecture-brief.md § Edge text). Delete the column")
+    if header is not None and w_i is None:
+        warnings.append("the Relationships table has no 'What flows' column — the edges will carry no text")
     edges = []
     for row in rel_rows:
         pair = None
@@ -94,18 +103,21 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
             warnings.append(f"relationship {pair[0]} → {pair[1]} names a component that is not drawn — skipped")
             continue
         kind = row[k_i] if k_i is not None and k_i < len(row) else ""
+        if re.search(r"not drawn", kind, re.I):
+            continue                                    # the brief says so; brief_check treats the row as optional
         edge = {"from": pair[0], "to": pair[1]}
         if row and row[0].strip().isdigit():
-            edge["num"] = int(row[0].strip())            # the brief's # — drawn as the badge on the edge, cited by the guide
+            edge["num"] = int(row[0].strip())            # the brief's # — the step number in the guide
         if re.search(r"aux|async|dashed", kind, re.I):
             edge["dashed"] = True
-        label = row[l_i].strip() if l_i is not None and l_i < len(row) else ""
-        if label and label not in ("—", "-", "–"):
-            edge["label"] = label                       # layout.py keeps it where the placed edge has room (LABEL_MAX_*)
-            if not edge.get("dashed") and len(label) > LABEL_MAX_LANE:
-                # no placement can hold it: say so here, before layout luck decides whether the edge bends
-                warnings.append(f"label '{label}' ({len(label)} characters) on primary relationship {pair[0]} → {pair[1]} "
-                                f"can never fit (max {LABEL_MAX_LANE} on a lane) — shorten it in the brief or write —")
+        text = " ".join(row[w_i].replace("`", "").split()) if w_i is not None and w_i < len(row) else ""
+        if text not in NO_LABEL:
+            edge["label"] = text                        # drawn on the edge by build_diagram.py (wrapped, on the leg with room)
+            if not edge.get("dashed") and label_lines(text, LABEL_MAX_LINE_CHARS) is None:
+                # no edge anywhere can hold it: say so here, before layout luck decides where the edge lands
+                warnings.append(f"What flows '{text}' ({len(text)} characters) on primary relationship {pair[0]} → {pair[1]} "
+                                f"can never fit an edge (at most {LABEL_MAX_LINES} lines of {LABEL_MAX_LINE_CHARS} characters, "
+                                "no word longer than a line) — condense the phrase in the brief or write —")
         edges.append(edge)
     warnings += check_evidence(brief_text, comp_rows)
     spec = {"title": title, "layout": "auto", "groups": [groups[g] for g in order], "nodes": nodes, "edges": edges}

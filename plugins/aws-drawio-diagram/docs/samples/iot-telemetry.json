@@ -180,66 +180,76 @@
     {
       "from": "sensors",
       "to": "iotcore",
-      "label": "MQTT",
-      "num": 1
+      "num": 1,
+      "label": "telemetry over MQTT"
     },
     {
       "from": "iotcore",
       "to": "kinesis",
-      "num": 2
+      "num": 2,
+      "label": "rule action: put record"
     },
     {
       "from": "kinesis",
       "to": "normalize",
-      "num": 3
+      "num": 3,
+      "label": "record batch"
     },
     {
       "from": "normalize",
       "to": "ddb",
-      "num": 4
+      "num": 4,
+      "label": "upsert latest state"
     },
     {
       "from": "normalize",
       "to": "s3lake",
-      "num": 5
+      "num": 5,
+      "label": "write to lake"
     },
     {
       "from": "normalize",
       "to": "sns",
-      "num": 6
+      "num": 6,
+      "label": "publish threshold breach"
     },
     {
       "from": "s3lake",
       "to": "crawler",
-      "num": 7
+      "num": 7,
+      "label": "new files"
     },
     {
       "from": "crawler",
       "to": "catalog",
-      "num": 8
+      "num": 8,
+      "label": "update tables"
     },
     {
       "from": "catalog",
       "to": "athena",
-      "num": 9
+      "num": 9,
+      "label": "query metadata"
     },
     {
       "from": "athena",
       "to": "quicksight",
-      "num": 10
+      "num": 10,
+      "label": "SPICE / direct query"
     },
     {
       "from": "kinesis",
       "to": "cw",
       "dashed": true,
-      "num": 11
+      "num": 11,
+      "label": "stream metrics"
     },
     {
       "from": "sns",
       "to": "ops",
-      "label": "notify",
       "dashed": true,
-      "num": 12
+      "num": 12,
+      "label": "email / SMS"
     }
   ]
 }

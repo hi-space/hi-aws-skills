@@ -3,6 +3,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 PLUGIN = Path(__file__).resolve().parents[1]
 SKILL = PLUGIN / "skills" / "aws-drawio-diagram"
 SCRIPTS = SKILL / "scripts"
@@ -78,10 +80,16 @@ def test_scaffold_reads_a_brief_into_a_logical_spec():
     dashed = {(e["from"], e["to"]) for e in spec["edges"] if e.get("dashed")}
     assert ("apigw", "cognito") in dashed and ("sqs", "dlq") in dashed and ("mobile", "apigw") not in dashed
     labels = {(e["from"], e["to"]): e.get("label") for e in spec["edges"]}
-    # the scaffold passes every Label through; whether it fits is layout.py's call, per edge geometry
-    assert labels[("mobile", "apigw")] == "HTTPS" and labels[("sfn", "sns")] == "on complete"
-    assert labels[("apigw", "sqs")] == "order message"                                     # two words pass through
-    assert labels[("sfn", "payment")] is None                                              # "—" stays unlabeled
+    # the edge text is the What flows phrase, passed through verbatim (backticks stripped); the builder wraps it
+    assert labels[("mobile", "apigw")] == "order requests" and labels[("sfn", "sns")] == "post status"
+    assert labels[("sfn", "payment")] == "task invoke"
+    assert labels[("sqs", "dlq")] == "messages that exceed maxReceiveCount"
+    # a brief still carrying the 1.4 "Label" column: the column is ignored and named in a warning
+    old = brief.replace("| # | From → To | What flows | Kind |", "| # | From → To | What flows | Kind | Label |").replace(
+        "| 1 | mobile → apigw | order requests | sync |", "| 1 | mobile → apigw | order requests | sync | HTTPS |")
+    spec2, warnings = sc.scaffold(old, STENCILS)
+    assert any("'Label' column" in w and "ignored" in w for w in warnings), warnings
+    assert {(e["from"], e["to"]): e.get("label") for e in spec2["edges"]}[("mobile", "apigw")] == "order requests"
 
 
 def _two_group_spec(edges):
@@ -100,31 +108,48 @@ def _two_group_spec(edges):
     }
 
 
-def test_layout_keeps_labels_that_fit_and_says_why_it_drops_the_rest():
+def _edge_values(xml):
+    import xml.etree.ElementTree as ET
+    out = {}
+    for c in ET.fromstring(xml).iter("mxCell"):
+        if c.get("edge") == "1":
+            out[(c.get("source"), c.get("target"))] = (c.get("value"), vd.parse_style(c.get("style")), c.find("mxGeometry").get("x"))
+    return out
+
+
+def test_builder_draws_every_what_flows_phrase_wrapped_to_the_room_it_has():
     spec = _two_group_spec([
-        {"from": "u", "to": "gw", "label": "HTTPS"},                          # outside → cloud: ≤ 6 chars fits
-        {"from": "gw", "to": "fn", "label": "invoke (proxy)"},                # inside one box: 14 chars fits
-        {"from": "gw", "to": "auth", "label": "validate JWT", "dashed": True},# vertical straight: 12 chars fits
-        {"from": "fn", "to": "cache", "label": "session lookup"},             # vertical straight: 14 > 12 → dropped
-        {"from": "fn", "to": "db", "label": "put item"},                      # adjacent groups: 8 > 6 → dropped
+        {"from": "u", "to": "gw", "label": "order requests"},                   # outside → cloud: 121 px pocket, one line
+        {"from": "gw", "to": "fn", "label": "invoke with the validated order"},  # inside one box: 162 px → wrapped to 2 lines
+        {"from": "gw", "to": "auth", "label": "validate JWT", "dashed": True},   # vertical straight: beside the line
+        {"from": "fn", "to": "cache", "label": "session lookup"},                # vertical inside the box: one line beside it
+        {"from": "fn", "to": "db", "label": "put item"},                         # adjacent groups: wraps into the 61 px pocket
     ])
-    # a fixed placement, so the test pins the label rule and not the planner's taste
+    # a fixed placement, so the test pins the label rules and not the planner's taste
     p = layout.Placement(spec, seed=1)
     p.col = {"u": 0, "gw": 1, "fn": 2, "auth": 1, "cache": 2, "db": 3}
     p.lane = {"u": 0, "gw": 0, "fn": 0, "auth": 1, "cache": 1, "db": 0}
     placed = p.apply()
     assert [g["id"] for g in placed["groups"]] == ["a", "b"], placed["groups"]   # "a" is one 2 × 2 box
-    labels = {(e["from"], e["to"]): e.get("label") for e in placed["edges"]}
-    assert labels[("u", "gw")] == "HTTPS"
-    assert labels[("gw", "fn")] == "invoke (proxy)"
-    assert labels[("gw", "auth")] == "validate JWT"
-    assert labels[("fn", "cache")] is None and labels[("fn", "db")] is None
-    assert any("fn → db" in n and "put item" in n and "shorten" in n for n in p.dropped_labels), p.dropped_labels
-    assert any("fn → cache" in n and "vertical" in n for n in p.dropped_labels), p.dropped_labels
-    # and what layout keeps, the builder can place without a W7
+    assert all(e.get("label") for e in placed["edges"])                          # the planner drops nothing
     xml = bd.build(placed)
+    values = _edge_values(xml)
+    assert values[("u", "gw")][0] == "order requests" and values[("u", "gw")][1]["verticalAlign"] == "bottom"
+    assert values[("gw", "fn")][0] == "invoke with the<br>validated order"
+    assert values[("gw", "auth")][0] == "validate JWT" and values[("gw", "auth")][1]["align"] in ("right", "left")
+    assert values[("fn", "cache")][0] == "session lookup" and values[("fn", "cache")][1]["align"] in ("right", "left")
+    assert values[("fn", "db")][0] == "put<br>item" and values[("fn", "db")][2] is not None      # slid into a pocket
     errors, warnings = vd.validate_text(xml, INDEX)
-    assert errors == [] and [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS] == [], warnings
+    assert errors == [] and warnings == [], warnings
+
+
+def test_label_wrapping_helpers():
+    assert bd.wrap_lines("Fetch dynamic credentials (optional)", 24) == ["Fetch dynamic", "credentials (optional)"]
+    assert bd.label_lines("Fetch dynamic credentials (optional)", 29) == ["Fetch dynamic", "credentials (optional)"]  # balanced
+    assert bd.label_lines("put item", 6) == ["put", "item"]
+    assert bd.label_lines("StartExecution", 6) is None                       # a word wider than the line
+    assert bd.label_lines("one two three four five six seven eight", 6) is None   # more than 3 lines
+    assert bd.chars_that_fit(162) == 22 and bd.chars_that_fit(61) == 6 and bd.chars_that_fit(121) == 16
 
 
 def test_layout_prefers_a_straight_edge_for_a_labeled_relationship():
@@ -161,9 +186,9 @@ def test_brief_count_guard_catches_a_shrunken_table():
 | a | API Gateway (`api_gateway`) | entry | G |
 
 ## Relationships
-| # | From → To | What | Kind | Label |
-|---|---|---|---|---|
-| 1 | u → a | HTTPS | sync | HTTPS |
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | u → a | HTTPS | sync |
 """
     spec = {"nodes": [{"id": "u"}, {"id": "a"}], "edges": [{"from": "u", "to": "a"}]}
     errors, _ = bd.brief_check(brief, spec)
@@ -185,9 +210,9 @@ Components: 2 · Relationships: 1
 | g | S3 (`s3`) | bucket | G | infra/storage/s3.tf:4 | deployed |
 
 ## Relationships
-| # | From → To | What | Kind | Label |
-|---|---|---|---|---|
-| 1 | u → f | HTTPS | sync | HTTPS |
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | u → f | HTTPS | sync |
 """
     spec, warnings = sc.scaffold(brief, STENCILS)
     assert [w for w in warnings if "does not exist" in w] == ["g: evidence path 'infra/storage/s3.tf' does not exist under "
@@ -212,7 +237,8 @@ def test_contract_freezes_component_ids_and_relationship_pairs(tmp_path):
     errors, _ = bd.contract_check(brief.replace("| dlq | SQS (`sqs`)", "| dlq_x | SQS (`sqs`)"), lock)
     assert any("dlq" in e for e in errors), errors
     # a row newly marked not drawn is allowed but reported, so the Reviewer sees the shrinkage
-    shrunk = brief.replace("| 12 | ddb → s3 | periodic export | aux (dashed) |", "| 12 | ddb → s3 | periodic export | aux (not drawn) |")
+    shrunk = brief.replace("| 12 | ddb → s3 | PITR export | aux (dashed) |", "| 12 | ddb → s3 | PITR export | aux (not drawn) |")
+    assert shrunk != brief
     errors, notes = bd.contract_check(shrunk, lock)
     assert errors == [] and any("newly marked" in n and "ddb → s3" in n for n in notes), notes
 
@@ -232,78 +258,70 @@ def test_scaffold_and_builder_refuse_a_rewired_brief_end_to_end(tmp_path):
     assert r.returncode == 1 and "contract" in r.stdout, r.stdout
 
 
-def test_too_long_label_on_a_primary_edge_is_an_error_not_a_note():
-    spec = _two_group_spec([
-        {"from": "u", "to": "gw"}, {"from": "gw", "to": "fn"},
-        {"from": "fn", "to": "db", "label": "put item"},                              # solid, adjacent groups: 8 > 6
-        {"from": "fn", "to": "cache", "label": "session lookup", "dashed": True},     # dashed, vertical: 14 > 12
-    ])
+def _cross_border_spec(text, dashed=False):
+    # fn (box a) → db (box b) on one lane: the text has two 61 px pockets, i.e. words of ≤ 6 characters
+    spec = _two_group_spec([{"from": "u", "to": "gw"}, {"from": "gw", "to": "fn"}, {"from": "gw", "to": "auth", "dashed": True},
+                            {"from": "fn", "to": "cache"},
+                            {"from": "fn", "to": "db", "label": text, **({"dashed": True} if dashed else {})}])
     p = layout.Placement(spec, seed=1)
     p.col = {"u": 0, "gw": 1, "fn": 2, "auth": 1, "cache": 2, "db": 3}
     p.lane = {"u": 0, "gw": 0, "fn": 0, "auth": 1, "cache": 1, "db": 0}
-    p.apply()
-    assert [d for d in p.too_long_primary if "fn → db" in d] and not [d for d in p.too_long_primary if "fn → cache" in d]
-    assert any("or write —" in d for d in p.too_long_primary), p.too_long_primary
+    return p.apply()
 
 
-def test_builder_refuses_a_primary_label_that_does_not_fit(tmp_path):
-    brief = (SAMPLES / "order-pipeline.brief.md").read_text()
-    row = "| 2 | apigw → sqs | order message | sync | order message |"
-    assert row in brief
-    def run(text):
-        (tmp_path / "op.brief.md").write_text(text)
-        (tmp_path / "op.contract.json").unlink(missing_ok=True)
-        (tmp_path / "op.drawio").unlink(missing_ok=True)
-        r = subprocess.run([sys.executable, str(SCRIPTS / "scaffold_spec.py"), str(tmp_path / "op.brief.md"), str(tmp_path / "op.json")],
-                           capture_output=True, text=True)
-        if r.returncode:
-            return r
-        return subprocess.run([sys.executable, str(SCRIPTS / "build_diagram.py"), str(tmp_path / "op.json"), str(tmp_path / "op.drawio")],
-                              capture_output=True, text=True)
-    # 21 characters on a primary edge can fit nowhere: the scaffold already refuses, before layout luck decides
-    r = run(brief.replace(row, "| 2 | apigw → sqs | order message | sync | order message payload |"))
-    assert r.returncode == 1 and "can never fit" in r.stdout and "apigw → sqs" in r.stdout, r.stdout
-    assert not (tmp_path / "op.drawio").exists()
-    # the same text on an aux (dashed) edge is layout's business and at most a note
-    aux_row = "| 11 | apigw → cw | metrics, logs | aux (dashed) | metrics |"
-    assert aux_row in brief
-    r = run(brief.replace(aux_row, "| 11 | apigw → cw | metrics, logs | aux (dashed) | metrics and access logs |"))
-    assert r.returncode == 0 and "ERROR label" not in r.stdout, r.stdout
-    # "—" is the explicit way out for a primary pair that explains itself
-    r = run(brief.replace(row, "| 2 | apigw → sqs | order message | sync | — |"))
-    assert r.returncode == 0, r.stdout
+def test_primary_text_with_no_room_is_an_error_dashed_text_is_dropped_with_a_note():
+    with pytest.raises(bd.LabelError) as exc:
+        bd.build(_cross_border_spec("StartExecution"))                 # one 14-character word, 6 fit per line
+    assert len(exc.value.problems) == 1 and "fn → db" in exc.value.problems[0] and "condense" in exc.value.problems[0]
+    b = bd.Builder(_cross_border_spec("StartExecution", dashed=True), json.loads(bd.INDEX.read_text()))
+    xml = b.build()
+    assert any("label dropped" in n and "fn → db" in n for n in b.notes), b.notes
+    assert _edge_values(xml)[("fn", "db")][0] is None and vd.validate_text(xml, INDEX) == ([], [])
+    # the same meaning in pocket-sized words is drawn
+    xml = bd.build(_cross_border_spec("start saga"))
+    assert _edge_values(xml)[("fn", "db")][0] == "start<br>saga" and vd.validate_text(xml, INDEX) == ([], [])
 
 
-def test_builder_stops_on_a_planner_label_too_long_note(tmp_path, monkeypatch, capsys):
-    # the planner treats a fitting primary label as a hard constraint, so end-to-end it rarely reports one;
-    # the gate in the builder is still the last line — feed it the note directly
-    spec = {"title": "t", "layout": "auto",
-            "groups": [{"id": "g", "label": "G"}],
-            "nodes": [{"id": "a", "label": "A", "icon": "lambda", "group": "g"}, {"id": "b", "label": "B", "icon": "sqs", "group": "g"}],
-            "edges": [{"from": "a", "to": "b", "label": "enqueue order"}]}
-    (tmp_path / "s.json").write_text(json.dumps(spec))
-    real_plan = layout.plan
-    def fake_plan(s, **kw):
-        placed, notes = real_plan(s, **kw)
-        return placed, notes + ["label too long: a → b ('enqueue order'): 13 characters is too long for an edge between "
-                                "adjacent groups (max 6) — shorten the Label in the brief, or write — when the pair explains itself"]
-    monkeypatch.setattr(layout, "plan", fake_plan)
+def test_builder_cli_stops_on_a_primary_text_with_no_room(tmp_path, capsys):
+    (tmp_path / "s.json").write_text(json.dumps(_cross_border_spec("StartExecution")))
     rc = bd.main([str(tmp_path / "s.json"), str(tmp_path / "s.drawio"), "--no-brief"])
     out = capsys.readouterr().out
-    assert rc == 1 and "ERROR label" in out and "a → b" in out and "NOT CLEAN" in out, out
+    assert rc == 1 and "ERROR label" in out and "fn → db" in out and "NOT CLEAN" in out, out
     assert not (tmp_path / "s.drawio").exists()
 
 
-def test_scaffold_flags_a_primary_label_that_can_never_fit():
+def test_scaffold_flags_a_what_flows_phrase_that_can_never_fit(tmp_path):
     brief = (SAMPLES / "order-pipeline.brief.md").read_text()
-    row = "| 2 | apigw → sqs | order message | sync | order message |"
-    spec, warnings = sc.scaffold(brief.replace(row, "| 2 | apigw → sqs | order message | sync | order message payload |"), STENCILS)
-    assert any("can never fit" in w and "apigw → sqs" in w and "21 characters" in w for w in warnings), warnings
-    # the same length on an aux edge is layout's business, not a brief defect
-    aux_row = "| 11 | apigw → cw | metrics, logs | aux (dashed) | metrics |"
-    _, warnings = sc.scaffold(brief.replace(aux_row, "| 11 | apigw → cw | metrics, logs | aux (dashed) | metrics and access logs |"), STENCILS)
+    row = "| 2 | apigw → sqs | order message | sync |"
+    assert row in brief
+    # a 26-character word is wider than any line: the scaffold refuses, before layout luck decides where the edge lands
+    spec, warnings = sc.scaffold(brief.replace(row, "| 2 | apigw → sqs | OrderMessagePayloadEnvelope | sync |"), STENCILS)
+    assert any("can never fit" in w and "apigw → sqs" in w and "condense" in w for w in warnings), warnings
+    # four lines of text neither
+    _, warnings = sc.scaffold(brief.replace(row, "| 2 | apigw → sqs | every accepted order as one message on the queue with its idempotency key and the caller identity | sync |"), STENCILS)
+    assert any("can never fit" in w for w in warnings), warnings
+    # the same on an aux edge is the builder's business (dropped with a note), not a brief defect
+    aux_row = "| 11 | apigw → cw | metrics, logs | aux (dashed) |"
+    _, warnings = sc.scaffold(brief.replace(aux_row, "| 11 | apigw → cw | AccessLogsAndExecutionMetrics | aux (dashed) |"), STENCILS)
     assert warnings == []
+    # "—" means: no text on this edge
+    spec, _ = sc.scaffold(brief.replace(row, "| 2 | apigw → sqs | — | sync |"), STENCILS)
+    assert "label" not in next(e for e in spec["edges"] if (e["from"], e["to"]) == ("apigw", "sqs"))
+    # end to end: the scaffold exits 1 and writes no diagram
+    (tmp_path / "op.brief.md").write_text(brief.replace(row, "| 2 | apigw → sqs | OrderMessagePayloadEnvelope | sync |"))
+    r = subprocess.run([sys.executable, str(SCRIPTS / "scaffold_spec.py"), str(tmp_path / "op.brief.md"), str(tmp_path / "op.json")],
+                       capture_output=True, text=True)
+    assert r.returncode == 1 and "can never fit" in r.stdout, r.stdout
     assert sc.main([str(SAMPLES / "order-pipeline.brief.md"), "/tmp/_op_scaffold_check.json"]) == 0
+
+
+def test_planner_closes_empty_columns():
+    spec = _two_group_spec([{"from": "u", "to": "gw"}, {"from": "gw", "to": "fn"}, {"from": "fn", "to": "db"}])
+    p = layout.Placement(spec, seed=1)
+    p.col = {"u": 0, "gw": 1, "fn": 2, "auth": 1, "cache": 2, "db": 5}        # columns 3 and 4 hold nothing
+    p.lane = {"u": 0, "gw": 0, "fn": 0, "auth": 1, "cache": 1, "db": 0}
+    p.compact_columns()
+    assert p.col["db"] == 3 and p.col["u"] == 0 and p.max_col == 3
 
 
 def test_scaffold_numbers_edges_from_the_brief_hash_column():
@@ -319,8 +337,8 @@ KO_GUIDE = """# 주문 파이프라인
 모바일 앱의 주문을 API Gateway가 받아 SQS에 넣고 Lambda가 처리한다.
 
 ## 단계별 흐름
-1. **Mobile client → API Gateway** — 앱이 HTTPS로 REST 요청을 보낸다.
-2. **API Gateway → SQS** — 주문 메시지를 큐에 넣고 202를 돌려준다.
+1. **Mobile client → API Gateway** — 앱이 HTTPS로 REST 요청을 보낸다. (라벨 `requests`)
+2. **API Gateway → SQS** — 주문 메시지를 큐에 넣고 202를 돌려준다. (라벨 `order message`)
 
 ## 서비스
 | 서비스 | 역할 |
@@ -344,10 +362,10 @@ Components: 3 · Relationships: 2
 | sqs | SQS (`sqs`) | queue | API |
 
 ## Relationships
-| # | From → To | What flows | Kind | Label |
-|---|---|---|---|---|
-| 1 | mobile → apigw | requests | sync | HTTPS |
-| 2 | apigw → sqs | order message | sync | order message |
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | mobile → apigw | requests | sync |
+| 2 | apigw → sqs | order message | sync |
 """
 
 
@@ -361,11 +379,12 @@ def test_check_guide_rejects_wrong_language_missing_steps_and_missing_services()
     import check_guide as cg
     english = KO_GUIDE.replace("앱이 HTTPS로 REST 요청을 보낸다", "The app sends REST requests over HTTPS").replace(
         "주문 메시지를 큐에 넣고 202를 돌려준다", "puts the order on the queue and returns 202").replace(
-        "모바일 앱의 주문을 API Gateway가 받아 SQS에 넣고 Lambda가 처리한다", "Orders from the mobile app enter through API Gateway into SQS")
+        "모바일 앱의 주문을 API Gateway가 받아 SQS에 넣고 Lambda가 처리한다", "Orders from the mobile app enter through API Gateway into SQS").replace(
+        "라벨", "label")
     errors, _ = cg.check_guide(english, KO_BRIEF)
     assert any("Language: ko" in e for e in errors), errors
     # step 2 missing → the relationship it should describe is named
-    errors, _ = cg.check_guide(KO_GUIDE.replace("2. **API Gateway → SQS** — 주문 메시지를 큐에 넣고 202를 돌려준다.\n", ""), KO_BRIEF)
+    errors, _ = cg.check_guide(KO_GUIDE.replace("2. **API Gateway → SQS** — 주문 메시지를 큐에 넣고 202를 돌려준다. (라벨 `order message`)\n", ""), KO_BRIEF)
     assert any("apigw → sqs" in e and "step 2" in e for e in errors), errors
     # step exists but names the wrong endpoint
     errors, _ = cg.check_guide(KO_GUIDE.replace("2. **API Gateway → SQS**", "2. **API Gateway → DynamoDB**"), KO_BRIEF)
@@ -373,6 +392,12 @@ def test_check_guide_rejects_wrong_language_missing_steps_and_missing_services()
     # a component absent from the guide
     errors, _ = cg.check_guide(KO_GUIDE.replace("SQS", "큐"), KO_BRIEF)                # SQS named nowhere in the guide
     assert any("'sqs'" in e and "Services" in e for e in errors), errors
+    # a step that does not quote the text drawn on its arrow
+    errors, _ = cg.check_guide(KO_GUIDE.replace(" (라벨 `order message`)", ""), KO_BRIEF)
+    assert any("step 2" in e and "order message" in e and "edge text" in e for e in errors), errors
+    # "—" rows and rows not drawn are exempt from the quote rule
+    dash = KO_BRIEF.replace("| 2 | apigw → sqs | order message | sync |", "| 2 | apigw → sqs | — | sync |")
+    assert cg.check_guide(KO_GUIDE.replace(" (라벨 `order message`)", ""), dash)[0] == []
 
 
 def test_check_guide_cli_on_the_shipped_sample():

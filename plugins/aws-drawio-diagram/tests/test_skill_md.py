@@ -58,13 +58,18 @@ def test_output_set_has_a_guide_and_a_single_final_png():
     assert "architecture-guide.md" in style and "name.md" not in style
 
 
-def test_relationship_labels_are_kept_when_they_fit():
+def test_edge_text_is_the_what_flows_phrase():
     style = (SKILL / "references" / "layout-and-style.md").read_text()
-    assert "16 characters" in style and "6 characters" in style and "12 characters" in style
+    section = style.split("## 5.")[1].split("## 6.")[0]
+    for needle in ("What flows", "3 lines", "24 characters", "6 characters", "12 characters", "longest leg", "OUTSIDE_GAP"):
+        assert needle in section, needle
+    assert "badge" not in section and "cannot carry a label" not in section
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
-    assert "Label on diagram" in brief and "≤ 16" in brief
+    assert "## Edge text" in brief and "What flows" in brief and "Label on diagram" not in brief and "badge" not in brief
+    skill = SKILL_MD.read_text()
+    assert "What flows" in skill and "number badge" not in skill        # "corner badge" of a group is a different thing
     review = (SKILL / "references" / "review-checklist.md").read_text()
-    assert "≤ 5 edge labels" not in review
+    assert "≤ 5 edge labels" not in review and "badge" not in review and "What flows" in review
 
 
 def test_contract_lock_and_title_band_are_documented():
@@ -84,14 +89,13 @@ def test_guide_is_numbered_in_the_users_language_and_checked_mechanically():
     skill = SKILL_MD.read_text()
     assert "Language:" in skill and "scripts/check_guide.py" in skill
     guide = (SKILL / "references" / "architecture-guide.md").read_text()
-    for needle in ("Language:", "badge", "## 단계별 흐름", "## 서비스", "## 설계 결정", "step per relationship"):
+    for needle in ("Language:", "What flows", "(라벨 `", "## 단계별 흐름", "## 서비스", "## 설계 결정", "step per relationship"):
         assert needle in guide, needle
+    assert "badge" not in guide and "배지" not in guide
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
     assert "Language:" in brief
     review = (SKILL / "references" / "review-checklist.md").read_text()
-    assert "check_guide.py" in review and "badge" in review
-    style = (SKILL / "references" / "layout-and-style.md").read_text()
-    assert "badge" in style.split("## 5.")[1].split("## 6.")[0]
+    assert "check_guide.py" in review and "quote" in review
     assert (SKILL / "scripts" / "check_guide.py").exists()
 
 

@@ -188,84 +188,85 @@
     {
       "from": "mobile",
       "to": "apigw",
-      "label": "HTTPS",
-      "num": 1
+      "num": 1,
+      "label": "order requests"
     },
     {
       "from": "apigw",
       "to": "sqs",
-      "label": "order message",
-      "num": 2
+      "num": 2,
+      "label": "order message"
     },
     {
       "from": "apigw",
       "to": "cognito",
-      "label": "verify JWT",
       "dashed": true,
-      "num": 3
+      "num": 3,
+      "label": "token validation"
     },
     {
       "from": "sqs",
       "to": "handler",
-      "label": "poll",
-      "num": 4
+      "num": 4,
+      "label": "batch poll"
     },
     {
       "from": "handler",
       "to": "ddb",
-      "label": "put order",
-      "num": 5
+      "num": 5,
+      "label": "put order"
     },
     {
       "from": "handler",
       "to": "sfn",
-      "label": "start",
-      "num": 6
+      "num": 6,
+      "label": "start saga"
     },
     {
       "from": "sfn",
       "to": "payment",
-      "num": 7
+      "num": 7,
+      "label": "task invoke"
     },
     {
       "from": "sfn",
       "to": "inventory",
-      "label": "invoke task",
-      "num": 8
+      "num": 8,
+      "label": "task invoke"
     },
     {
       "from": "sfn",
       "to": "sns",
-      "label": "on complete",
-      "num": 9
+      "num": 9,
+      "label": "post status"
     },
     {
       "from": "sns",
       "to": "customer",
-      "label": "notify",
       "dashed": true,
-      "num": 10
+      "num": 10,
+      "label": "email / push"
     },
     {
       "from": "apigw",
       "to": "cw",
-      "label": "metrics",
       "dashed": true,
-      "num": 11
+      "num": 11,
+      "label": "metrics, logs"
     },
     {
       "from": "ddb",
       "to": "s3",
-      "label": "export",
       "dashed": true,
-      "num": 12
+      "num": 12,
+      "label": "PITR export"
     },
     {
       "from": "sqs",
       "to": "dlq",
-      "label": "redrive",
       "dashed": true,
-      "num": 13
+      "num": 13,
+      "label": "messages that exceed maxReceiveCount"
     }
   ]
 }

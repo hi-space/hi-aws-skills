@@ -22,20 +22,20 @@ Language: ko
 | ops | User (`user`, resource) | Ops team on call | outside |
 
 ## Relationships
-| # | From → To | What flows | Kind | Label |
-|---|---|---|---|---|
-| 1 | sensors → iotcore | telemetry over MQTT | sync | MQTT |
-| 2 | iotcore → kinesis | rule action: put record | sync | — |
-| 3 | kinesis → normalize | event source mapping | sync | — |
-| 4 | normalize → ddb | upsert latest state | sync | — |
-| 5 | normalize → s3lake | write curated records | sync | — |
-| 6 | normalize → sns | publish threshold breach | sync | — (target named "threshold alerts") |
-| 7 | s3lake → crawler | crawl new partitions | sync | — |
-| 8 | crawler → catalog | update tables | sync | — |
-| 9 | catalog → athena | query metadata | sync | — |
-| 10 | athena → quicksight | SPICE / direct query | sync | — |
-| 11 | kinesis → cw | stream metrics | aux (dashed) | — |
-| 12 | sns → ops | email / SMS | async (dashed) | notify |
+| # | From → To | What flows | Kind |
+| --- | --- | --- | --- |
+| 1 | sensors → iotcore | telemetry over MQTT | sync |
+| 2 | iotcore → kinesis | rule action: put record | sync |
+| 3 | kinesis → normalize | record batch | sync |
+| 4 | normalize → ddb | upsert latest state | sync |
+| 5 | normalize → s3lake | write to lake | sync |
+| 6 | normalize → sns | publish threshold breach | sync |
+| 7 | s3lake → crawler | new files | sync |
+| 8 | crawler → catalog | update tables | sync |
+| 9 | catalog → athena | query metadata | sync |
+| 10 | athena → quicksight | SPICE / direct query | sync |
+| 11 | kinesis → cw | stream metrics | aux (dashed) |
+| 12 | sns → ops | email / SMS | async (dashed) |
 
 ## Flow
 1. Sensors publish telemetry to IoT Core over MQTT; an IoT rule forwards records to Kinesis Data Streams.

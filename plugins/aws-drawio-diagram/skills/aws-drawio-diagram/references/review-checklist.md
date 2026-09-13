@@ -68,12 +68,13 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       (roughly equal margins); no half-empty page.
 - [ ] **Edges**: every edge is straight or has one bend; fan-out bends are all on the same side of the source;
       no two edges share a segment.
-- [ ] **Edge labels**: every straight primary edge shows its brief label; each sits in free space, ≤ 16
-      characters, never on a corner. Compare the brief's Label column with the picture: a label missing on a
-      *straight* edge is a finding; a label missing on a *bent* edge is expected (the guide explains it). The
-      builder refuses (`ERROR label`) a primary label that does not fit, so a build that passed has none — a review
-      that reads "too long, acceptable" next to a solid edge describes a build that did not pass, and is `not
-      ready`. `note: label dropped … too long` on a dashed edge is allowed. Node labels ≤ 3 words.
+- [ ] **Edge text**: every primary edge — straight or bent — shows its brief's *What flows* phrase, in ≤ 3 lines,
+      in free space (not on a border, a title row, an icon, another label or another line). Compare the brief's
+      What flows column with the picture: a primary edge without its text is a finding. The builder refuses
+      (`ERROR label`) a primary phrase that has no room, so a build that passed has none — a review that reads
+      "too long, acceptable" next to a solid edge describes a build that did not pass, and is `not ready`.
+      `note: label dropped` on a dashed edge is allowed. A phrase the Drawer condensed still means what the
+      Architect wrote (`StartExecution` → `start saga` yes; `token validation` → `—` no). Node labels ≤ 3 words.
 - [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
       group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend.
 - [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
@@ -93,15 +94,16 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 
 - [ ] `<name>.guide.md` exists next to the `.drawio`, written from the template in `architecture-guide.md`, in the
       brief's `Language:` (Korean prose with English service names for `ko`). Its step-by-step section has **one
-      numbered step per row of the brief's Relationships, numbered like the brief's `#`** — the same number as the
-      badge on that edge in the picture; aux rows not drawn say so. Its Services table has one row per Components
-      row, and Design decisions carries every Decisions line, every accepted review finding with its source, every
-      icon substitution and every trimmed aux edge.
+      numbered step per row of the brief's Relationships, numbered like the brief's `#`, and every step quotes
+      the text drawn on that arrow** — the row's *What flows* phrase, as (라벨 `…`); aux rows not drawn say so.
+      Its Services table has one row per Components row, and Design decisions carries every Decisions line, every
+      accepted review finding with its source, every icon substitution and every trimmed aux edge.
 - [ ] `python3 <skill-dir>/scripts/check_guide.py <name>.guide.md <name>.brief.md` exits 0 (`guide check … ✓`).
-      It refuses the wrong language, a missing or mis-numbered step, a step that names the wrong endpoints, and a
-      component missing from Services. A guide that fails it is `not ready`, whatever it reads like.
-- [ ] Every edge on the picture shows its number badge and the numbers match the brief's `#` column (spot-check
-      three); a text label, where present, sits beside its badge, not under it.
+      It refuses the wrong language, a missing or mis-numbered step, a step that names the wrong endpoints or does
+      not quote its phrase, and a component missing from Services. A guide that fails it is `not ready`, whatever
+      it reads like.
+- [ ] Spot-check three arrows: the text on the picture is the brief's *What flows* phrase for that pair, and the
+      guide step with that number quotes the same words.
 - [ ] `<name>.preview.png` has been deleted. The delivered image is `<name>.drawio.png` alone (XML embedded);
       `ls` the directory and check — two identical-looking PNGs is a finding.
 
@@ -109,9 +111,10 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 
 | Finding | Spec fix |
 |---|---|
-| Label on a group border | remove `label`, or move the node so the segment crosses a row gap, or set `label_offset` |
-| `note: label dropped … too long` | Architect shortens the brief's Label to the limit named (16 on a lane, 6 across a border, 12 vertical) and reruns the scaffold; or accepts the drop — the guide carries the full text |
-| Straight primary edge with no label although the brief has one | the label was dropped by hand — restore it in the spec; if it W7s, move the node so the segment crosses a row gap |
+| Edge text on a border, an icon or another line (W7, hand-written XML) | set `label_offset` to a free stretch of the edge, or move the node so the edge has a longer leg |
+| `ERROR label … no clear place` on a primary edge | Drawer condenses the brief's *What flows* phrase to what the edge offers (a hop between two group boxes holds words of ≤ 6 letters: `start saga`, `write to lake`) and reruns the scaffold; or moves a node in the `.layout.json` so the edge runs inside one box or vertically |
+| `note: label dropped` on a dashed edge | allowed; the guide quotes the phrase and says the line has no text — or condense it as above so it appears |
+| Primary edge with no text although the brief has a phrase | the text was removed by hand — restore it in the spec; if it W7s, move the node |
 | Node label runs into the neighbouring column | label > 22 characters and the builder could not split it (no space) — shorten or add a space before the qualifier |
 | Line disappears behind a node label | hand-written XML without the `B` port — use `exitY`/`entryY` = (78 + 4 + 18·lines)/78 with `*Perimeter=0` (layout-and-style.md §5) |
 | Dead column inside a group | move a neighbour into that cell or shrink the group's `cols` |

@@ -42,7 +42,8 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
   the top (lanes A–B), row 2 below (lanes C–D). Groups in the same row share their top edge unless one is
   intentionally shorter (then it hugs its content, top-aligned to its own first lane).
 - **AWS Cloud** (badge group) contains the role groups; **Users / on-premise / SaaS** sit outside it, on the
-  main lane, 260 px left of the first column.
+  main lane, in column 0 shifted 60 px further out (`OUTSIDE_GAP`) so the first edge into the cloud has room for
+  its text.
 - Nesting deeper than *AWS Cloud → role group → icons* only when the request is about networking (then Region →
   VPC → AZ → subnet from the table below, same 200/40 arithmetic).
 - Validator `W6`: a service icon whose parent is the canvas while an AWS Cloud group exists → put it in a group.
@@ -165,43 +166,41 @@ required, otherwise draw.io snaps the point back onto the icon.
   arrowheads on one line (validator `W8`, builder error). Dashed and solid edges may share a trunk; the trunk
   renders solid and the dashing shows on the branches.
 - **Empty corridor.** No other icon on any leg of the edge; no two edges in the same corridor.
-- Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />`. No `value` when unlabeled.
+- Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />` and, as `value`, the brief's
+  *What flows* phrase (see *Edge text* below). No `value` only for a `—` row.
 - Edges may cross group borders (that is what groups are for); they must not run along one.
 - Left-to-right for the request path: users left, models/data right. Auxiliary (logs, alarms) below.
 
-**Edge labels.** A label carries the brief's *Label on diagram* — the what-flows phrase — so a reader can follow
-the request path without the guide. Every primary relationship gets one in the brief; the picture keeps the ones
-that have room, and `scripts/layout.py` prints a `note:` naming each label it dropped and why. What fits
-(`LABEL_MAX_*` in `layout.py`, 6.2 px per 11 pt character + 16 px padding):
+**Edge text.** Every edge shows the brief's *What flows* phrase — what travels on that hop — so a reader follows
+the picture without the guide, and the guide's steps quote the same words. The builder draws the phrase as an
+html label (11 pt, 6.2 px per character + 16 px padding, 14 px per line), wrapped into at most **3 lines of
+≤ 24 characters** and re-wrapped so the lines come out even (`Fetch dynamic` / `credentials (optional)`), and
+places it on the **longest leg** of the edge that has a clear spot — a bent edge carries its text on one of its
+legs, positioned along the polyline with the relative `mxGeometry x` (−1 source … 1 target, by length). On a
+horizontal leg the text sits above the line (`align=center;verticalAlign=bottom;`) or, if that is taken, below it
+(`verticalAlign=top;`); on a vertical leg left of it (`align=right;spacingRight=4;verticalAlign=middle;`) or
+right of it (`align=left;spacingLeft=4;`). The builder slides it from the middle of the leg outwards in 1/20
+steps until the box covers **no group or cloud border, no title row (top 28 px of a titled container), no icon or
+node label, no other edge's text and no other edge's line**, and tries narrower wraps (24 → 18 → 14 → 10 → 8 → 6
+characters per line) when the wide one has no room. The validator's `W7` checks exactly that on the file. Room
+by situation (`chars_that_fit` in `build_diagram.py`):
 
-| Placed edge | Max label | Room |
+| Leg | Characters per line | Room |
 |---|---|---|
-| Straight, horizontal, inside one group box or across an empty column | **16 characters** | 162 px clear between two icons on a lane |
-| Straight, horizontal, between two adjacent group boxes — also users → first service across the cloud border | **6 characters** | two 61 px pockets either side of the 40 px gap; the label sits in one of them (`HTTPS`, `MQTT`, `events`) |
-| Straight, vertical | **12 characters** | hangs left of the line; must stay inside the 100 px to the group's left border and **below the target group's title row** (top 28 px — the builder slides it there, the validator's `W7` names the title). A vertical edge between two group rows is the roomiest place for a label (`retrieve`, `embed`) |
-| Bent (one L) | none | draw.io centres the label on the polyline, i.e. on the corner. Name the target instead (`SNS (threshold alerts)`) — the guide explains the hop. Builder error |
+| Horizontal, inside one group box (or on an empty column) | **22–24** | 162 px clear between two icons on a lane; 201 px on the horizontal leg of a bend |
+| Horizontal, the first hop into the cloud (users → first service) | **16** | users sit `OUTSIDE_GAP` = 60 px further from the cloud than the grid column, so the pocket outside the cloud border is 121 px |
+| Horizontal, between two neighbouring group boxes | **6 characters** (per line, up to 3 lines) | two 61 px pockets either side of the 40 px gap — `HTTPS`, `invoke`, `put` / `order`, `start` / `saga`. The one tight spot: condense the phrase to short words here |
+| Vertical (straight, or the trunk of a bend) | **12 characters** | hangs beside the line inside the 100 px to the box border; must stay below the target box's title row — a vertical hop between two group rows is a roomy place for text |
 
-**Number badges.** Every edge also carries its relationship number from the brief's `#` column as a small badge
-(dark pill, white 11 pt bold digits — an `edgeLabel` child cell of the edge, `connectable="0"`, relative
-geometry). The badge is the link between the picture and `<name>.guide.md`: step 3 of the guide is badge ③. The
-builder places it *on* the line — beside the text label on a straight edge (before it in reading order), at the
-corner of a bent edge, at the freest point otherwise — and the validator's `W7` refuses a badge on a border, a
-title row, an icon or the edge's own label. A badge fits everywhere a line runs, so bent edges keep their number
-even though they cannot keep text.
-
-```xml
-<mxCell id="e3_n" value="3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontFamily=Amazon Ember;fontSize=11;fontStyle=1;fontColor=#FFFFFF;labelBackgroundColor=#232F3E;labelBorderColor=#232F3E;" vertex="1" connectable="0" parent="e3"><mxGeometry x="-0.35" y="0" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>
-```
-
-- Horizontal edge: `verticalAlign=bottom;` (label above the line). Vertical edge: `align=right;spacingRight=4;`
-  (label left of the line).
-- **Slide the label along the edge** when the midpoint is on a border: `<mxGeometry x="-0.6" relative="1"
-  as="geometry"/>` (−1 = at the source, 0 = midpoint, 1 = at the target). The users → first-service edge always
-  needs this, because its midpoint sits on the AWS Cloud border; the builder computes the offset in 4 px steps
-  and refuses (`W7`) when no free position exists, by hand aim for the middle of the pocket outside the cloud.
-- A label that does not fit on a **primary (solid) edge** stops the build (`ERROR label`): shorten it in the brief
-  (`token validation` → `verify JWT`, `PostgreSQL 5432` → `SQL`) or write `—` when the pair explains itself. On
-  dashed edges it is a `note:` and the drop is allowed — the guide carries the full sentence either way.
+- **Nothing is dropped silently.** A phrase with no clear spot on a **primary (solid) edge** stops the build
+  (`ERROR label`, naming the characters per line the edge offers): condense it in the brief (`StartExecution` →
+  `start saga`, `write curated records` → `write to lake`, `prompt / completion` → `LLM prompt`) or move a node in
+  the `.layout.json` so the edge runs inside one box or vertically — never delete the text from the spec. On a
+  dashed edge the same case is a `note: label dropped` and allowed; the guide still explains the hop.
+- **Pinning by hand**: `"label_offset": -0.6` on an edge fixes the relative position (−1 source … 1 target, along
+  the polyline); the builder then only picks the side. Use it after reading a `W7`, not instead of it.
+- Hand-written XML: `value` with `<br>` between lines and `html=1`, one of the four alignment styles above, and
+  the relative `x`. The validator measures the box from the longest line and the line count.
 
 ## 6. Node labels — always below the icon
 

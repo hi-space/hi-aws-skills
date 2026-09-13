@@ -23,21 +23,21 @@ Language: ko
 | s3 | S3 (`s3`) | Order archive (DynamoDB export) | Archive |
 
 ## Relationships
-| # | From → To | What flows | Kind | Label |
-|---|---|---|---|---|
-| 1 | mobile → apigw | order requests | sync | HTTPS |
-| 2 | apigw → sqs | order message | sync | order message |
-| 3 | apigw → cognito | token validation | aux (dashed) | verify JWT |
-| 4 | sqs → handler | batch poll | sync | poll |
-| 5 | handler → ddb | put order | sync | put order |
-| 6 | handler → sfn | StartExecution | sync | start |
-| 7 | sfn → payment | task invoke | sync | — |
-| 8 | sfn → inventory | task invoke | sync | invoke task |
-| 9 | sfn → sns | publish status | sync | on complete |
-| 10 | sns → customer | email / push | async (dashed) | notify |
-| 11 | apigw → cw | metrics, logs | aux (dashed) | metrics |
-| 12 | ddb → s3 | periodic export | aux (dashed) | export |
-| 13 | sqs → dlq | messages that exceed `maxReceiveCount` | aux (dashed) | redrive |
+| # | From → To | What flows | Kind |
+| --- | --- | --- | --- |
+| 1 | mobile → apigw | order requests | sync |
+| 2 | apigw → sqs | order message | sync |
+| 3 | apigw → cognito | token validation | aux (dashed) |
+| 4 | sqs → handler | batch poll | sync |
+| 5 | handler → ddb | put order | sync |
+| 6 | handler → sfn | start saga | sync |
+| 7 | sfn → payment | task invoke | sync |
+| 8 | sfn → inventory | task invoke | sync |
+| 9 | sfn → sns | post status | sync |
+| 10 | sns → customer | email / push | async (dashed) |
+| 11 | apigw → cw | metrics, logs | aux (dashed) |
+| 12 | ddb → s3 | PITR export | aux (dashed) |
+| 13 | sqs → dlq | messages that exceed `maxReceiveCount` | aux (dashed) |
 
 ## Flow
 1. The mobile app calls API Gateway over HTTPS; Cognito validates the token.

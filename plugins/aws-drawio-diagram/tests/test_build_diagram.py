@@ -117,8 +117,10 @@ def test_fan_out_uses_vertical_exit_and_horizontal_entry():
 def test_outside_label_is_shifted_off_the_cloud_border():
     xml = bd.build(spec())
     import xml.etree.ElementTree as ET
-    e1 = next(c for c in ET.fromstring(xml).iter("mxCell") if c.get("id") == "e1")
-    assert float(e1.find("mxGeometry").get("x")) < -0.3
+    cells = {c.get("id"): c for c in ET.fromstring(xml).iter("mxCell")}
+    assert float(cells["e1"].find("mxGeometry").get("x")) < 0            # slid toward the users, off the cloud border
+    # users sit OUTSIDE_GAP further left than the grid column, so the pocket outside the cloud holds real text
+    assert float(cells["u"].find("mxGeometry").get("x")) == 140 - 39 - bd.OUTSIDE_GAP
     assert vd.validate_text(xml, INDEX) == ([], [])
 
 
@@ -139,7 +141,6 @@ def test_image_node_and_no_cloud():
     (lambda s: s["groups"].append({"id": "h", "label": "H", "cols": [2], "lanes": [1]}), "overlap"),
     (lambda s: s["edges"].append({"from": "a", "to": "zzz"}), "must name a node"),
     (lambda s: s["edges"].append({"from": "b", "to": "b", "dashed": True}), "cannot connect to itself"),
-    (lambda s: s["edges"].append({"from": "b", "to": "c", "label": "x"}), "bent edge cannot carry a label"),
 ])
 def test_spec_errors(mutate, message):
     s = spec()
@@ -242,12 +243,12 @@ BRIEF = """# T
 | dom | Cognito domain (not drawn) | token endpoint | G |
 
 ## Relationships
-| # | From → To | What | Kind | Label |
-|---|---|---|---|---|
-| 1 | u → a | HTTPS | sync | HTTPS |
-| 2 | a → b | invoke | sync | — |
-| 3 | a → c | token | aux (dashed) | — |
-| 4 | b → c | JWKS | sync/aux | — |
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | u → a | HTTPS | sync |
+| 2 | a → b | invoke | sync |
+| 3 | a → c | token | aux (dashed) |
+| 4 | b → c | JWKS | sync/aux |
 
 ## Flow
 """
@@ -309,30 +310,40 @@ def test_vertical_label_between_group_rows_clears_the_title_band():
     assert vd.validate_text(xml, INDEX) == ([], [])          # and lands on neither a border nor a title
 
 
-def test_every_numbered_edge_gets_a_badge_child_and_the_picture_stays_clean():
+def test_bent_edge_carries_its_text_on_the_longer_leg():
     import xml.etree.ElementTree as ET
     s = spec()
-    for i, e in enumerate(s["edges"], 1):
-        e["num"] = i
-    s["edges"].append({"from": "b", "to": "c", "num": 9})          # an L: badge goes to the corner
+    s["edges"].append({"from": "b", "to": "c", "label": "fetch JWKS keys"})    # an L: up from b, left into c
     xml = bd.build(s)
     cells = {c.get("id"): c for c in ET.fromstring(xml).iter("mxCell")}
-    badges = [c for c in cells.values() if "edgeLabel" in (c.get("style") or "")]
-    assert len(badges) == len(s["edges"])
-    for b in badges:
-        parent = cells[b.get("parent")]
-        assert parent.get("edge") == "1" and b.get("vertex") == "1" and b.get("connectable") == "0"
-        g = b.find("mxGeometry")
-        assert g.get("relative") == "1" and -1 <= float(g.get("x")) <= 1
-    by_edge = {cells[b.get("parent")].get("source") + "→" + cells[b.get("parent")].get("target"): b for b in badges}
-    assert by_edge["u→a"].get("value") == "1" and by_edge["b→c"].get("value") == "9"
-    # the badge next to a text label sits beside it, not under it: different position along the edge
-    e1 = cells[by_edge["u→a"].get("parent")]
-    assert float(by_edge["u→a"].find("mxGeometry").get("x")) != float(e1.find("mxGeometry").get("x") or 0)
+    e4 = cells["e4"]
+    assert e4.get("value") == "fetch JWKS keys"
+    st = vd.parse_style(e4.get("style"))
+    rel = float(e4.find("mxGeometry").get("x"))
+    # legs: vertical 131 px (b's top to c's lane), horizontal 201 px (corner to c's right side) — the text goes
+    # on the horizontal leg, i.e. past the corner (relative x > 2·131/332 − 1) and above the line
+    assert rel > round(2 * 131 / 332 - 1, 3) and st["verticalAlign"] == "bottom" and st["align"] == "center"
+    assert "edgeLabel" not in xml                                            # no number badges any more
     assert vd.validate_text(xml, INDEX) == ([], [])
 
 
-def test_corner_fraction_maps_to_drawio_relative_x():
-    # relative x runs -1 (source) … 1 (target) along the whole polyline; the corner is at leg1 / (leg1 + leg2)
-    assert bd.Builder.badge_x_at_corner(100, 100) == 0.0
-    assert bd.Builder.badge_x_at_corner(131, 201) == round(2 * 131 / 332 - 1, 3)
+def test_long_text_wraps_and_the_validator_measures_the_wrapped_box():
+    s = spec()
+    s["edges"][1]["label"] = "invoke with the validated order payload"      # a → b inside one box, 162 px
+    xml = bd.build(s)
+    # three lines, re-wrapped at the narrowest width that keeps three so they come out even
+    assert 'value="invoke with&lt;br&gt;the validated&lt;br&gt;order payload"' in xml
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    # a label pinned by hand at the source end lands on the users' icon: the validator says so
+    s = spec()
+    s["edges"][0]["label_offset"] = -0.98
+    _, warnings = vd.validate_text(bd.build(s), INDEX)
+    assert any(w.startswith("W7") and "icon" in w for w in warnings), warnings
+
+
+def test_label_placement_avoids_other_edges_lines():
+    # a's label on the vertical dashed edge to c must not be laid across the horizontal edge a → b
+    s = spec()
+    s["edges"][2]["label"] = "verify"
+    xml = bd.build(s)
+    assert vd.validate_text(xml, INDEX) == ([], [])

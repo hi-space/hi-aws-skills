@@ -23,17 +23,27 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+from build_diagram import (CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, OUTSIDE_GAP,  # noqa: E402
+                           chars_that_fit, label_lines)
+
 HARD = 1000.0
 
-# Longest edge label (characters) per straight-edge situation, derived from the builder's geometry (6.2 px per
-# character + 16 px padding, 240 px column pitch, 78 px icon, 40 px gap between groups):
-#   lane      162 px clear between two icons on one lane                                → 16 characters
-#   border    a horizontal edge between adjacent groups (or users → first service) crosses a 40 px gap; the label
-#             sits in one of the two 61 px pockets either side of it, and the builder slides it in 4 px steps,
-#             so the box must leave a few px of slack                                   → 6 characters
-#   vertical  the label hangs left of the line and must stay inside the 100 px to the group's left border → 12
-# Bent edges carry no label at all (draw.io centres it on the corner). Keep in step with layout-and-style.md §5.
-LABEL_MAX_LANE, LABEL_MAX_BORDER, LABEL_MAX_VERTICAL = 16, 6, 12
+# Edge text is the brief's *What flows* phrase; the builder wraps it (≤ 3 lines) and puts it on the longest leg
+# of the edge that has a clear spot (build_diagram.py § edge text). The planner estimates that room the same way,
+# so a labelled edge is placed where its text will fit:
+#   horizontal leg  the pixels between the two icons (or a corner and an icon), cut by every group / cloud border
+#                   it crosses — the widest stretch sets the characters per line: 162 px on one lane → 22, the
+#                   61 px pocket beside a border → 6, the 121 px pocket outside the cloud → 16, the 201 px leg
+#                   of a bend → 24 (the cap)
+#   vertical leg    the text hangs beside the line, 96 px to the box border → 12 characters per line
+# The estimate only steers the search (LABEL_ROOM_COST per primary edge whose text would not fit — less than a
+# spine break, more than a bend, so the planner trades a little shape for a label but never sprawls for one); the
+# builder measures exactly and refuses a primary edge whose text has no room (`ERROR label`). Keep in step with
+# layout-and-style.md §5.
+LABEL_VERTICAL_CHARS = 12
+LABEL_ROOM_COST = 20.0
 
 
 def layering(nodes: dict, edges: list) -> dict[str, int]:
@@ -194,11 +204,28 @@ class Placement:
         # the rectangles the groups will be drawn as (see boxes()); a label's room depends on them, not on the
         # logical group — one group split into two boxes puts a border between two of its own members
         boxes = self.boxes(col, lane)
-        box_of: dict[str, int] = {}
-        for i, (gid, c0, c1, l0, l1) in enumerate(boxes):
-            for nid, d in self.nodes.items():
-                if d.get("group") == gid and c0 <= col[nid] <= c1 and l0 <= lane[nid] <= l1:
-                    box_of[nid] = i
+        inside_cols = [col[n] for n, d in self.nodes.items() if not d.get("outside")]
+
+        def x_of(nid: str) -> float:                                # icon centre x as the builder draws it
+            x = COL0 + COL_PITCH * col[nid]
+            if self.nodes[nid].get("outside") and inside_cols:
+                x += -OUTSIDE_GAP if col[nid] < min(inside_cols) else OUTSIDE_GAP if col[nid] > max(inside_cols) else 0
+            return x
+
+        cloud_x = ()
+        if boxes:
+            cloud_x = (COL0 + COL_PITCH * min(b[1] for b in boxes) - GROUP_HALF_W - CLOUD_PAD,
+                       COL0 + COL_PITCH * max(b[2] for b in boxes) + GROUP_HALF_W + CLOUD_PAD)
+
+        def h_room(lane_: int, xa: float, xb: float) -> int:
+            """Characters per line on a horizontal leg from xa to xb on `lane_`: its widest stretch between borders."""
+            cuts = list(cloud_x)
+            for _, c0, c1, l0, l1 in boxes:
+                if l0 <= lane_ <= l1:
+                    cuts += [COL0 + COL_PITCH * c0 - GROUP_HALF_W, COL0 + COL_PITCH * c1 + GROUP_HALF_W]
+            xs = [xa] + sorted(x for x in cuts if xa < x < xb) + [xb]
+            return chars_that_fit(max(b - a for a, b in zip(xs, xs[1:])))
+
         sides: dict[tuple[str, str], list[tuple[str, str]]] = defaultdict(list)   # (node, side) -> [(kind, role)]
         segs: list[tuple[str, float, float, float, str, str, str]] = []           # (orient, coord, lo, hi, leg, s, t)
         for e in self.edges:
@@ -208,25 +235,11 @@ class Placement:
             solid = not e.get("dashed")
             if (s, t) in self.spine and sl != tl:
                 soft += 80.0                                        # the request path stays on one lane
-            label = e.get("label")
-            if label and (sc == tc or sl == tl):                    # straight edge: will the label fit this geometry?
-                if sc == tc:
-                    limit = LABEL_MAX_VERTICAL
-                elif box_of.get(s) != box_of.get(t) and abs(sc - tc) == 1:
-                    limit = LABEL_MAX_BORDER
-                else:
-                    limit = LABEL_MAX_LANE
-                if len(label) > limit:
-                    if solid and len(label) <= LABEL_MAX_LANE:
-                        # it fits on a lane or a vertical edge somewhere — making that room is the planner's job,
-                        # otherwise an unrelated change elsewhere would decide whether this label survives
-                        hard += 1
-                        notes.append(f"edge {s}→{t}: label '{label}' does not fit here (max {limit}) — needs a cell "
-                                     "where the edge stays inside one group box or runs vertically")
-                    else:
-                        soft += 20.0 if solid else 4.0              # can fit nowhere: the builder's ERROR label says shorten
+            xs_, xt_ = x_of(s), x_of(t)
+            rooms: list[int] = []                                   # characters per line, per leg of the drawn edge
             if sc == tc:                                            # vertical straight
                 soft += 1.0 if solid else 0.0
+                rooms = [LABEL_VERTICAL_CHARS]
                 segs.append(("v", sc, min(sl, tl), max(sl, tl), "only", s, t))
                 step = 1 if tl > sl else -1
                 for l in range(sl + step, tl, step):
@@ -236,6 +249,7 @@ class Placement:
                 sides[(s, "B" if step > 0 else "T")].append(("straight", "out"))
                 sides[(t, "T" if step > 0 else "B")].append(("straight", "in"))
             elif sl == tl:                                          # horizontal straight
+                rooms = [h_room(sl, min(xs_, xt_) + ICON / 2, max(xs_, xt_) - ICON / 2)]
                 segs.append(("h", sl, min(sc, tc), max(sc, tc), "only", s, t))
                 step = 1 if tc > sc else -1
                 if (s, t) in self.spine and step < 0:
@@ -247,28 +261,38 @@ class Placement:
                 sides[(s, "R" if step > 0 else "L")].append(("straight", "out"))
                 sides[(t, "L" if step > 0 else "R")].append(("straight", "in"))
             else:                                                   # one bend, either orientation
-                soft += (3.0 if solid else 0.0) + (8.0 if e.get("label") else 0.0)   # a bend drops its label
+                soft += 3.0 if solid else 0.0
                 step = 1 if tl > sl else -1
                 cstep = 1 if tc > sc else -1
                 v_cells = [(sc, l) for l in range(sl + step, tl + step, step)] + [(c, tl) for c in range(sc + cstep, tc, cstep)]
                 h_cells = [(c, sl) for c in range(sc + cstep, tc + cstep, cstep)] + [(tc, l) for l in range(sl + step, tl, step)]
                 v_block = [cells[c] for c in v_cells if c in cells]
                 h_block = [cells[c] for c in h_cells if c in cells]
-                if not v_block:
+                if not v_block:                                     # corner on the source's column, target's lane
                     sides[(s, "B" if step > 0 else "T")].append(("bend", "out"))
                     sides[(t, "L" if cstep > 0 else "R")].append(("bend", "in"))
                     segs.append(("v", sc, min(sl, tl), max(sl, tl), "first", s, t))
                     segs.append(("h", tl, min(sc, tc), max(sc, tc), "last", s, t))
-                elif not h_block:
+                    t_edge = xt_ - ICON / 2 if xt_ > xs_ else xt_ + ICON / 2
+                    rooms = [LABEL_VERTICAL_CHARS, h_room(tl, min(xs_, t_edge), max(xs_, t_edge))]
+                elif not h_block:                                   # corner on the source's lane, target's column
                     sides[(s, "R" if cstep > 0 else "L")].append(("bend", "out"))
                     sides[(t, "T" if step > 0 else "B")].append(("bend", "in"))
                     segs.append(("h", sl, min(sc, tc), max(sc, tc), "first", s, t))
                     segs.append(("v", tc, min(sl, tl), max(sl, tl), "last", s, t))
                     soft += 1.0
+                    s_edge = xs_ + ICON / 2 if xt_ > xs_ else xs_ - ICON / 2
+                    rooms = [h_room(sl, min(s_edge, xt_), max(s_edge, xt_)), LABEL_VERTICAL_CHARS]
                 else:
                     hard += 1
                     notes.append(f"edge {s}→{t}: both L routes are blocked ('{v_block[0]}' / '{h_block[0]}')")
                 soft += 2.0 * (abs(tc - sc) - 1)                     # long legs are allowed, short ones look better
+            label = e.get("label")
+            if label and rooms and not any(label_lines(label, r) for r in rooms):
+                # the text has no room on this edge as placed: a strong nudge, not a hard rule — a compact picture
+                # beats a spare column, and the builder refuses a primary edge whose text still has no room
+                # (`ERROR label`), so the Drawer condenses the phrase; a dashed edge just loses its text (note)
+                soft += LABEL_ROOM_COST if solid else LABEL_ROOM_COST / 5
         for i, a in enumerate(segs):                               # W8: collinear overlapping legs of different edges
             for b in segs[i + 1:]:
                 if a[0] != b[0] or a[1] != b[1] or (a[5], a[6]) == (b[5], b[6]):
@@ -427,6 +451,19 @@ class Placement:
             if not improved:
                 break
 
+    def compact_columns(self) -> None:
+        """Close columns nobody uses: the constructive pass parks stragglers at `max_col + 1`, which can leave an
+        empty 240 px band in the middle of the picture. Removing an empty column only shortens edges — corridors
+        stay empty, sides and buses keep their order — so it cannot add a hard violation."""
+        used = sorted(set(self.col.values()))
+        remap = {c: i for i, c in enumerate(used)}
+        if used and used[0] == 0 and any(self.nodes[n].get("outside") for n in self.nodes if self.col[n] == 0):
+            pass                                                     # column 0 stays the outside column
+        elif used and not any(self.nodes[n].get("outside") and self.col[n] == used[0] for n in self.nodes):
+            remap = {c: i + 1 for i, c in enumerate(used)}           # no outside source: inside starts at 1
+        self.col = {n: remap[c] for n, c in self.col.items()}
+        self.max_col = max(self.col.values())
+
     # ---- output --------------------------------------------------------------------------------------
     def apply(self) -> dict:
         spec = json.loads(json.dumps(self.spec))
@@ -442,37 +479,10 @@ class Placement:
                 if n.get("group") == gid and c0 <= n["col"] <= c1 and l0 <= n["lane"] <= l1:
                     n["group"] = bid
         spec["groups"] = groups_out
-        # labels are judged against the *drawn* boxes: one logical group may have become two boxes with a border
-        box_of = {n["id"]: n.get("group") for n in spec["nodes"]}
-        self.dropped_labels, self.too_long_primary = [], []
-        for e in spec.get("edges", []):
-            label = e.get("label")
-            if label:
-                problem = self.label_problem(e["from"], e["to"], label, box_of)
-                if problem:
-                    e.pop("label")
-                    text = f"{e['from']} → {e['to']} ('{label}'): {problem}"
-                    self.dropped_labels.append(text)
-                    # a primary (solid) relationship keeps its label or says "—" explicitly; the builder refuses the rest
-                    if "too long" in problem and not e.get("dashed"):
-                        self.too_long_primary.append(text)
+        # every label stays in the placed spec: the builder measures the room exactly and decides (ERROR label on a
+        # primary edge, `note: label dropped` on a dashed one)
         spec.pop("layout", None)
         return spec
-
-    def label_problem(self, s: str, t: str, label: str, box_of: dict[str, str | None]) -> str | None:
-        """Why `label` cannot stay on the placed edge s → t, or None when it fits (LABEL_MAX_* above)."""
-        if self.col[s] != self.col[t] and self.lane[s] != self.lane[t]:
-            return "bent edge — name the target instead; the guide carries the meaning"
-        if self.col[s] == self.col[t]:
-            limit, where = LABEL_MAX_VERTICAL, "a vertical edge"
-        elif box_of[s] != box_of[t] and abs(self.col[s] - self.col[t]) == 1:
-            limit, where = LABEL_MAX_BORDER, "an edge between adjacent groups"
-        else:
-            limit, where = LABEL_MAX_LANE, "an edge on one lane"
-        if len(label) > limit:
-            return (f"{len(label)} characters is too long for {where} (max {limit}) — shorten the Label in the brief, "
-                    "or write — when the pair explains itself")
-        return None
 
 
 def needs_layout(spec: dict) -> bool:
@@ -480,18 +490,18 @@ def needs_layout(spec: dict) -> bool:
 
 
 def plan(spec: dict, seed: int = 7, steps: int = 9000) -> tuple[dict, list[str]]:
-    """Return (placed spec, notes: remaining hard violations plus 'label dropped …' lines)."""
+    """Return (placed spec, notes: the hard violations that remain — an edge with no one-bend route, a primary
+    edge whose text has no room, …)."""
     best_spec, best_notes, best_cost = None, None, None
     for s in range(seed, seed + 2):                      # two restarts; keep the best
         p = Placement(spec, seed=s)
         p.descent()
         p.solve(steps)
         p.descent()
+        p.compact_columns()
         c, notes = p.cost()
         if best_cost is None or c < best_cost:
-            best_spec, best_cost = p.apply(), c
-            best_notes = list(notes) + [("label too long: " if d in p.too_long_primary else "label dropped: ") + d
-                                        for d in p.dropped_labels]
+            best_spec, best_cost, best_notes = p.apply(), c, list(notes)
     return best_spec, best_notes
 
 
@@ -506,11 +516,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"wrote {args[1]}")
     for n in placed["nodes"]:
         print(f"  {n['id']:<24} col {n['col']:>2}  lane {n['lane']:>2}  {n.get('group') or 'outside'}")
-    hard = [n for n in notes if not n.startswith("label dropped")]          # "label too long" is hard too
     for n in notes:
-        tag = "note" if n.startswith("label dropped") else "ERROR label" if n.startswith("label too long") else "unresolved"
-        print(f"  {tag}: {n}")
-    return 1 if hard else 0
+        print(f"  unresolved: {n}")
+    return 1 if notes else 0
 
 
 if __name__ == "__main__":

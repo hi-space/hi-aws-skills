@@ -23,21 +23,21 @@ Language: ko
 | ingest | Lambda (`lambda`) | Chunk, embed, index | Document ingestion |
 
 ## Relationships
-| # | From → To | What flows | Kind | Label |
-|---|---|---|---|---|
-| 1 | users → cf | HTTPS | sync | HTTPS |
-| 2 | cf → s3web | static assets | sync | — |
-| 3 | cf → apigw | `/api` requests | sync | — |
-| 4 | apigw → cognito | token validation | aux (dashed) | — |
-| 5 | apigw → lambda | invoke | sync | — |
-| 6 | lambda → memory | read/write memory | sync | — |
-| 7 | lambda → bedrock | prompt / completion | sync | — |
-| 8 | lambda → oss | vector query | sync | retrieve |
-| 9 | apigw → cw | execution logs | aux (dashed) | — |
-| 10 | cw → sns | alarm | sync | alarm |
-| 11 | s3docs → eb | object created | sync | — |
-| 12 | eb → ingest | rule target | sync | — |
-| 13 | ingest → oss | upsert vectors | sync | embed |
+| # | From → To | What flows | Kind |
+| --- | --- | --- | --- |
+| 1 | users → cf | HTTPS | sync |
+| 2 | cf → s3web | static assets | sync |
+| 3 | cf → apigw | /api calls | sync |
+| 4 | apigw → cognito | token validation | aux (dashed) |
+| 5 | apigw → lambda | invoke | sync |
+| 6 | lambda → memory | read/write memory | sync |
+| 7 | lambda → bedrock | LLM prompt | sync |
+| 8 | lambda → oss | vector query | sync |
+| 9 | apigw → cw | execution logs | aux (dashed) |
+| 10 | cw → sns | alarm | sync |
+| 11 | s3docs → eb | object created | sync |
+| 12 | eb → ingest | rule target | sync |
+| 13 | ingest → oss | upsert vectors | sync |
 
 ## Flow
 1. Users reach CloudFront over HTTPS; static assets come from S3, API calls go to API Gateway.

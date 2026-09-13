@@ -28,13 +28,13 @@ Language: ko   <!-- the language the USER wrote the request in — the guide is 
 | memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Long-term memory | Agent runtime |
 
 ## Relationships
-| # | From → To | What flows | Kind | Label on diagram |
-|---|---|---|---|---|
-| 1 | users → cf | HTTPS requests | sync | HTTPS |
-| 2 | cf → s3web | static assets | sync | static assets |
-| 3 | apigw → cognito | token validation | async/aux (dashed) | verify JWT |
-| 4 | lambda → oss | vector query | sync | retrieve |
-| 5 | lambda → ddb | session read/write | sync | — |
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | users → cf | HTTPS | sync |
+| 2 | cf → s3web | static assets | sync |
+| 3 | apigw → cognito | token validation | async/aux (dashed) |
+| 4 | lambda → oss | vector query | sync |
+| 5 | lambda → ddb | session read/write | sync |
 
 ## Flow (numbered, matches the relationships)
 1. Users reach CloudFront over HTTPS; …
@@ -58,27 +58,27 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 - R1 (WAF in front of API Gateway) accepted for v1 — source: Serverless Applications Lens, <url>.
 ```
 
-## The `#` column is the badge on the edge
+## Edge text — *What flows* is drawn on the edge
 
-Every relationship's `#` is drawn on its edge as a small number badge and is the step number in `<name>.guide.md`
-— the reader's link between picture and text. Number rows 1…n in flow order and **never renumber after Phase 3
-starts** (a renumbered brief makes the picture disagree with the guide). Aux rows keep their numbers even when not
-drawn; their step in the guide says so.
+The *What flows* cell **is the text on the arrow**. There is no separate label column: what the reader sees on
+the picture is what this table says flows, so write it as a short noun phrase that reads on a line — `order
+message`, `token validation`, `put order`, `record batch`, `messages that exceed maxReceiveCount` — not a
+sentence and not a protocol dump (`PostgreSQL 5432 (via bedrock Lambda)`). Write `—` only when the pair already
+says it all (rare). Aux rows get a phrase too (`metrics, logs`, `PITR export`).
 
-## Labels — the picture carries what fits, the guide carries the rest
+The builder draws every phrase: it wraps it into at most **3 lines of ≤ 24 characters** and puts it on the leg
+of the edge that has room — a straight run, or one leg of a bent edge — off every border, icon and other label
+(layout-and-style.md § 5). Room is the only limit, and it is tight in one place: a horizontal hop **between two
+neighbouring group boxes** (also the very first hop into the cloud) has two 61 px pockets, i.e. words of ≤ 6
+letters (`HTTPS`, `invoke`, `put order`, `start saga`). A phrase that has no room on a **primary** relationship
+stops the build (`ERROR label`) until the Drawer condenses it (`StartExecution` → `start saga`, `write curated
+records` → `write to lake`); on a dashed edge it is dropped with a `note:`. Condensing keeps the meaning — the
+guide still explains the hop in full. The scaffold refuses outright a phrase that can fit nowhere (a word longer
+than 24 characters, more than 3 lines).
 
-The *Label on diagram* column is filled for **every primary relationship**: the *What flows* phrase, ≤ 16
-characters, no commas (`static assets`, `verify JWT`, `StartExecution`, `publish status`). Write `—` only when the
-pair already says it (Lambda → DynamoDB with nothing to add). Aux rows take a label too when one word names
-them (`metrics`, `export`).
-
-The Drawer's tools decide per placed edge whether the label has room — 16 characters on one lane, 6 across a
-group border (`HTTPS`), 12 on a vertical edge, none on a bent edge (layout-and-style.md § 5) — and print a
-`note:` for every label they drop on a bent or dashed edge. A too-long label on a **primary** relationship stops
-the build (`ERROR label`) until it is shortened to the limit named or replaced by `—` — so write them short from
-the start (`SQL`, `verify JWT`, `invoke`), not as protocol strings (`PostgreSQL 5432 (via bedrock Lambda)`). What
-the picture cannot show, `<name>.guide.md` explains step by step (architecture-guide.md); nothing in this table is
-lost, it only moves.
+The `#` column numbers the rows in flow order and is the step number in `<name>.guide.md`; each step quotes the
+row's phrase, so the reader finds the arrow by its text. **Never renumber after Phase 3 starts.** Aux rows keep
+their numbers even when not drawn; their step in the guide says so.
 
 ## Diagram budget — decide it here, not in the drawing
 
@@ -142,11 +142,12 @@ write ids the Drawer can use verbatim, and put the aux marker where you mean "op
 The first scaffold run also freezes the brief: `<name>.contract.json` records every component id and every
 `From → To` pair with its status (drawn / aux / not drawn). Afterwards the scaffold and the builder refuse a brief
 whose ids or pairs differ (`ERROR contract`) and print a `note:` for every row newly marked aux or not drawn. The
-Drawer's licence is Label text and "not drawn" markers — never the target of a relationship. When *you* change
+Drawer's licence is the wording of a *What flows* phrase and "not drawn" markers — never the target of a
+relationship. When *you* change
 the architecture after Phase 3 started, delete the contract file and write the reason under Decisions.
 
 ## What the Drawer needs from the brief
 
 Component ids (they become node ids), stencil names or image files, the group of every inside component, and the
-relationship table with the kind and the label text. Nothing else. If the Drawer has to invent any of these,
+relationship table with the kind and the *What flows* phrase. Nothing else. If the Drawer has to invent any of these,
 the brief is incomplete — send it back.

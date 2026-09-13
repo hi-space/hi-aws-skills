@@ -33,9 +33,14 @@ pattern), or first across on the source's lane, then along the target's column (
 crosses no icon (the builder picks "v" when both are free; `"route": "h"` forces the other). Both legs must
 be empty of icons, else it is a spec error naming the blockers. A node side carries one straight edge, or
 a *bus* of bent edges that all leave (or all arrive) there and share the first/last leg — so a hub keeps
-its own column clear above/below and stacks its neighbours in the columns around it. Cross-cutting sinks (CloudWatch) still get one representative edge. Only straight
-edges may carry a label. Node labels longer than 22 characters break into two lines at the middle space.
-`icon` names come from scripts/stencil-index.json; `image` names a file in assets/extra-icons/.
+its own column clear above/below and stacks its neighbours in the columns around it. Cross-cutting sinks (CloudWatch) still get one representative edge.
+Edge `label` is the brief's *What flows* phrase, drawn on the edge: wrapped into at most 3 lines and placed on
+the longest leg that has a clear spot (above/below a horizontal leg, beside a vertical one), off every border,
+title row, icon, other label and other line — a bent edge carries it on one of its legs. A solid (primary)
+edge whose text finds no room stops the build (`ERROR label`); on a dashed edge the text is dropped with a
+`note:`. `label_offset` (−1 source … 1 target) pins the position by hand. Node labels longer than 22 characters
+break into two lines at the middle space. `icon` names come from scripts/stencil-index.json; `image` names a
+file in assets/extra-icons/.
 
 Exit status: 0 only when the validator reports 0 errors and no W4–W9 layout defect; 1 otherwise (do not
 ship the file — change the spec).
@@ -71,9 +76,15 @@ LANE0, LANE_PITCH, ROW_GAP = 260, 170, 50
 GROUP_HALF_W, GROUP_GAP = 100, 40
 GROUP_ABOVE, GROUP_BELOW = 60, 46
 CLOUD_PAD = 40
-LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_HALF_H = 6.2, 8, 8   # keep in step with validate_drawio
+OUTSIDE_GAP = 60                                         # px: users / on-prem sit this much further from the cloud than the grid says,
+                                                         # so the edge into the cloud has a 121 px pocket for its text (16 characters)
+# Edge text (the brief's *What flows* phrase): 11 pt, 6.2 px per character + 2 × 8 px padding, EDGE_LINE_H px per
+# line, at most LABEL_MAX_LINES lines of LABEL_MAX_LINE_CHARS characters; the builder slides it along the edge in
+# 1/20 steps and keeps LABEL_SLACK_PX from anything it must not touch. Keep in step with validate_drawio.
+LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_SLACK_PX = 6.2, 8, 4
+EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 14, 3, 24
+LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
 TITLE_BAND = 28                                          # px: a container's title row — no edge label sits on it (validate_drawio)
-BADGE_H = 18                                             # px: edge number badge (11 pt bold on a dark pill); width 10 + 7/digit
 LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 22       # node label: px per line, gap under the icon, chars per line
 TITLE_Y = 32
 LEGEND_W = 300
@@ -100,8 +111,60 @@ class SpecError(ValueError):
     pass
 
 
+class LabelError(SpecError):
+    """A primary (solid) edge's text has no clear place on the edge it was drawn on."""
+
+    def __init__(self, problems: list[str]):
+        super().__init__("; ".join(problems))
+        self.problems = problems
+
+
 def attr(value: str) -> str:
     return escape(value, {'"': "&quot;"})
+
+
+# ---- edge text ---------------------------------------------------------------------------------
+def chars_that_fit(px: float) -> int:
+    """Characters of 11 pt text that fit in `px` pixels with the label's padding and the slide slack."""
+    return max(0, int((px - 2 * LABEL_PAD_PX - LABEL_SLACK_PX) // LABEL_CHAR_PX))
+
+
+def wrap_lines(text: str, width: int) -> list[str] | None:
+    """Greedy word wrap of `text` to `width` characters per line; None when a single word is wider than that."""
+    words = text.split()
+    if not words or width <= 0 or max(len(w) for w in words) > width:
+        return None
+    lines, cur = [], words[0]
+    for w in words[1:]:
+        if len(cur) + 1 + len(w) <= width:
+            cur += " " + w
+        else:
+            lines.append(cur)
+            cur = w
+    lines.append(cur)
+    return lines
+
+
+def label_lines(text: str, width: int) -> list[str] | None:
+    """The lines an edge label takes on a segment that holds `width` characters per line: the fewest lines, then
+    re-wrapped at the narrowest width that keeps that count so the lines come out even ('Fetch dynamic' /
+    'credentials (optional)' rather than 'Fetch dynamic credentials' / '(optional)'). None when it needs more
+    than LABEL_MAX_LINES lines or a word is wider than the segment."""
+    width = min(width, LABEL_MAX_LINE_CHARS)
+    lines = wrap_lines(text, width)
+    if lines is None or len(lines) > LABEL_MAX_LINES:
+        return None
+    longest_word = max(len(w) for w in text.split())
+    for w in range(longest_word, width + 1):
+        cand = wrap_lines(text, w)
+        if cand is not None and len(cand) <= len(lines):
+            return cand
+    return lines
+
+
+def label_box_size(lines: list[str]) -> tuple[float, float]:
+    """(half width, half height) of the drawn label box."""
+    return (LABEL_CHAR_PX * max(len(l) for l in lines) / 2 + LABEL_PAD_PX, (EDGE_LINE_H * len(lines) + 2) / 2)
 
 
 class Builder:
@@ -110,6 +173,7 @@ class Builder:
         self.index = index["stencils"]
         self.font = spec.get("font", "Amazon Ember")
         self.cells: list[str] = []
+        self.notes: list[str] = []                           # e.g. a dashed edge whose text found no room
         self.nodes = {n["id"]: n for n in spec.get("nodes", [])}
         self.groups = {g["id"]: g for g in spec.get("groups", [])}
         self._check()
@@ -121,6 +185,18 @@ class Builder:
 
     def ly(self, lane: int) -> int:
         return LANE0 + LANE_PITCH * lane + ROW_GAP * sum(1 for b in self.row_breaks if b <= lane)
+
+    def outside_shift(self, n: dict) -> int:
+        """Users / on-prem left of every inside column move OUTSIDE_GAP px further left (right of them: further
+        right), so the edge into the cloud has room for its text outside the cloud border."""
+        if not n.get("outside"):
+            return 0
+        inside = [m["col"] for m in self.nodes.values() if not m.get("outside")]
+        if inside and n["col"] < min(inside):
+            return -OUTSIDE_GAP
+        if inside and n["col"] > max(inside):
+            return OUTSIDE_GAP
+        return 0
 
     def _row_breaks(self) -> list[int]:
         """A lane starts a new group row when some group ends on the lane above it and another begins on it;
@@ -288,60 +364,121 @@ class Builder:
         return round((ICON + self.label_h(n)) / ICON, 3)
 
     @staticmethod
-    def badge_x_at_corner(leg1: float, leg2: float) -> float:
-        """draw.io relative x (-1 source … 1 target, measured by length) of the corner of an L edge."""
-        total = leg1 + leg2
-        return round(2 * leg1 / total - 1, 3) if total else 0.0
-
-    @staticmethod
-    def edge_run(e, d, node_xy, label_h):
-        """(a, b, line, horizontal): the free run of a straight edge between its two icons — x-range a..b on a
-        horizontal edge (line = its y), y-range on a vertical one (line = its x); the vertical run starts under
-        the upper node's label."""
+    def edge_path(e, d, kind, node_xy, label_h) -> list[tuple[float, float]]:
+        """The polyline draw.io draws for the edge, source port first: two points for a straight edge, three for
+        an L (the corner is pinned as a waypoint). Vertical runs start or end under a node's label (the B port)."""
         sx, sy = node_xy[e["from"]]
         tx, ty = node_xy[e["to"]]
-        if d in ("right", "left"):
-            a, b = (sx + ICON, tx) if d == "right" else (tx + ICON, sx)
-            return a, b, sy + ICON / 2, True
-        a, b = (sy + ICON + label_h[e["from"]], ty) if d == "down" else (ty + ICON + label_h[e["to"]], sy)
-        return a, b, sx + ICON / 2, False
+        if kind == "straight":
+            if d == "right":
+                return [(sx + ICON, sy + ICON / 2), (tx, sy + ICON / 2)]
+            if d == "left":
+                return [(sx, sy + ICON / 2), (tx + ICON, sy + ICON / 2)]
+            if d == "down":
+                return [(sx + ICON / 2, sy + ICON + label_h[e["from"]]), (sx + ICON / 2, ty)]
+            return [(sx + ICON / 2, sy), (sx + ICON / 2, ty + ICON + label_h[e["to"]])]
+        if kind == "bend":                                   # vertical first: corner on the source's column
+            corner = (sx + ICON / 2, ty + ICON / 2)
+            p = (sx + ICON / 2, sy if corner[1] < sy else sy + ICON + label_h[e["from"]])
+            q = (tx if corner[0] < tx else tx + ICON, ty + ICON / 2)
+        else:                                                # horizontal first: corner on the target's column
+            corner = (tx + ICON / 2, sy + ICON / 2)
+            p = (sx if corner[0] < sx else sx + ICON, sy + ICON / 2)
+            q = (tx + ICON / 2, ty if corner[1] < ty else ty + ICON + label_h[e["to"]])
+        return [p, corner, q]
 
     @staticmethod
-    def box_at(e, d, k, half_w, half_h, place, node_xy, label_h):
-        """Box of a label-like thing at relative position k along a straight edge: `above` the line (text on a
-        horizontal edge), `left` of it (text on a vertical edge) or `on` it (a number badge). Also whether its
-        centre still lies within the free run."""
-        a, b, line, horizontal = Builder.edge_run(e, d, node_xy, label_h)
-        sign = 1 if d in ("right", "down") else -1
-        c = (a + b) / 2 + k * (b - a) / 2 * sign
-        if horizontal:
-            cy = line - half_h if place == "above" else line
-            return (c - half_w, cy - half_h, c + half_w, cy + half_h), a + half_w <= c <= b - half_w
-        cx = line - half_w - 4 if place == "left" else line
-        return (cx - half_w, c - half_h, cx + half_w, c + half_h), a + half_h <= c <= b - half_h
+    def segments(path):
+        """(x1, y1, x2, y2) per leg of a polyline."""
+        return [(a[0], a[1], b[0], b[1]) for a, b in zip(path, path[1:])]
 
     @staticmethod
-    def free_offset(e, d, half_w, half_h, place, node_xy, borders, label_h, avoid=(), prefer=None):
-        """Relative position along a straight edge where the box covers no container border or title row and none
-        of the `avoid` boxes: `prefer` first, then the midpoint, then outwards in 1/20 steps. None if nothing is
-        free (the validator's W7 will say so)."""
-        def clear(bx):
-            for gx, gy, gw, gh in borders:
-                hit_v = any(bx[0] <= x <= bx[2] for x in (gx, gx + gw)) and bx[1] < gy + gh and bx[3] > gy
-                hit_h = any(bx[1] <= y <= bx[3] for y in (gy, gy + gh)) and bx[0] < gx + gw and bx[2] > gx
-                on_title = bx[0] < gx + gw and bx[2] > gx and bx[1] < gy + TITLE_BAND and bx[3] > gy
-                if hit_v or hit_h or on_title:
+    def box_is_clear(box, borders, obstacles, segments, slack=LABEL_SLACK_PX) -> bool:
+        """No container border or title row under the box, none of the `obstacles` boxes (icons with their labels,
+        other edge labels) overlapping it, none of the `segments` (edge legs) running through it — with `slack`
+        pixels to spare in each direction (slack / 2 per side), so the validator's exact check agrees after rounding."""
+        s = slack / 2
+        bx = (box[0] - s, box[1] - s, box[2] + s, box[3] + s)
+        for gx, gy, gw, gh in borders:
+            hit_v = any(bx[0] <= x <= bx[2] for x in (gx, gx + gw)) and bx[1] < gy + gh and bx[3] > gy
+            hit_h = any(bx[1] <= y <= bx[3] for y in (gy, gy + gh)) and bx[0] < gx + gw and bx[2] > gx
+            on_title = bx[0] < gx + gw and bx[2] > gx and bx[1] < gy + TITLE_BAND and bx[3] > gy
+            if hit_v or hit_h or on_title:
+                return False
+        for o in obstacles:
+            if bx[0] < o[2] and bx[2] > o[0] and bx[1] < o[3] and bx[3] > o[1]:
+                return False
+        for x1, y1, x2, y2 in segments:
+            if y1 == y2:                                     # horizontal leg
+                if bx[1] < y1 < bx[3] and min(x1, x2) < bx[2] and max(x1, x2) > bx[0]:
                     return False
-            for o in avoid:
-                if bx[0] < o[2] and bx[2] > o[0] and bx[1] < o[3] and bx[3] > o[1]:
-                    return False
-            return True
+            elif bx[0] < x1 < bx[2] and min(y1, y2) < bx[3] and max(y1, y2) > bx[1]:
+                return False
+        return True
 
-        candidates = ([prefer] if prefer is not None else []) + [0.0] + [s * k / 20 for k in range(1, 20) for s in (-1, 1)]
-        for k in candidates:
-            bx, inside = Builder.box_at(e, d, k, half_w, half_h, place, node_xy, label_h)
-            if inside and clear(bx):
-                return round(k, 2)
+    @staticmethod
+    def place_label(text, path, borders, obstacles, segments, offset=None):
+        """Where the edge's text goes: (lines, relative x along the edge, place, box) or None when no leg has a
+        clear spot. Legs are tried branch before trunk (a leg shared with other edges — a bus — comes last), then
+        longest first; on each, the text is wrapped to what the leg holds (≤ 3 lines) and slid from the leg's
+        middle outwards in 1/20 steps — above then below a horizontal leg, left then right of a vertical one.
+        `offset` (the spec's `label_offset`, −1 source … 1 target) pins the position instead and only picks the
+        side."""
+        legs = Builder.segments(path)
+        lens = [abs(x2 - x1) + abs(y2 - y1) for x1, y1, x2, y2 in legs]
+        total = sum(lens) or 1.0
+
+        def shared(leg) -> bool:
+            """Is this leg the trunk of a bus — collinear with a leg of another edge? Text there could belong to
+            any branch, so the branch leg (unique to this edge) is tried first even when it is shorter."""
+            x1, y1, x2, y2 = leg
+            for ox1, oy1, ox2, oy2 in segments:
+                if y1 == y2 and oy1 == oy2 and abs(y1 - oy1) <= 1 and min(x1, x2) < max(ox1, ox2) and max(x1, x2) > min(ox1, ox2):
+                    return True
+                if x1 == x2 and ox1 == ox2 and abs(x1 - ox1) <= 1 and min(y1, y2) < max(oy1, oy2) and max(y1, y2) > min(oy1, oy2):
+                    return True
+            return False
+
+        order = sorted(range(len(legs)), key=lambda i: (shared(legs[i]), -lens[i]))
+        for i in order:
+            x1, y1, x2, y2 = legs[i]
+            horizontal = y1 == y2
+            lo, hi = (min(x1, x2), max(x1, x2)) if horizontal else (min(y1, y2), max(y1, y2))
+            start = sum(lens[:i])
+            # widest wrap first (fewest lines); narrower ones fit the pockets beside a border or a vertical line
+            widths = [w for w in (LABEL_MAX_LINE_CHARS, 18, 14, 10, 8, 6) if not horizontal or w <= chars_that_fit(lens[i])]
+            if horizontal and chars_that_fit(lens[i]) < LABEL_MAX_LINE_CHARS:
+                widths.insert(0, chars_that_fit(lens[i]))
+            tried: set[tuple] = set()
+            for width in widths:
+                lines = label_lines(text, width)
+                if lines is None or tuple(lines) in tried:
+                    continue
+                tried.add(tuple(lines))
+                half_w, half_h = label_box_size(lines)
+                span = (hi - lo) / 2 - (half_w if horizontal else half_h)
+                if span < 0:
+                    continue
+                if offset is not None:                       # pinned by hand: which leg holds that point?
+                    at = total * (offset + 1) / 2
+                    if not (start <= at <= start + lens[i]):
+                        break
+                    along = [x1 + (at - start) * (1 if x2 > x1 else -1)] if horizontal else [y1 + (at - start) * (1 if y2 > y1 else -1)]
+                else:
+                    mid = (lo + hi) / 2
+                    along = [mid] + [mid + s * k / 20 * span for k in range(1, 21) for s in (-1, 1)]
+                for place in (("above", "below") if horizontal else ("left", "right")):
+                    for c in along:
+                        if horizontal:
+                            cy = y1 - half_h if place == "above" else y1 + half_h
+                            box = (c - half_w, cy - half_h, c + half_w, cy + half_h)
+                        else:
+                            cx = x1 - half_w - LABEL_SIDE_GAP if place == "left" else x1 + half_w + LABEL_SIDE_GAP
+                            box = (cx - half_w, c - half_h, cx + half_w, c + half_h)
+                        if offset is None and not Builder.box_is_clear(box, borders, obstacles, segments):
+                            continue
+                        dist = start + abs(c - (x1 if horizontal else y1))
+                        return lines, round(2 * dist / total - 1, 3), place, box
         return None
 
     # ---- emit ---------------------------------------------------------------------------------
@@ -379,7 +516,8 @@ class Builder:
                 bx, by, bw, bh = rects[b]
                 if ax < bx + bw and bx < ax + aw and ay < by + bh and by < ay + ah:
                     raise SpecError(f"groups '{a}' and '{b}' overlap once padded — give them different lanes or columns")
-        node_xy = {nid: (self.cx(n["col"]) - ICON // 2, self.ly(n["lane"]) - ICON // 2) for nid, n in self.nodes.items()}
+        node_xy = {nid: (self.cx(n["col"]) - ICON // 2 + self.outside_shift(n), self.ly(n["lane"]) - ICON // 2)
+                   for nid, n in self.nodes.items()}
 
         # cloud box around the groups (and any grouped node)
         cloud = None
@@ -434,83 +572,66 @@ class Builder:
         borders = list(rects.values()) + ([cloud] if cloud else [])
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"fontFamily={font};fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;")
+        # geometry of every edge first: the text of one edge must not sit on the line of another
+        geom = []
         for i, e in enumerate(edges, 1):
-            eid = e.get("id", f"e{i}")
             d, exit_p, entry_p, kind = self.edge_geometry(e)
+            geom.append((e.get("id", f"e{i}"), e, d, exit_p, entry_p, kind, self.edge_path(e, d, kind, node_xy, label_h)))
+        icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()]
+        # then the text — the brief's *What flows* phrase — solid (primary) edges first so they get the room
+        placed: dict[str, tuple] = {}
+        label_boxes: list[tuple] = []
+        problems: list[str] = []
+        for eid, e, d, exit_p, entry_p, kind, path in sorted(geom, key=lambda g: bool(g[1].get("dashed"))):
+            text = " ".join(str(e.get("label", "")).split())
+            if not text:
+                continue
+            other_lines = [seg for g in geom if g[0] != eid for seg in self.segments(g[6])]
+            spot = self.place_label(text, path, borders, icon_boxes + label_boxes, other_lines, e.get("label_offset"))
+            if spot is None:
+                legs = self.segments(path)
+                room = max(chars_that_fit(abs(x2 - x1) + abs(y2 - y1)) for x1, y1, x2, y2 in legs)
+                why = (f"edge {e['from']} → {e['to']}: '{text}' has no clear place on its "
+                       f"{'legs' if len(legs) > 1 else 'line'} (at most {min(room, LABEL_MAX_LINE_CHARS)} characters per line, "
+                       f"{LABEL_MAX_LINES} lines; a longer word, a border, an icon or another label is in the way) — condense "
+                       "the What flows phrase in the brief, or move a node in the .layout.json so the edge runs inside one "
+                       "group box or vertically")
+                if e.get("dashed"):
+                    self.notes.append("label dropped: " + why)
+                else:
+                    problems.append(why)
+                continue
+            placed[eid] = spot
+            label_boxes.append(spot[3])
+        if problems:
+            raise LabelError(problems)
+
+        for eid, e, d, exit_p, entry_p, kind, path in geom:
             style = base_edge + exit_p + entry_p
             if e.get("dashed"):
                 style += "dashed=1;"
             if e.get("error"):
                 style += "dashed=1;strokeColor=#DD344C;"
-            label = e.get("label", "")
-            geo_x, text_box = "", None
-            if label and kind != "straight":
-                raise SpecError(f"edge {e['from']}→{e['to']}: a bent edge cannot carry a label (draw.io centres it on the "
-                                "corner). Drop the label or put the target on the source's lane/column")
-            if label:
-                place = "above" if d in ("right", "left") else "left"
-                style += "verticalAlign=bottom;" if place == "above" else "align=right;spacingRight=4;"
-                half_w = LABEL_CHAR_PX * len(label) / 2 + LABEL_PAD_PX
-                offset = e.get("label_offset")
-                if offset is None:
-                    offset = self.free_offset(e, d, half_w, LABEL_HALF_H, place, node_xy, borders, label_h)
-                    if offset is None:
-                        offset = 0.0                                 # nothing free: W7 will name it
-                if offset:
-                    geo_x = f' x="{offset}"'
-                text_box, _ = self.box_at(e, d, offset, half_w, LABEL_HALF_H, place, node_xy, label_h)
-            val = f' value="{attr(label)}"' if label else ""
+            val, geo_x = "", ""
+            if eid in placed:
+                lines, rel, place, _ = placed[eid]
+                style += {"above": "align=center;verticalAlign=bottom;",
+                          "below": "align=center;verticalAlign=top;",
+                          "left": f"align=right;spacingRight={LABEL_SIDE_GAP};verticalAlign=middle;",
+                          "right": f"align=left;spacingLeft={LABEL_SIDE_GAP};verticalAlign=middle;"}[place]
+                val = f' value="{attr("<br>".join(lines))}"'
+                if rel:
+                    geo_x = f' x="{rel}"'
             # A bent edge leaves under the source label, i.e. from a point outside the shape; draw.io's router
             # then picks the first leg's direction itself and may go sideways along the label. Pin the corner.
-            pts, corner = "", None
-            sx, sy = node_xy[e["from"]]
-            tx, ty = node_xy[e["to"]]
-            if kind == "bend":                                   # corner on the source's column, target's lane
-                corner = (sx + ICON // 2, ty + ICON // 2)
-            elif kind == "bend-h":                               # corner on the source's lane, target's column
-                corner = (tx + ICON // 2, sy + ICON // 2)
-            if corner:
-                pts = f'<Array as="points"><mxPoint x="{corner[0]}" y="{corner[1]}"/></Array>'
+            pts = ""
+            if kind != "straight":
+                corner = path[1]
+                pts = f'<Array as="points"><mxPoint x="{corner[0]:g}" y="{corner[1]:g}"/></Array>'
             geo = f'<mxGeometry{geo_x} relative="1" as="geometry">{pts}</mxGeometry>' if pts else f'<mxGeometry{geo_x} relative="1" as="geometry"/>'
             self.cells.append(
                 f'<mxCell id="{eid}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
                 f'{geo}</mxCell>')
-
-            # the relationship number as a badge on the line — the link between the picture and the guide's steps
-            num = e.get("num")
-            if num is None:
-                continue
-            badge_hw = (10 + 7 * len(str(num))) / 2
-            if kind == "straight":
-                prefer = None
-                if text_box is not None:                         # beside the text: before it in reading order
-                    a, b, line, horizontal = self.edge_run(e, d, node_xy, label_h)
-                    sign = 1 if d in ("right", "down") else -1
-                    mid, half_run = (a + b) / 2, (b - a) / 2
-                    if horizontal:
-                        centre = (text_box[0] + text_box[2]) / 2 - ((text_box[2] - text_box[0]) / 2 + badge_hw + 4)
-                    else:
-                        centre = (text_box[1] + text_box[3]) / 2 - (LABEL_HALF_H + BADGE_H / 2 + 2)
-                    prefer = round((centre - mid) / half_run / sign, 2) if half_run else None
-                bx = self.free_offset(e, d, badge_hw, BADGE_H / 2, "on", node_xy, borders, label_h,
-                                      avoid=[text_box] if text_box else (), prefer=prefer)
-                if bx is None:
-                    bx = 0.0
-            else:                                                # at the corner of the L
-                if kind == "bend":
-                    p = (sx + ICON // 2, sy if corner[1] < sy else sy + ICON + label_h[e["from"]])
-                    q = (tx if corner[0] < tx else tx + ICON, ty + ICON // 2)
-                else:
-                    p = (sx if corner[0] < sx else sx + ICON, sy + ICON // 2)
-                    q = (tx + ICON // 2, ty if corner[1] < ty else ty + ICON + label_h[e["to"]])
-                leg1 = abs(corner[0] - p[0]) + abs(corner[1] - p[1])
-                leg2 = abs(q[0] - corner[0]) + abs(q[1] - corner[1])
-                bx = self.badge_x_at_corner(leg1, leg2)
-            self.cells.append(
-                f'<mxCell id="{eid}_n" value="{num}" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;'
-                f'points=[];fontFamily={font};fontSize=11;fontStyle=1;fontColor=#FFFFFF;labelBackgroundColor=#232F3E;'
-                f'labelBorderColor=#232F3E;" vertex="1" connectable="0" parent="{eid}">'
-                f'<mxGeometry x="{bx}" y="0" relative="1" as="geometry"><mxPoint as="offset"/></mxGeometry></mxCell>')
 
         name = spec.get("page", spec.get("title", "Page-1"))
         return ('<mxfile host="app.diagrams.net">'
@@ -652,24 +773,6 @@ def contract_check(brief_text: str, contract_path: Path) -> tuple[list[str], lis
     return errors, notes
 
 
-def fill_nums(spec: dict, brief_text: str) -> None:
-    """Give edges that have no `num` the brief's # for their From → To pair (hand-written specs; scaffolded ones
-    carry it already). The number becomes the badge on the edge and the step number in the guide."""
-    import re
-    nums: dict[tuple[str, str], int] = {}
-    for row in _table_rows(brief_text, "Relationships"):
-        if not (row and row[0].strip().isdigit()):
-            continue
-        for cell in row:
-            mm = re.search(r"([A-Za-z0-9_\-]+)\s*(?:→|->)\s*([A-Za-z0-9_\-]+)", cell)
-            if mm:
-                nums[(mm.group(1), mm.group(2))] = int(row[0])
-                break
-    for e in spec.get("edges", []):
-        if "num" not in e and (e["from"], e["to"]) in nums:
-            e["num"] = nums[(e["from"], e["to"])]
-
-
 def brief_check(brief_text: str, spec: dict) -> tuple[list[str], str]:
     """Compare a brief with a spec. Returns (errors, one-line summary)."""
     import re
@@ -765,24 +868,26 @@ def main(argv: list[str] | None = None) -> int:
               f"{max(n['lane'] for n in spec['nodes']) + 1} lanes, {len(spec['groups'])} group boxes → {planned.name} "
               "(edit that file and rebuild from it to adjust)")
         for n in notes:
-            tag = "note" if n.startswith("label dropped") else "ERROR label" if n.startswith("label too long") else "unresolved"
+            tag = "note" if n.startswith("label dropped") else "unresolved"
             print(f"  {tag}: {n}")
-        too_long = [n for n in notes if n.startswith("label too long")]
-        if too_long:
-            print(f"NOT CLEAN: {len(too_long)} primary relationship label(s) do not fit — shorten each in the brief's Label "
-                  "column to the limit named, or write — when the pair explains itself, then re-run the scaffold. A primary "
-                  "edge without its label is not an accepted trade-off; the placed spec is in the .layout.json for inspection")
-            return 1
     if brief_path is None and "--no-brief" not in flags:
         candidate = spec_path.with_suffix(".brief.md")
         brief_path = candidate if candidate.exists() else None
-    if brief_path is not None:
-        fill_nums(spec, brief_path.read_text(encoding="utf-8"))
     try:
-        xml = build(spec)
+        builder = Builder(spec, json.loads(INDEX.read_text()))
+        xml = builder.build()
+    except LabelError as exc:
+        for p in exc.problems:
+            print(f"ERROR label: {p}")
+        print(f"NOT CLEAN: {len(exc.problems)} primary relationship text(s) have no room on their edge. The picture shows what "
+              "flows on every primary edge — condense the What flows phrase in the brief (then re-run the scaffold) or move a "
+              "node in the .layout.json; leaving a solid edge without its text is not an accepted trade-off")
+        return 1
     except SpecError as exc:
         print(f"ERROR spec: {exc}")
         return 1
+    for n in builder.notes:
+        print(f"  note: {n}")
     if brief_path is not None:
         brief_text = brief_path.read_text(encoding="utf-8")
         c_errors, c_notes = contract_check(brief_text, contract_path_for(brief_path))

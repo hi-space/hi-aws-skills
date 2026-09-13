@@ -11,33 +11,34 @@ Step Functions — 흐르고, 데이터는 DynamoDB(주문), S3(보관), 고객�
 - **Order processing** — 주문 하나를 책임지는 Lambda와 그것이 쓰는 테이블.
 - **Payment & inventory workflow** — Step Functions saga와 두 개의 task Lambda.
 - **Notification**, **Observability**, **Archive** — 각각 서비스 하나: 상태·지표·이력이 가는 곳.
-- **선** — 실선 = 동기 호출, 점선 = 비동기·보조. 선 위의 **번호 배지**가 아래 단계 번호다. 글자 라벨은 자리가 있는
-  선에만 있고, 유일하게 글자가 없는 선(⑦ Step Functions → Payment)은 팬아웃 가지라서 배지만 달려 있다.
+- **선** — 실선 = 동기 호출, 점선 = 비동기·보조. 선 위의 글자가 그 홉에서 **무엇이 흐르는지**(브리프의 What flows)이고,
+  아래 단계마다 같은 글자를 `라벨`로 인용했으니 그림에서 그 화살표를 찾으면 된다. 단계 번호는 브리프 관계표의 `#` 순서다.
 - Mobile client와 Customer는 AWS Cloud 상자 밖에 있다.
 
 ## 단계별 흐름
 1. **Mobile client → API Gateway** — 앱이 REST 엔드포인트를 HTTPS로 호출한다. API Gateway가 TLS를 종료하고 요청
-   형식을 검증하고 스로틀링한다. (라벨 `HTTPS`)
+   형식을 검증하고 스로틀링한다. (라벨 `order requests`)
 2. **API Gateway → SQS** — 주문을 메시지로 큐에 넣고 클라이언트에는 즉시 202를 돌려준다. 이 큐가 비동기 경계라서
    뒤쪽 처리가 느려져도 주문 접수는 계속된다. (라벨 `order message`)
 3. **API Gateway → Cognito** — 모든 호출에서 bearer 토큰을 검증한다. 점선: 요청 데이터 경로의 한 홉이 아니라 요청
-   옆에서 도는 검사다. (라벨 `verify JWT`)
-4. **SQS → Order handler** — Lambda가 큐를 배치로 폴링한다. (라벨 `poll`)
+   옆에서 도는 검사다. (라벨 `token validation`)
+4. **SQS → Order handler** — Lambda가 큐를 배치로 폴링한다. (라벨 `batch poll`)
 5. **Order handler → DynamoDB** — 주문을 orders 테이블에 먼저 쓴다. saga는 항상 저장된 레코드를 기준으로 돈다.
    (라벨 `put order`)
-6. **Order handler → Step Functions** — 주문마다 Step Functions 실행 하나를 시작한다. (라벨 `start`)
-7. **Step Functions → Payment** — 결제 Lambda를 task로 호출한다. 선이 꺾여서 배지만 있다; ⑧과 같은 종류의 task
-   호출이다. 재시도와 보상(compensation)은 state machine이 맡는다 — 두 단계를 직접 이어 붙이지 않은 이유다.
-8. **Step Functions → Inventory** — 재고 예약 Lambda를 task로 호출한다. (라벨 `invoke task`)
+6. **Order handler → Step Functions** — 주문마다 Step Functions 실행(saga) 하나를 시작한다. (라벨 `start saga`)
+7. **Step Functions → Payment** — 결제 Lambda를 task로 호출한다. 꺾인 선의 위쪽 다리에 글자가 있다; 8번과 같은
+   종류의 task 호출이다. 재시도와 보상(compensation)은 state machine이 맡는다 — 두 단계를 직접 이어 붙이지 않은
+   이유다. (라벨 `task invoke`)
+8. **Step Functions → Inventory** — 재고 예약 Lambda를 task로 호출한다. (라벨 `task invoke`)
 9. **Step Functions → SNS** — saga가 끝나면(성공이든 보상된 실패든) 결과를 order-status 토픽에 발행한다.
-   (라벨 `on complete`)
-10. **SNS → Customer** — 토픽이 이메일·푸시 구독으로 팬아웃한다. 점선: 비동기이고 요청 경로 밖이다. (라벨 `notify`)
+   (라벨 `post status`)
+10. **SNS → Customer** — 토픽이 이메일·푸시 구독으로 팬아웃한다. 점선: 비동기이고 요청 경로 밖이다. (라벨 `email / push`)
 11. **API Gateway → CloudWatch** — API 지표와 접근 로그가 CloudWatch로 흐른다. Lambda들도 로그를 쓰지만 대표 엣지
-    하나(API)만 그렸다. 점선·보조. (라벨 `metrics`)
+    하나(API)만 그렸다. 점선·보조. (라벨 `metrics, logs`)
 12. **DynamoDB → S3** — 주기적인 point-in-time export로 orders 테이블을 S3에 보관한다. 이 export는 테이블에
-    point-in-time recovery가 켜져 있어야 한다(그림이 보여줄 수 없는 테이블 설정). 점선·보조. (라벨 `export`)
+    point-in-time recovery가 켜져 있어야 한다(그림이 보여줄 수 없는 테이블 설정). 점선·보조. (라벨 `PITR export`)
 13. **SQS → SQS (DLQ)** — `maxReceiveCount`를 넘겨 계속 실패하는 메시지는 무한 재시도 대신 dead-letter 큐로 옮긴다.
-    Architecture review R1로 추가되었다. 점선·보조. (라벨 `redrive`)
+    Architecture review R1로 추가되었다. 점선·보조. (라벨 `messages that exceed maxReceiveCount`)
 
 ## 서비스
 | 서비스 | 이 시스템에서의 역할 | 비고 |

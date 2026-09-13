@@ -50,10 +50,10 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    One question at most; otherwise assume and record the assumption. Write `Language: ko` (or `en`, …) under the
    title — **the language the user typed the request in**, not the language of the code or of this brief; the
    guide is written in it later by a hat that never saw the request.
-2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, what
-   flows, sync/async, **Label on diagram**: the what-flows phrase in ≤ 16 characters for every primary
-   relationship, `—` only when the pair explains itself — architecture-brief.md § Labels), numbered flow, 2–7
-   role groups, the AWS sanity checklist, decisions.
+2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, **What
+   flows** — the phrase that is drawn on the arrow, a short noun phrase such as `order message` or `token
+   validation`, `—` only when the pair says it all; architecture-brief.md § Edge text — sync/async), numbered
+   flow, 2–7 role groups, the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
 4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): hubs keep their own column free
    above/below so their neighbours can stack beside them (bus edges), one representative edge into
@@ -85,11 +85,12 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    what the builder does, not to do it yourself.
 2. **Do not place nodes by hand.** Run `python3 <skill-dir>/scripts/scaffold_spec.py <name>.brief.md <name>.json`:
    it turns the brief's Components and Relationships tables into a coordinate-free spec (nodes with icon/image and
-   group, edges with dashed/label). Fix any `warn:` it prints (unknown stencil → look it up; a relationship naming
-   an undrawn component → mark that row "not drawn" or add the component; a primary Label that `can never fit`
-   — longer than 16 characters — shorten it or write `—`) by editing the **brief**, then rerun.
+   group, edges dashed per Kind and carrying the *What flows* phrase as their text). Fix any `warn:` it prints
+   (unknown stencil → look it up; a relationship naming an undrawn component → mark that row "not drawn" or add
+   the component; a primary phrase that `can never fit` — a word longer than 24 characters or more than 3 lines
+   — condense it or write `—`) by editing the **brief**, then rerun.
    The first run also writes `<name>.contract.json` — the brief's component ids and `From → To` pairs, frozen.
-   From here the Drawer edits only Label text and "not drawn" markers; a changed id or pair fails the scaffold
+   From here the Drawer edits only *What flows* wording and "not drawn" markers; a changed id or pair fails the scaffold
    and the build (`ERROR contract`), and every row newly marked aux / not drawn is printed as a `note:` for the
    Reviewer. Only the Architect deletes the file, when the architecture itself changed, and says so under
    Decisions. Re-pointing a relationship at a different service so the picture converges is the defect this
@@ -97,18 +98,21 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 3. Build: `python3 <skill-dir>/scripts/build_diagram.py <name>.json <name>.drawio`. Nodes without coordinates are
    placed automatically (`scripts/layout.py`: request path left → right on one lane, hubs with their neighbours
    stacked beside them, groups as rectangles, users outside) and the placed spec is saved as
-   `<name>.layout.json`. The builder then computes ports, labels, group boxes, cloud box and canvas, checks the
-   spec against the brief, and runs the validator. Hand-tuning: edit `<name>.layout.json` (move a node to another
-   cell, force `"route": "h"` on an edge) and rebuild **from that file**; never from a hand-written subset.
+   `<name>.layout.json`. The builder then computes ports, group boxes, cloud box and canvas, **draws every
+   edge's What flows phrase** on the leg of the edge that has room (wrapped to ≤ 3 lines; bent edges carry it on
+   one leg — layout-and-style.md § 5), checks the spec against the brief, and runs the validator. Hand-tuning:
+   edit `<name>.layout.json` (move a node to another cell, force `"route": "h"` on an edge, pin a text with
+   `"label_offset"`) and rebuild **from that file**; never from a hand-written subset.
 4. Read the builder's output to the end. `unresolved:` lines mean two nodes cannot be joined with one bend in
    this placement — move one of them in `<name>.layout.json`; if a node has neighbours spread over four or more
-   columns, that is the signal to split the diagram by request path (from-source-code.md § 1). `note: label
-   dropped … bent edge` is fine (the guide carries that relationship's meaning). **`ERROR label: label too long …`
-   stops the build**: a primary (solid) relationship's label does not fit the edge it landed on — shorten that Label
-   in the brief to the limit named (16 characters on a lane, 6 across a group border, 12 on a vertical edge), or
-   write `—` when the pair explains itself, and rerun the scaffold. Editing Label text is the Drawer's job, not a
-   brief change; "acceptable, the guide explains it" is not a verdict for a primary edge. On dashed (async/aux)
-   edges the same situation is only a `note:`.
+   columns, that is the signal to split the diagram by request path (from-source-code.md § 1). **`ERROR label: …
+   has no clear place` stops the build**: a primary (solid) relationship's phrase does not fit the edge it landed
+   on — usually a hop between two group boxes, which holds words of ≤ 6 letters. Condense that *What flows*
+   phrase in the brief to the room the message names (`StartExecution` → `start saga`, `write curated records` →
+   `write to lake`) and rerun the scaffold, or move a node in the `.layout.json` so the edge runs inside one box
+   or vertically. Condensing the wording is the Drawer's job; replacing it with `—` or "acceptable, the guide
+   explains it" is not a verdict for a primary edge. On dashed (async/aux) edges the same situation is only a
+   `note: label dropped`.
    **Exit status 0 is the only pass**: any `ERROR` or `W4`–`W9` prints `Layout defects … NOT CLEAN` and exits 1
    — fix it by changing the spec (move a node, drop a label, widen a group, stack a hub's neighbours beside it);
    read the builder's `hint:` lines too. Never export, and never call the diagram done, on a non-zero exit.
@@ -141,12 +145,12 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    - Write `<name>.guide.md` — the step-by-step companion, template and rules in
      [`references/architecture-guide.md`](references/architecture-guide.md), in the brief's `Language:` (the
      user's language — Korean prose with English service names for `ko`). **One numbered step per row of the
-     brief's Relationships, numbered like the brief's `#`** — that number is the badge the builder draws on the
-     edge, so the reader finds ③ on the picture and reads step 3. Text labels sit only on edges with room; the
-     guide explains every hop, in sentences, with the why.
+     brief's Relationships, numbered like the brief's `#`, each quoting the text drawn on that arrow** — the
+     row's *What flows* phrase, as (라벨 `order message`) — so the reader finds the arrow by its words. The guide
+     explains every hop, in sentences, with the why.
    - Run `python3 <skill-dir>/scripts/check_guide.py <name>.guide.md <name>.brief.md` — it refuses a guide in the
-     wrong language, a missing or mis-numbered step, a step that does not name both endpoints, or a component
-     absent from Services. Exit 0 is the only pass.
+     wrong language, a missing or mis-numbered step, a step that does not name both endpoints or does not quote
+     its phrase, or a component absent from Services. Exit 0 is the only pass.
    - **Delete `<name>.preview.png`.** The user receives one image, `<name>.drawio.png`; the preview was the
      Reviewer's copy of the same picture.
    - Tell the user the paths (`.drawio`, `.drawio.png`, `.guide.md`, `.brief.md`) and any substitutions or
@@ -208,8 +212,8 @@ Quick grep when a name is on the tip of your tongue: `grep -ri "opensearch" <ski
 
 The look to match: [`docs/samples/`](../../docs/samples/) in the plugin root holds three complete output sets
 (`agentic-rag-chat`, `order-pipeline`, `iot-telemetry`: `.brief.md`, `.json`, `.drawio`, `.drawio.png`). Read a spec before
-writing your first one. `order-pipeline` also shows the finished `.guide.md` and a Label column filled for every
-primary relationship — 12 of its 13 edges carry their label on the picture.
+writing your first one. `order-pipeline` also shows the finished `.guide.md`; all 13 of its edges carry their
+*What flows* phrase on the picture, and each guide step quotes it.
 
 [`templates/`](templates/README.md) holds five upstream diagrams as a **topology** reference (which services
 connect to which). They predate the grid rules; do not copy their coordinates.
@@ -241,12 +245,14 @@ https://app.diagrams.net, which is always current.
 - `E1` unknown stencil name · `E2` wrong strokeColor for the pattern · `E3` edge without valid endpoints ·
   `E4` group without `container=1` · `E5` duplicate id · `E6` comment / DOCTYPE / compressed XML.
 - `W4` edge that needs two bends · `W5` edge through an icon · `W6`
-  icon inside the cloud but in no group · `W7` edge label on a group border · `W8` two edges drawn on top of
+  icon inside the cloud but in no group · `W7` edge text on a border, a title row, an icon, another label or
+  another line · `W8` two edges drawn on top of
   each other (bent edges sharing a trunk from one side of one node are a *bus*, allowed) · `W9` icon with no
   edge. All six are defects: the validator and the builder exit 1 on them. `W1`–`W3` are style hints. The
   builder refuses specs that would produce `W4`/`W8` and prints `hint:` lines for sparse groups and
   single-icon lanes — act on them.
-- Not checked by the script, checked by the Reviewer's eyes: label length, read order, balance,
+- Not checked by the script, checked by the Reviewer's eyes: whether a condensed phrase still means what the
+  brief meant, read order, balance,
   faithfulness to the brief. Architecture quality is not checked here at all — that is Phase 2, against AWS sources.
 
 ## Related skill
