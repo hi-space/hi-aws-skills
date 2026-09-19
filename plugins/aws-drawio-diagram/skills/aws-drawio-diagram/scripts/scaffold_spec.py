@@ -18,6 +18,7 @@ names are reported and left for you to fix (the builder refuses them anyway). Wh
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import sys
 from collections import defaultdict
@@ -61,7 +62,10 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
         if group.lower() == "outside":
             node["outside"] = True
         else:
-            gid = "g_" + re.sub(r"[^a-z0-9]+", "_", group.lower()).strip("_")
+            slug = re.sub(r"[^a-z0-9]+", "_", group.lower()).strip("_")
+            if not slug:                                 # non-ASCII group names (e.g. Korean) must not collapse into one id
+                slug = "k" + hashlib.md5(group.encode("utf-8")).hexdigest()[:6]
+            gid = "g_" + slug
             node["group"] = gid
             if gid not in groups:
                 groups[gid] = {"id": gid, "label": group}
