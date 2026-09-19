@@ -1,0 +1,29 @@
+{
+  "skill_name": "aws-tech-blog-writer",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "경신홀딩스랑 한 3A PoC(Bedrock AgentCore 기반 Agent Platform, LLM Gateway, HIS/SAP Text-to-SQL 에이전트) 를 AWS 기술 블로그 고객 사례 글로 써줘. 최종보고 PDF, 전사록 md, drawio 아키텍처 파일이 ./docs/ks 에 있어. 고객사명 공개 여부는 아직 모르고, 파일럿 결과 수치는 없어.",
+      "expected_output": "blog-work/<slug>/ with 00-intake, per-source digests, 01-facts, 03-plan, verified diagrams with manifest, 04-draft and 06-final in Korean 합니다체 following the case-study skeleton, 05-claims with URLs, placeholders.md; customer name and results appear as coloured placeholders, no invented numbers, lint exits 0, 06-final.docx built by scripts/build_docx.js with verification ok (placeholder colours and images match the Markdown)",
+      "files": [
+        "docs/ks/0908-kyungshin-3a-final.pdf",
+        "docs/ks/경신_0908_최종보고_전사록.md",
+        "docs/ks/ks-agent-platform/agent-platform.brief.md"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "우리 팀이 만든 Bedrock 위 사내 LLM Gateway(Entra ID OIDC 인증, virtual key, 팀별 예산, Fargate) 를 아키텍처 해설 형태로 AWS 블로그에 올리려고 해. README.md 랑 terraform 디렉토리만 있어. 아키텍처 다이어그램은 새로 그려야 해.",
+      "expected_output": "deep-dive skeleton with numbered H2s, an aws-drawio-diagram output set built from the fact base and cross-checked in diagrams/manifest.md, technical claims about OIDC/Bedrock/Fargate verified against AWS docs with URLs, unknown quotas or prices as [기술 검증 필요]/[작성자 확인] placeholders; deliverable is 06-final.docx built with build_docx.js, verification ok",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "블로그 초안 draft.md 를 이미 써놨는데 AWS 기술 블로그 스타일로 다듬고 기술적으로 틀린 부분 없는지 검증해줘. 다이어그램은 이미 있어.",
+      "expected_output": "skill enters at Phase 1 with draft.md registered as a source, builds 01-facts from it, runs fact-check (05-claims.md) and style pass (lint exits 0), replaces unsupported statements with placeholders rather than deleting or inventing, reports verified/corrected/unverified counts, and 06-final.docx built with build_docx.js as the deliverable",
+      "files": [
+        "draft.md"
+      ]
+    }
+  ]
+}

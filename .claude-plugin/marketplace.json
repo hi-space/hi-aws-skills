@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders)."
   },
   "owner": {
     "name": "hi-space"
@@ -21,6 +21,11 @@
       "name": "aws-ppt-master",
       "source": "./plugins/aws-ppt-master",
       "description": "Natively editable PPTX decks from documents or a topic (ppt-master fork); AI images on Amazon Bedrock only; PPTX layout + Korean copy-voice QA gate; 304 AWS service icons."
+    },
+    {
+      "name": "aws-tech-blog-writer",
+      "source": "./plugins/aws-tech-blog-writer",
+      "description": "AWS Tech Blog (Korean) post writer: fixed 8-phase pipeline from source digest and fact base through verified diagrams, house-style draft and AWS-docs fact-check to a Word (.docx) deliverable with colour-coded placeholders for what only the author knows."
     }
   ]
 }
