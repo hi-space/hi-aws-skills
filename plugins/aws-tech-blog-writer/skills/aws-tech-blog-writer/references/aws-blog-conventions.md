@@ -17,7 +17,7 @@ The customer is the protagonist; AWS services are the means. Numbers and quotes 
 (제목) <고객사>의 <AWS 서비스> 기반 <무엇> 구축기 / 구축 사례 / 운영 효율화 방안
 (도입 단락 2~4개, 제목 없음)  고객 소개 한 문장, 풀려던 문제, 이 글이 다루는 범위
 (Disclaimer, 필요 시)
-## <문제를 드러내는 제목>            예: 매일 반복되는 Trader의 업무에 주목하다
+## <문제를 나타내는 명사구 제목>      예: Trader의 반복 업무와 자동화 대상
 ## 솔루션 개요  또는  아키텍처        그림 1 (전체 아키텍처) + 구성 요소별 역할 설명
 ## 구현 상세  (H3로 축 3~5개)          각 축: 무엇을, 왜 그렇게, 어떻게 (코드/설정 발췌)
 ## 결과                              정량 수치가 있으면 표로, 없으면 구조적 성과를 사실로만
@@ -46,7 +46,7 @@ The reader will rebuild it. Every step has a checkable result.
 
 ### C. Architecture deep dive (아키텍처 해설)
 
-A design and the reasoning behind it. Often numbered H2s.
+A design and the reasoning behind it. Numbered H2s, noun-phrase headings.
 
 ```
 (제목) <AWS 서비스> 위에 <무엇> 구축하기: <부제로 핵심 축 3개>
@@ -88,17 +88,20 @@ Customer names, logos, screenshots, and quotes require the customer's approval; 
 
 ## 4. Voice and register
 
-- `합니다`체 throughout. Never `해요`, never `~다.` plain form in body text. Headings may be plain-form
-  thesis statements (`3.1 관측값만으로는 학습이 되지 않는다`), which is the author's signature; see
-  `author-voice.md` §1.
-- Subject is the team or the organization (`경신홀딩스 정보전략팀은`, `AWS 팀은`, `저희는` sparingly), or the
-  post itself (`이 글에서는`, `본 게시글에서는`). Avoid `우리`/`여러분` as a habit.
-- Reader is addressed indirectly: `~할 수 있습니다`, `~하는 것이 좋습니다`, `~를 권장합니다`. No imperatives
-  such as `하세요` except inside step-by-step walkthroughs (`다음 명령을 실행합니다` is preferred even there).
-- Technical nouns stay in English inside Korean sentences: `Lambda 함수`, `IAM 역할`, `MCP 서버`, `Text-to-SQL`.
-  Korean transliteration (`람다`, `다이나모디비`) is wrong.
-- Numbers use Arabic digits with Korean counters: `4주`, `2개 DB`, `27개 컴포넌트`. Percentages `35%`, no space.
-- Dates: `2026년 9월 8일`; ranges `7월~8월` (a tilde, the only accepted use of `~`).
+Sentence-level rules live in `voice.md`; the conventions that editors check are repeated here.
+
+- `합니다`체 throughout. Never `해요`, never `~다.` plain form in body text.
+- Headings are noun phrases (`3.2 SAP 에이전트: OpenAPI 타깃과 interceptor`), numbered in case studies
+  and deep dives. Not sentences, not questions.
+- Subject is the team or the organization (`경신홀딩스 정보전략팀은`, `AWS 팀은`), a service, or the post
+  itself (`이 글에서는`). `저희는` only where a decision is attributed in a co-authored post. Avoid
+  `우리`/`여러분`.
+- Reader is addressed indirectly: `~할 수 있습니다`, `~를 권장합니다`. No `하세요` outside a step list;
+  `다음 명령을 실행합니다` even there.
+- Technical nouns stay in English inside Korean sentences: `Lambda 함수`, `IAM 역할`, `MCP 서버`. Korean
+  transliteration (`람다`, `다이나모디비`) is wrong.
+- Numbers use Arabic digits with Korean counters: `4주`, `2개 DB`, `27개 컴포넌트`. Percentages `35%`.
+- Dates: `2026년 9월 8일`; ranges `7월~8월` (the only accepted use of `~`).
 
 ## 5. AWS service naming
 
@@ -173,7 +176,7 @@ write `해당 없음`.
 - Author bios, one sentence or two, third person:
   AWS: `<이름> <직함>는 <배경 경험>을 바탕으로 고객이 비즈니스 목표를 달성하도록 아키텍처 설계와 기술을 지원하고 있습니다.`
   Customer: `<이름> <사내 호칭>는 <팀>의 <직함>로서 <전문 분야>의 경험을 바탕으로 <담당 업무>를 담당하고 있습니다.`
-  Verbatim examples in `author-voice.md` §7. Bios come from the author; until then they are `[작성자 확인]`
+  Verbatim examples in `voice.md` §2.8. Bios come from the author; until then they are `[작성자 확인]`
   placeholders with the pattern filled in.
 
 ## 11. What editors send back
@@ -183,6 +186,6 @@ write `해당 없음`.
 - Architecture pictures with non-official icons or services that are not in the text.
 - Customer data, names, or quotes without approval.
 - English-only paragraphs, or Korean paragraphs that read as translated English (see
-  `writing-rules-ko.md`).
+  `voice.md`).
 - Posts over roughly 4,000 Korean characters of body text without a strong reason. A typical case study
   is 2,500 to 3,500 characters plus figures and code; deep dives run longer and are numbered.

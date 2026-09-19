@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "aws-tech-blog-writer",
-  "version": "1.1.0",
-  "description": "Publication-ready AWS Tech Blog (Korean) posts about projects, PoCs and customer engagements built on AWS: source digest and fact base, deep research, verified architecture diagrams, house-style draft, fact-check against AWS documentation, colour-coded placeholders, delivered as a Word (.docx) file built with docx-js.",
+  "version": "2.0.0",
+  "description": "Publication-ready AWS Tech Blog (Korean) posts about projects, PoCs and customer engagements built on AWS: parallel source digests and a fact base, an approved plan, research and verified architecture diagrams in parallel, a draft written in a fresh context from a minimal packet, fact-check against AWS documentation, a literal-voice style pass (no metaphors, no agentless passives), colour-coded placeholders, delivered as a Word (.docx) file built with docx-js.",
   "author": {
     "name": "hi-space"
   },

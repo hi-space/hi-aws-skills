@@ -25,7 +25,7 @@
     {
       "name": "aws-tech-blog-writer",
       "source": "./plugins/aws-tech-blog-writer",
-      "description": "AWS Tech Blog (Korean) post writer: fixed 8-phase pipeline from source digest and fact base through verified diagrams, house-style draft and AWS-docs fact-check to a Word (.docx) deliverable with colour-coded placeholders for what only the author knows."
+      "description": "AWS Tech Blog (Korean) post writer: six stages with two parallel groups (research with diagrams, fact-check with lint), the draft written by a fresh subagent from a minimal packet, a literal-voice style pass (no metaphors, no agentless passives, noun-phrase headings), AWS-docs fact-check, and a Word (.docx) deliverable with colour-coded placeholders for what only the author knows."
     },
     {
       "name": "aws-workshop-studio",

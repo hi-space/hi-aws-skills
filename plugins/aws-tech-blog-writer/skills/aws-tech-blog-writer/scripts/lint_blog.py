@@ -6,9 +6,10 @@
 Errors (exit 1): forbidden punctuation in prose, wrong AWS service prefixes or Korean transliterations,
 images without file / alt / caption, code fences without a language, malformed or empty placeholders,
 more than one H1. With --final, leftover fact-ID comments (<!-- F12 -->) are errors too.
-Warnings (exit 1 only with --strict): translation-ese vocabulary and constructions, metaphors, plain-form
-or 해요체 endings, over-long sentences, unintroduced service short names, numbers that need a claim row,
-English-only paragraphs, and other patterns from references/writing-rules-ko.md.
+Warnings (exit 1 only with --strict): translation-ese vocabulary and constructions, figurative nouns,
+abstract nouns used as actors, passive endings with an available agent, plain-form headings, plain-form
+or 해요체 endings, connective overuse, over-long sentences, unintroduced service short names, numbers that
+need a claim row, English-only paragraphs, and other patterns from references/voice.md.
 Always prints a placeholder summary; --placeholders-out writes it as Markdown for the author.
 """
 from __future__ import annotations
@@ -106,7 +107,24 @@ BANNED_VOCAB = [
 ]
 SOFT_VOCAB = ["다양한", "효과적으로", "효율적으로", "이를 통해", "우리는", "저희는"]
 METAPHORS = ["나침반", "등불", "항해", "심장", "두뇌", "무대", "다리 역할", "톱니바퀴", "퍼즐", "열쇠",
-             "문을 열", "발판", "날개를", "레시피", "빙산", "이정표", "청사진"]
+             "문을 열", "길을 열", "발판", "날개를", "레시피", "빙산", "이정표", "청사진", "지렛대", "밑거름",
+             "뼈대", "큰 그림", "전체 그림", "목표 그림", "재료", "몫", "씨앗", "열매", "울타리", "무기"]
+# 축 is literal in 시간축 / X축 / 좌표축; elsewhere it stands for a workstream or a request path
+FIGURATIVE_AXIS_RE = re.compile(r"(?<![가-힣A-Za-z])축(?=[은는이가을를의로와과에 ,.:)])")
+# abstract noun as the actor of a human or physical verb (voice.md §1.1)
+ABSTRACT_SUBJECTS = "문제|질문|과제|조건|선택|결정|구조|차이|필요|요구|한계|이유|고민|숙제|답|일|경계|규칙|원칙|목표|비용|부담"
+PERSONIFICATION_RE = re.compile(
+    r"(?:" + ABSTRACT_SUBJECTS + r")(?:이|가|은|는|도)\s[^.]{0,30}?"
+    r"(남습니다|남는다|남았습니다|따라옵니다|따라온다|쌓입니다|쌓인다|결정합니다|결정했습니다|뒷받침합니다|뒷받침했습니다|"
+    r"말해\s?줍니다|말합니다|보여\s?줍니다|이끕니다|기다립니다|찾아옵니다|드러냅니다|떠오릅니다|등장합니다|"
+    r"자리\s?잡|요구합니다|가리킵니다|알려\s?줍니다|좌우합니다|말해주듯)")
+# passive endings that hide an available actor (voice.md §1.2); each occurrence warns
+AGENTIVE_PASSIVES = re.compile(
+    r"(요구|정리|구성|확인|진행|수행|제공|사용|적용|처리|판단|예상|기대|고려|검토|결정|선택|도입|구축|설계|운영|관리|개발|작성|"
+    r"배포|호출|전달|저장|수집|분석|생성|등록|승인|검증|측정|평가)(됩니다|되었습니다|되며|되고|되어\s|될 예정)")
+PASSIVE_ENDING_RE = re.compile(r"(됩니다|되었습니다|이루어집니다|어집니다|어졌습니다|여집니다)\.?$")
+CONNECTIVES = ["그래서", "하지만", "이때", "결국", "다만", "즉,"]
+PLAIN_HEADING_RE = re.compile(r"(는다|이다|니다|ㄴ다|않다|없다|있다|된다|한다|르다|하다|크다|많다|다르다|같다|어렵다|쉽다)\s*$")
 CONSTRUCTIONS = [
     (re.compile(r"에 있어서?(?!\w)"), "'~에 있어' (translated 'in terms of'); use '~에서', '~할 때'"),
     (re.compile(r"함에 있어"), "'~함에 있어'; use '~할 때'"),
@@ -243,6 +261,8 @@ def lint(path: Path, final: bool, service_check: bool):
             title = hm.group(2)
             if title.rstrip().endswith(("?", "!")):
                 rep.add("warn", i, "W6", "heading ends with ? or !")
+            if PLAIN_HEADING_RE.search(strip_inline(title)):
+                rep.add("warn", i, "W6", "plain-form sentence heading; use a noun phrase (voice.md §2.4)")
             if PH_TAG_RE.search(title) and not PH_SPAN_RE.search(title):
                 # placeholders in headings are allowed as bare tags
                 pass
@@ -271,7 +291,7 @@ def lint(path: Path, final: bool, service_check: bool):
                 if ch == "·" and i in table_lines:
                     continue  # middle dots inside tables are tolerated
                 if ch == "–" and is_h1:
-                    continue  # series marker in the title (author-voice.md §1)
+                    continue  # series marker in the title (aws-blog-conventions.md §2)
                 rep.add("error", i, "E1", f"{name} in prose")
         if i not in table_lines and ARROW_RE.search(prose):
             rep.add("error", i, "E1", "arrow in prose (allowed only in code blocks and tables)")
@@ -363,10 +383,18 @@ def lint(path: Path, final: bool, service_check: bool):
                 rep.add("warn", i, "W4", f"banned vocabulary '{w.strip()}'")
         for w in METAPHORS:
             if w in prose:
-                rep.add("warn", i, "W4", f"metaphor '{w}'")
+                rep.add("warn", i, "W4", f"figurative noun '{w}'; write the literal thing (voice.md §1.3)")
+        if FIGURATIVE_AXIS_RE.search(prose):
+            rep.add("warn", i, "W4", "'축' as a workstream or path; write 경로 / 구성 / 부분 (voice.md §1.3)")
         for rx, msg in CONSTRUCTIONS:
             if rx.search(prose):
                 rep.add("warn", i, "W5", msg)
+        if HEADING_RE.match(lines[i - 1]):
+            continue
+        for pm in PERSONIFICATION_RE.finditer(prose):
+            rep.add("warn", i, "W9", f"abstract noun as actor: '{pm.group(0)[:40]}'; make the team, service, or reader the subject (voice.md §1.1)")
+        for am in AGENTIVE_PASSIVES.finditer(prose):
+            rep.add("warn", i, "W9", f"passive '{am.group(0).strip()}' with an available actor; name who does it (voice.md §1.2)")
     # soft vocabulary: only when frequent
     soft_counts = defaultdict(int)
     for _, prose in prose_lines:
@@ -375,11 +403,21 @@ def lint(path: Path, final: bool, service_check: bool):
     for w, c in soft_counts.items():
         if c >= 3:
             rep.add("warn", 0, "W4", f"'{w}' used {c} times; name the items or the mechanism instead")
-    # per-paragraph '를 통해' density
+    conn_counts = defaultdict(int)
+    for _, prose in prose_lines:
+        for w in CONNECTIVES:
+            conn_counts[w] += prose.count(w)
+    for w, c in conn_counts.items():
+        if c >= 4:
+            rep.add("warn", 0, "W4", f"connective '{w.rstrip(',')}' used {c} times; at most once per section, prefer a cause clause")
+    # per-paragraph '를 통해' and passive-ending density
     for par in paragraphs:
         joined = " ".join(p for _, p in par)
         if joined.count("를 통해") + joined.count("을 통해") >= 2:
             rep.add("warn", par[0][0], "W5", "'~를 통해' twice in one paragraph")
+        passive_sentences = [s for s in split_sentences(joined) if PASSIVE_ENDING_RE.search(s)]
+        if len(passive_sentences) >= 2:
+            rep.add("warn", par[0][0], "W9", f"{len(passive_sentences)} passive-ending sentences in one paragraph; name the actor (voice.md §1.2)")
         if len(joined) > 80 and not re.search(r"[가-힣]", joined) and not joined.strip().startswith(("-", "*", "|", "[")):
             rep.add("warn", par[0][0], "W7", "English-only paragraph in a Korean post")
 

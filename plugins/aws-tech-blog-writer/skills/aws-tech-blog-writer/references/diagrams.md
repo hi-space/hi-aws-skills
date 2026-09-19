@@ -1,4 +1,4 @@
-# Phase 4: Diagrams
+# Stage 3: Diagrams (runs in parallel with research)
 
 A blog post about an AWS project is judged first by its architecture figure. Readers zoom in on it before
 they read a paragraph, and reviewers at AWS compare it against the text. The figure therefore has to be

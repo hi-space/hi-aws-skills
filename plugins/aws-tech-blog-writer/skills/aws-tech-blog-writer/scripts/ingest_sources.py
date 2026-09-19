@@ -6,7 +6,7 @@
 Handles: .pdf (pdftotext, fallback pypdf), .docx (python-docx or pandoc), .pptx (python-pptx),
 .md/.txt/.json/.yaml/.csv (copied), .drawio (node labels and edge labels extracted from the XML,
 brief.md kept as-is). Video/audio files are listed as "not readable"; ask the author for a transcript.
-Prints a registry table you can paste into 00-intake.md.
+Prints a registry table you can paste into 00-brief.md.
 """
 from __future__ import annotations
 

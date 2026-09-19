@@ -15,7 +15,7 @@ visible at a glance (colour), say which kind of gap it is (tag), and describe th
 | `[인용 승인 필요]` | green `#D5E8D4` / `#1E5631` | Customer name, logo, quote, or data that needs the customer's or PR's approval | Author with customer |
 
 Everything else is not a placeholder. A general technical question you can answer by opening AWS
-documentation is research (Phase 2), not a placeholder.
+documentation is research (Stage 3), not a placeholder.
 
 ## HTML form
 
@@ -61,10 +61,10 @@ Write the request in the language of the post. Keep it under three sentences; th
 
 ## Rules
 
-- Never resolve a placeholder by inference in a later pass. If Phase 6 research answers a
+- Never resolve a placeholder by inference in a later pass. If the Stage 5 fact-check answers a
   `[기술 검증 필요]`, the sentence is rewritten with a citation and the placeholder removed; if it does
   not, the placeholder stays.
-- A number, a date, or a name that is not in `01-facts.md` or `02-research.md` is a placeholder, even
+- A number, a date, or a name that is not in `01-facts.md` or `03-research.md` is a placeholder, even
   when a "reasonable" value is obvious.
 - Do not stack: one placeholder per gap, placed where the content will go. Do not add a second one in
   the conclusion for the same fact.

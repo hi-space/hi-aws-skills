@@ -4,8 +4,8 @@
     python3 init_workspace.py <slug> [--dir <parent>]
 
 Creates <parent>/<slug>/ (default parent: ./blog-work) with:
-  00-intake.md 01-facts.md 03-plan.md 05-claims.md 04-draft.md
-  sources/ sources/text/ research/ diagrams/manifest.md images/
+  00-brief.md 01-facts.md 02-plan.md 03-research.md 04-draft.md 05-claims.md
+  sources/ sources/text/ diagrams/manifest.md images/
 Existing files are never overwritten.
 """
 from __future__ import annotations
@@ -19,14 +19,15 @@ SKILL_DIR = Path(__file__).resolve().parent.parent
 TEMPLATES = SKILL_DIR / "templates"
 
 COPIES = {
-    "intake.md": "00-intake.md",
+    "brief.md": "00-brief.md",
     "facts.md": "01-facts.md",
-    "plan.md": "03-plan.md",
-    "claims.md": "05-claims.md",
+    "plan.md": "02-plan.md",
+    "research.md": "03-research.md",
     "blog-post.md": "04-draft.md",
+    "claims.md": "05-claims.md",
     "diagram-manifest.md": "diagrams/manifest.md",
 }
-DIRS = ["sources", "sources/text", "research", "diagrams", "images"]
+DIRS = ["sources", "sources/text", "diagrams", "images"]
 
 
 def main() -> int:
@@ -65,7 +66,7 @@ def main() -> int:
         print(f"  created  {c}")
     for s in skipped:
         print(f"  kept     {s} (already existed)")
-    print("next: fill 00-intake.md, drop sources into sources/, run ingest_sources.py")
+    print("next: fill 00-brief.md, drop sources into sources/, run ingest_sources.py")
     return 0
 
 

@@ -40,11 +40,11 @@ def test_every_linked_reference_exists():
 
 def test_pipeline_ends_with_the_word_build():
     text = SKILL_MD.read_text()
-    for needle in ("Phase 8", "06-final.docx", "scripts/build_docx.js", "verification", "`docx` skill",
+    for needle in ("Stage 6", "06-final.docx", "scripts/build_docx.js", "verification", "`docx` skill",
                    "pandoc -o file.docx"):
         assert needle in text, needle
     # the progress checklist the agent copies into its reply lists the docx step
-    assert re.search(r"- \[ \] Phase 8 .*06-final\.docx", text)
+    assert re.search(r"- \[ \] Stage 6 .*06-final\.docx", text)
     assert (SKILL / "scripts" / "build_docx.js").exists()
     # the hand-back names the Word file as the deliverable
     assert "`06-final.docx` (the deliverable)" in text
@@ -71,3 +71,31 @@ def test_marketplace_registers_plugin():
 def test_docs_and_license_present():
     for f in ("README.md", "LICENSE"):
         assert (PLUGIN / f).exists(), f
+
+
+def test_draft_and_fact_check_run_in_fresh_subagents():
+    text = SKILL_MD.read_text()
+    assert "prompt-drafter.md" in text and "prompt-fact-checker.md" in text
+    assert "Never fork yourself" in text
+    for tpl in ("prompt-drafter.md", "prompt-fact-checker.md", "brief.md", "research.md"):
+        assert (SKILL / "templates" / tpl).exists(), tpl
+    # the drafter packet excludes the sources and digests
+    drafter = (SKILL / "templates" / "prompt-drafter.md").read_text()
+    assert "do not open the source documents" in drafter
+
+
+def test_voice_rules_cover_the_three_machine_habits():
+    voice = (SKILL / "references" / "voice.md").read_text()
+    for needle in ("Active voice", "figurative", "noun phrases", "문제가 남습니다", "정리됩니다"):
+        assert needle in voice, needle
+    lint = (SKILL / "scripts" / "lint_blog.py").read_text()
+    for name in ("PERSONIFICATION_RE", "AGENTIVE_PASSIVES", "PLAIN_HEADING_RE", "FIGURATIVE_AXIS_RE"):
+        assert name in lint, name
+
+
+def test_merged_references_are_gone():
+    refs = SKILL / "references"
+    for old in ("author-voice.md", "writing-rules-ko.md", "research.md", "fact-check.md"):
+        assert not (refs / old).exists(), old
+    for new in ("voice.md", "verification.md"):
+        assert (refs / new).exists(), new
