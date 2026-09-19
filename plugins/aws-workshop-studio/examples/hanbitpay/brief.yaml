@@ -1,0 +1,46 @@
+# brief.yaml — 이 워크샵의 고정값(SSOT, Single Source of Truth).
+# 인테이크에서 한 번 확정하면 read-only. 바꾸려면 명시적 amend → 영향받는 단계만 재생성.
+# 생성되는 모든 콘텐츠는 이 값을 절대 거스르지 않는다. (예: tech_level=L200인데 L400 함정만 늘어놓으면 QA 실패)
+
+schema_version: 1
+
+workshop:
+  title: "Quick Desktop으로 시작하는 사내 AI 업무 자동화"
+  mode: staged              # staged(SA 게이트) | oneshot(전자동)
+  languages: [ko, en, ja]   # 첫 번째가 기본 로케일
+  format: hands-on          # hands-on | booth | presenter-led
+
+engagement:                 # ← 바뀌지 않을 "수행 사실". 표지·co-branding·일정에 그대로 박힌다.
+  customer:
+    name: "한빛페이"
+    logo: assets/customer/hanbitpay.svg   # 원본 없으면 null → 텍스트 워드마크만
+    industry: "간편결제 PG"
+    size: "임직원 210명 · 일 180만 트랜잭션"
+  date: 2026-09-15          # 수행 일자
+  duration_min: 90          # 수행 시간(분)
+  venue: "고객사 세미나실 (온사이트)"
+
+audience:                   # ← 페르소나 평가 매트릭스를 구동 (persona-rubric.md)
+  levels: [L200, L300]
+  roles: [개발자, 아키텍트, 데이터/ML]
+  primary_tech_level: L200  # scenario에서 미지정 시 기본
+
+aws:
+  services:                 # ← 연구(2단계) 대상. GA/리전/preview를 feature-facts에서 검증.
+    - Amazon Bedrock AgentCore
+    - Amazon Bedrock Knowledge Bases
+  region: ap-northeast-2    # 리전 가용성 판정 기준
+
+scenarios:                  # ← 확정된 유즈케이스 → 시나리오. 씬 분해는 blueprint(3단계)에서.
+  - id: a
+    title: "매출 이상 탐지 자동화"
+    use_case: "일 180만 트랜잭션에서 이상 매출 SKU를 자동 탐지·브리핑"
+    tech_level: L200        # 생략 시 audience.primary_tech_level
+  - id: b
+    title: "정산 배치 보안 대응"
+    use_case: "정산 배치의 SSRF 침해를 조사·대응"
+    tech_level: L300
+
+deploy:
+  target: amplify
+  private: true             # 고객 로고 포함 → 접근통제된 곳에만 배포

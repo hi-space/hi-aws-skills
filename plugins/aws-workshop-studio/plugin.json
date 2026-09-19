@@ -1,0 +1,32 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "aws-workshop-studio",
+  "version": "0.3.0",
+  "description": "hi-aws-skills fork of workshop-scaffold, insight-first: generate a hands-on AWS workshop from a topic, scenarios, and target customer in the quick-* VitePress format — with the architecture rationale (why this architecture, what each service contributes, what changes once adopted) rendered on the overview page and architecture diagrams drawn with aws-diagram-design — plus standalone AWS fact-checking (aws-fact-check) and level×role persona review (persona-review). Commands: /new-workshop, /workshop-check, /workshop-walkthrough; agent: participant-walker.",
+  "author": {
+    "name": "hi-space"
+  },
+  "repository": "https://github.com/hi-space/hi-aws-skills",
+  "keywords": [
+    "aws",
+    "workshop",
+    "vitepress",
+    "scaffold",
+    "persona-review",
+    "fact-check",
+    "korean"
+  ],
+  "skills": [
+    "./skills/workshop-scaffold",
+    "./skills/aws-fact-check",
+    "./skills/persona-review"
+  ],
+  "commands": [
+    "./commands/new-workshop.md",
+    "./commands/workshop-check.md",
+    "./commands/workshop-walkthrough.md"
+  ],
+  "agents": [
+    "./agents/participant-walker.md"
+  ]
+}

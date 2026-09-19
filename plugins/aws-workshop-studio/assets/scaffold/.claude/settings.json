@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "node .claude/hooks/protect-brief.mjs" }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          { "type": "command", "command": "bash scripts/workshop-check.sh --fix" }
+        ]
+      }
+    ]
+  }
+}
