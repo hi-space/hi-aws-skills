@@ -1,19 +1,23 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "aws-tech-blog-writer",
-  "version": "2.0.0",
-  "description": "Publication-ready AWS Tech Blog (Korean) posts about projects, PoCs and customer engagements built on AWS: parallel source digests and a fact base, an approved plan, research and verified architecture diagrams in parallel, a draft written in a fresh context from a minimal packet, fact-check against AWS documentation, a literal-voice style pass (no metaphors, no agentless passives), colour-coded placeholders, delivered as a Word (.docx) file built with docx-js.",
+  "description": "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached; also when an existing AWS blog draft needs a style pass or a technical fact-check. The deliverable is a Word (.docx) file, built with the docx skill, with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘.",
+  "version": "2.1.0",
   "author": {
     "name": "hi-space"
   },
+  "license": "MIT",
   "keywords": [
-    "aws blog",
-    "tech blog",
+    "aws",
+    "blog",
+    "tech-blog",
     "korean",
     "docx",
     "fact-check",
-    "placeholders"
+    "placeholders",
+    "bedrock",
+    "agentcore",
+    "writing"
   ],
-  "license": "MIT",
   "repository": "https://github.com/hi-space/hi-aws-skills"
 }

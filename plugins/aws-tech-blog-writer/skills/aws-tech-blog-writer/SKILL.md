@@ -3,8 +3,8 @@ name: aws-tech-blog-writer
 description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached; also when an existing AWS blog draft needs a style pass or a technical fact-check. The deliverable is a Word (.docx) file, built with the docx skill, with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘."
 license: MIT
 metadata:
-  version: "2.0.0"
-  source: "https://github.com/hi-space/hi-agent-skills"
+  version: "2.1.0"
+  source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
 # AWS Tech Blog Writer
@@ -97,13 +97,16 @@ and copy shipping PNGs into `<work>/images/` as `figN-<name>.png`. Screenshots t
 
 ## Stage 4: Draft, in a fresh context
 
-Fill `templates/prompt-drafter.md` and send it to a general-purpose subagent. The subagent reads exactly
-seven files: `references/voice.md`, the relevant sections of `aws-blog-conventions.md`,
-`references/placeholders.md`, `02-plan.md`, `01-facts.md`, `03-research.md`, and `diagrams/manifest.md`.
-It does not see the sources, the digests, the brief, or this conversation, and it writes
-`<work>/04-draft.md` in one pass.
+Fill `templates/prompt-drafter.md` and send it to the plugin's `blog-drafter` agent (Agent tool,
+`subagent_type: aws-tech-blog-writer:blog-drafter`). The agent definition in `agents/blog-drafter.md`
+holds its rules and limits it to Read and Write, so it cannot search the web or open the sources even if
+it wanted to; the prompt carries only the paths and the variables of this post. The agent reads exactly
+eight files: `references/voice.md`, the relevant sections of `aws-blog-conventions.md`,
+`references/placeholders.md`, `02-plan.md`, `01-facts.md`, `03-research.md`, `diagrams/manifest.md`, and
+the skeleton `templates/blog-post.md`. It does not see the sources, the digests, the brief, or this
+conversation, and it writes `<work>/04-draft.md` in one pass (the file does not exist before then).
 
-The rules the prompt enforces, so you can check the result: every project statement ends with its fact
+The rules the agent enforces, so you can check the result: every project statement ends with its fact
 IDs in an HTML comment; every AWS statement rests on a research entry or is written so the fact-checker
 can test it; numbers only from facts or research; placeholders in the exact `placeholders.md` form;
 noun-phrase headings; subjects that can act; no passive with a known actor; no figurative nouns; AWS
@@ -114,10 +117,13 @@ same subagent what to move (SendMessage keeps its context); do not start editing
 
 ## Stage 5: Fact-check and lint, in parallel
 
-**Fact-check**: fill `templates/prompt-fact-checker.md` and send it to a general-purpose subagent with
-`04-draft.md`, `templates/claims.md`, and `references/verification.md`. It writes `<work>/05-claims.md`
-and returns counts plus a corrections list (proposed sentence for each `corrected` claim, proposed
-`[기술 검증 필요] (Cnn)` text for each `unverified` one). It never edits the draft.
+**Fact-check**: fill `templates/prompt-fact-checker.md` and send it to the plugin's `blog-fact-checker`
+agent (`subagent_type: aws-tech-blog-writer:blog-fact-checker`). Its definition in
+`agents/blog-fact-checker.md` holds the procedure and limits its tools to Read, Write, WebFetch, and the
+`aws-docs` / `aws-mcp` documentation tools. It reads `04-draft.md`, `templates/claims.md`, and
+`references/verification.md`, writes `<work>/05-claims.md`, and returns counts plus a corrections list
+(proposed sentence for each `corrected` claim, proposed `[기술 검증 필요] (Cnn)` text for each
+`unverified` one). It never edits the draft.
 
 **Lint**, while the fact-check runs: `python3 <skill-dir>/scripts/lint_blog.py <work>/04-draft.md`. It
 reports, with line numbers, forbidden punctuation, wrong or unintroduced service names, images without
@@ -165,9 +171,19 @@ placeholders remain the post is ready for the author's pass, not ready to publis
 ## Subagents
 
 Digests, research, the draft, and the fact-check are subagent work: file in, file out, given only the
-files named above and never the sources they do not need. Never fork yourself; a fork inherits this
-whole context, which is the problem the split exists to avoid. Never let a subagent spawn subagents.
-Diagram skills run their own Reviewer.
+files named above and never the sources they do not need. The draft and the fact-check run as this
+plugin's own agents (`agents/blog-drafter.md`, `agents/blog-fact-checker.md`), whose tool lists the
+harness enforces; digests and research run as general-purpose subagents. If the plugin agents are not
+registered (the skill copied without its plugin), send the same prompt to a general-purpose subagent with
+the agent body prepended. Never fork yourself; a fork inherits this whole context, which is the problem
+the split exists to avoid. Never let a subagent spawn subagents. Diagram skills run their own Reviewer.
+
+## Agents
+
+| Agent | Stage | Tools | Reads | Writes |
+|---|---|---|---|---|
+| [blog-drafter](../../agents/blog-drafter.md) | 4 | Read, Write | voice, conventions, placeholders, plan, facts, research, manifest, skeleton | `04-draft.md` |
+| [blog-fact-checker](../../agents/blog-fact-checker.md) | 5 | Read, Write, WebFetch, aws-docs and aws-mcp documentation tools | verification, claims template, draft | `05-claims.md` |
 
 ## Reference files
 

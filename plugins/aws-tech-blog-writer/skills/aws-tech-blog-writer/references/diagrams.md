@@ -73,7 +73,7 @@ figure without a manifest row does not go into the draft.
 ```markdown
 아래 그림 1은 PoC에서 구성한 전체 아키텍처입니다. 사용자의 요청은 Application Load Balancer를 거쳐 ...
 
-![Agent Platform 전체 아키텍처: ALB, ECS Fargate, Cognito, DynamoDB, S3, Bedrock AgentCore Runtime과 Gateway, Bedrock 모델](images/fig1-agent-platform.drawio.png)
+![Agent Platform 전체 아키텍처: ALB, ECS Fargate, Cognito, DynamoDB, S3, Bedrock AgentCore Runtime과 Gateway, Bedrock 모델](images/fig1-agent-platform.png)
 
 그림 1. Amazon Bedrock AgentCore 기반 Agent Platform 전체 아키텍처
 ```

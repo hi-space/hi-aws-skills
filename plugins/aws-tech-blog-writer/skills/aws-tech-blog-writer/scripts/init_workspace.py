@@ -4,7 +4,8 @@
     python3 init_workspace.py <slug> [--dir <parent>]
 
 Creates <parent>/<slug>/ (default parent: ./blog-work) with:
-  00-brief.md 01-facts.md 02-plan.md 03-research.md 04-draft.md 05-claims.md
+  00-brief.md 01-facts.md 02-plan.md 03-research.md 05-claims.md
+(04-draft.md is not pre-created: the Stage 4 drafter subagent writes it from templates/blog-post.md)
   sources/ sources/text/ diagrams/manifest.md images/
 Existing files are never overwritten.
 """
@@ -23,7 +24,6 @@ COPIES = {
     "facts.md": "01-facts.md",
     "plan.md": "02-plan.md",
     "research.md": "03-research.md",
-    "blog-post.md": "04-draft.md",
     "claims.md": "05-claims.md",
     "diagram-manifest.md": "diagrams/manifest.md",
 }

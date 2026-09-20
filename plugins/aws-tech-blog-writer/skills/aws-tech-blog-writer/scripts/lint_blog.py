@@ -329,8 +329,10 @@ def lint(path: Path, final: bool, service_check: bool):
                 continue
             fm = body_wo_title.find(full)
             if fm == -1 or fm > sm.start():
-                line_no = body_wo_title[: sm.start()].count("\n") + 1
-                # map back to original line: title removal keeps line count
+                # body is the join of body_text_positions (blank and fenced lines dropped), so the index into
+                # that join must be mapped back to the original line number it was recorded with
+                idx = body_wo_title[: sm.start()].count("\n")
+                line_no = body_text_positions[idx][0]
                 rep.add("warn", line_no, "W2", f"'{short}' appears before its full name '{full}' is introduced")
 
     # ---- images and captions

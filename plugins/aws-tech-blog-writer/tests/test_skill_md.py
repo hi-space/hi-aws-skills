@@ -81,7 +81,9 @@ def test_draft_and_fact_check_run_in_fresh_subagents():
         assert (SKILL / "templates" / tpl).exists(), tpl
     # the drafter packet excludes the sources and digests
     drafter = (SKILL / "templates" / "prompt-drafter.md").read_text()
-    assert "do not open the source documents" in drafter
+    assert "Do not open the source documents" in drafter
+    assert "aws-tech-blog-writer:blog-drafter" in drafter
+    assert "aws-tech-blog-writer:blog-fact-checker" in (SKILL / "templates" / "prompt-fact-checker.md").read_text()
 
 
 def test_voice_rules_cover_the_three_machine_habits():
@@ -99,3 +101,75 @@ def test_merged_references_are_gone():
         assert not (refs / old).exists(), old
     for new in ("voice.md", "verification.md"):
         assert (refs / new).exists(), new
+
+
+def test_root_manifest_mirrors_claude_plugin_manifest_apart_from_schema():
+    a = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())
+    b = json.loads((PLUGIN / "plugin.json").read_text())
+    b.pop("$schema", None)
+    assert a == b, "root plugin.json drifted from .claude-plugin/plugin.json (the other plugins keep them identical)"
+
+
+def test_skill_source_url_matches_plugin_repository():
+    repo = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["repository"]
+    assert f'source: "{repo}"' in frontmatter()
+
+
+def test_conventions_skeletons_do_not_use_the_figurative_axis():
+    conv = (SKILL / "references" / "aws-blog-conventions.md").read_text()
+    for phrase in ("각 축", "핵심 축", "평면/축", "축 3~5개"):
+        assert phrase not in conv, f"'{phrase}': voice.md §1.3 bans 축 as a workstream, and the drafter reads this file"
+
+
+def test_blog_post_template_reaches_the_drafter_and_is_not_pre_copied():
+    drafter = (SKILL / "templates" / "prompt-drafter.md").read_text()
+    assert "templates/blog-post.md" in drafter, "the drafter must read the skeleton or the template is dead weight"
+    assert "templates/blog-post.md" in (PLUGIN / "agents" / "blog-drafter.md").read_text()
+    init = (SKILL / "scripts" / "init_workspace.py").read_text()
+    assert '"blog-post.md": "04-draft.md"' not in init, "04-draft.md is written by the drafter, not pre-filled"
+    assert "eight files" in SKILL_MD.read_text()
+
+
+def test_figure_file_names_agree_across_skill_and_templates():
+    files = [SKILL_MD, SKILL / "templates" / "blog-post.md", SKILL / "templates" / "diagram-manifest.md"]
+    for f in files:
+        assert ".drawio.png" not in f.read_text(), f"{f.name}: shipping PNGs are figN-<name>.png (SKILL.md Stage 3)"
+
+
+def agent_frontmatter(name: str) -> dict:
+    text = (PLUGIN / "agents" / f"{name}.md").read_text()
+    fm = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    assert fm, f"{name}: missing frontmatter"
+    fields = dict(re.findall(r"^(\w+):\s*(.*)$", fm.group(1), re.M))
+    fields["_body"] = text[fm.end():]
+    return fields
+
+
+def test_drafter_agent_is_confined_to_read_and_write():
+    a = agent_frontmatter("blog-drafter")
+    assert a["name"] == "blog-drafter"
+    tools = {x.strip() for x in a["tools"].split(",")}
+    assert tools == {"Read", "Write"}, "the drafter must not be able to search, run commands, or spawn agents"
+    assert len(a["_body"]) <= 10000
+    for needle in ("voice.md", "01-facts.md", "04-draft.md", "<!-- F04 F09 -->", "When to invoke"):
+        assert needle in a["_body"], needle
+
+
+def test_fact_checker_agent_has_documentation_tools_and_cannot_edit_the_draft_by_design():
+    a = agent_frontmatter("blog-fact-checker")
+    tools = {x.strip() for x in a["tools"].split(",")}
+    assert {"Read", "Write", "WebFetch", "mcp__aws-docs__search_documentation", "mcp__aws-docs__read_documentation",
+            "mcp__aws-mcp__aws___search_documentation"} <= tools
+    assert "Bash" not in tools and "Agent" not in tools and "Edit" not in tools
+    assert len(a["_body"]) <= 10000
+    for needle in ("05-claims.md", "never edit", "unverified", "check_claims.py", "When to invoke"):
+        assert needle in a["_body"], needle
+
+
+def test_skill_md_names_both_agents_and_a_fallback():
+    text = re.sub(r"\s+", " ", SKILL_MD.read_text())
+    for needle in ("subagent_type: aws-tech-blog-writer:blog-drafter", "subagent_type: aws-tech-blog-writer:blog-fact-checker",
+                   "agents/blog-drafter.md", "agents/blog-fact-checker.md", "not registered"):
+        assert needle in text, needle
+    assert (PLUGIN / "agents" / "blog-drafter.md").exists() and (PLUGIN / "agents" / "blog-fact-checker.md").exists()
+    assert "blog-drafter" in (PLUGIN / "README.md").read_text()

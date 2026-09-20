@@ -35,10 +35,21 @@ AWS에서 구축한 프로젝트, PoC, 고객 사례를 **AWS 기술 블로그(a
 | 1 브리프와 사실 목록 | digest는 자료별 서브에이전트, 통합은 메인 | `00-brief.md`, `sources/*.digest.md`, `01-facts.md` |
 | 2 글 계획 (승인 게이트) | 메인 | `02-plan.md` |
 | 3 리서치 ‖ 다이어그램 | 리서치 서브에이전트 ‖ 다이어그램 스킬 + 메인 검증 | `03-research.md` ‖ `diagrams/manifest.md`, `images/` |
-| 4 초안 | packet만 받은 새 서브에이전트 | `04-draft.md` |
-| 5 팩트체크 ‖ 린트 | 팩트체크 서브에이전트(수정 목록 반환) ‖ 메인 | `05-claims.md` ‖ 린트 결과 |
+| 4 초안 | `blog-drafter` 에이전트 (Read, Write만, packet 8개 파일) | `04-draft.md` |
+| 5 팩트체크 ‖ 린트 | `blog-fact-checker` 에이전트 (aws-docs MCP, WebFetch; 수정 목록 반환) ‖ 메인 | `05-claims.md` ‖ 린트 결과 |
 | 5b 스타일 패스 | 메인 (유일한 편집자) | `06-final.md`, `placeholders.md` |
 | 6 Word 문서 빌드와 검증 | 메인 | `06-final.docx` |
+
+## 에이전트
+
+초안과 팩트체크는 플러그인의 커스텀 에이전트(`agents/`)가 맡습니다. 도구 목록을 하네스가 강제하므로 드래프터는 웹을 검색하거나 원본 자료를 열 수 없고, 팩트체커는 문서 도구와 파일 쓰기만 갖습니다. 프롬프트 템플릿(`templates/prompt-*.md`)은 파일 경로와 이 글의 변수만 담습니다.
+
+| 에이전트 | 도구 | 역할 |
+|---|---|---|
+| `blog-drafter` | Read, Write | packet 8개 파일만 읽고 `04-draft.md`를 한 번에 씀 |
+| `blog-fact-checker` | Read, Write, WebFetch, `aws-docs`/`aws-mcp` 문서 도구 | 기술 주장마다 공식 문서를 열어 `05-claims.md`와 수정 목록을 돌려줌. 초안은 안 건드림 |
+
+자료 digest와 리서치는 general-purpose 서브에이전트가 맡습니다.
 
 ## 문체
 
