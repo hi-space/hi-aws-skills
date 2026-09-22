@@ -18,8 +18,8 @@ Warnings:
   W6  icon drawn inside an AWS Cloud group but not a child of a role group
   W7  edge label whose box covers a group/cloud border or title row, an icon, another label or another
       edge's line (shift it along its edge with mxGeometry x, or move a node)
-  W8  two edges with overlapping collinear segments (a node side holds one straight edge, or bent edges that
-      share their trunk — a bus)
+  W8  two edges with overlapping collinear segments — they render as one line (bent edges touching one side of a
+      node must leave from different ports, side by side, as build_diagram.py draws them)
   W9  icon with no edge at all (a floating component)
 W4–W9 are layout defects: the exit status is 1 when any is present, like an error. W1–W3 are style hints.
 
@@ -147,10 +147,12 @@ def _edge_path(style, sg, tg):
         return None
     p = (sx + ex * sw, sy + ey * sh)
     q = (tx + nx * tw, ty + ny * th)
-    exit_vertical = abs(ex - 0.5) < 0.01 and (ey <= 0.0 or ey >= 1.0)
-    exit_horizontal = abs(ey - 0.5) < 0.01 and ex in (0.0, 1.0)
-    entry_vertical = abs(nx - 0.5) < 0.01 and (ny <= 0.0 or ny >= 1.0)
-    entry_horizontal = abs(ny - 0.5) < 0.01 and nx in (0.0, 1.0)
+    # a port anywhere along the top/bottom edge leaves vertically, anywhere along the left/right edge horizontally
+    # (the builder fans bent edges out along the side, so the ratio is rarely exactly 0.5)
+    exit_vertical = 0.0 < ex < 1.0 and (ey <= 0.0 or ey >= 1.0)
+    exit_horizontal = ex in (0.0, 1.0) and 0.0 < ey < 1.0
+    entry_vertical = 0.0 < nx < 1.0 and (ny <= 0.0 or ny >= 1.0)
+    entry_horizontal = nx in (0.0, 1.0) and 0.0 < ny < 1.0
     if exit_vertical and entry_horizontal:
         c = (p[0], q[1])
         ok = (c[1] < p[1]) if ey <= 0.0 else (c[1] > p[1])
@@ -169,7 +171,6 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     geo = _abs_geometry(cells)
     icons = {cid for cid, c in cells.items() if cid in geo and _is_icon(parse_style(c.get("style")))}
     paths: dict[str, list] = {}
-    ends: dict[str, tuple[str, str]] = {}
     for cid, cell in cells.items():
         if cell.get("edge") != "1":
             continue
@@ -187,11 +188,10 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
                             "(exit top/bottom + enter left/right, or exit left/right + enter top/bottom)")
             continue
         paths[cid] = path
-        ends[cid] = (s, t)
         for a, b in zip(path, path[1:]):
             for o in _blockers(icons, geo, {s, t}, a, b):
                 warnings.append(f"W5 edge '{cid}': path from '{s}' to '{t}' passes through icon '{o}' — move it off the corridor")
-    warnings.extend(_overlap_warnings(paths, ends))
+    warnings.extend(_overlap_warnings(paths))
     touched = set()
     for cid, cell in cells.items():
         if cell.get("edge") == "1":
@@ -202,11 +202,10 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
     return warnings
 
 
-def _overlap_warnings(paths: dict[str, list], ends: dict[str, tuple[str, str]] | None = None) -> list[str]:
-    """W8: two edges whose paths contain collinear segments that overlap (they render as one line).
-    Exception — a *bus*: bent edges that share their source (first leg) or their target (last leg) may share
-    that leg; it reads as one trunk with branches and the arrowheads stay distinct."""
-    ends = ends or {}
+def _overlap_warnings(paths: dict[str, list]) -> list[str]:
+    """W8: two edges whose paths contain collinear segments that overlap — they render as one line, and the reader
+    cannot tell which arrowhead belongs to which source. Bent edges touching the same side of a node must leave
+    from different ports (the builder spaces them 20 px apart); a bus with a shared trunk is not accepted."""
 
     def segments(path):
         for i, (a, b) in enumerate(zip(path, path[1:])):
@@ -215,30 +214,21 @@ def _overlap_warnings(paths: dict[str, list], ends: dict[str, tuple[str, str]] |
             else:
                 yield i, ("h", a[1], min(a[0], b[0]), max(a[0], b[0]))
 
-    def shared_leg(e1, i1, e2, i2) -> bool:
-        if e1 not in ends or e2 not in ends or len(paths[e1]) < 3 or len(paths[e2]) < 3:
-            return False
-        (s1, t1), (s2, t2) = ends[e1], ends[e2]
-        first = i1 == 0 and i2 == 0 and s1 == s2
-        last = i1 == len(paths[e1]) - 2 and i2 == len(paths[e2]) - 2 and t1 == t2
-        return first or last
-
     warnings: list[str] = []
     ids = sorted(paths)
     for i, e1 in enumerate(ids):
         for e2 in ids[i + 1:]:
             hit = False
-            for i1, (k1, c1, lo1, hi1) in segments(paths[e1]):
-                for i2, (k2, c2, lo2, hi2) in segments(paths[e2]):
-                    if k1 == k2 and abs(c1 - c2) <= ALIGN_TOLERANCE and min(hi1, hi2) - max(lo1, lo2) > ALIGN_TOLERANCE \
-                            and not shared_leg(e1, i1, e2, i2):
+            for _, (k1, c1, lo1, hi1) in segments(paths[e1]):
+                for _, (k2, c2, lo2, hi2) in segments(paths[e2]):
+                    if k1 == k2 and abs(c1 - c2) <= ALIGN_TOLERANCE and min(hi1, hi2) - max(lo1, lo2) > ALIGN_TOLERANCE:
                         hit = True
                         break
                 if hit:
                     break
             if hit:
-                warnings.append(f"W8 edges '{e1}' and '{e2}' run on top of each other — give them different sides of the "
-                                "node or different lanes (a side holds one straight edge, or bent edges sharing a trunk)")
+                warnings.append(f"W8 edges '{e1}' and '{e2}' run on top of each other — give them different ports on the side "
+                                "(bent edges 20 px apart, as the builder does), different sides of the node, or different lanes")
     return warnings
 
 

@@ -67,6 +67,50 @@ def test_auto_layout_handles_a_hub_with_eight_neighbours():
     assert all(g["cols"] and g["lanes"] for g in placed["groups"])
 
 
+def test_planner_caps_bends_per_side_and_lets_roles_mix():
+    def hub(n_targets, extra=()):
+        nodes = [{"id": "b", "label": "Hub", "icon": "lambda", "group": "g"}]
+        nodes += [{"id": f"t{i}", "label": f"T{i}", "icon": "s3", "group": "g"} for i in range(n_targets)]
+        nodes += [dict(e) for e in extra]
+        edges = [{"from": "b", "to": f"t{i}"} for i in range(n_targets)]
+        return {"title": "hub", "groups": [{"id": "g", "label": "G"}], "nodes": nodes, "edges": edges}
+
+    def placed(spec, cells):
+        p = layout.Placement(spec)
+        col = {nid: c for nid, (c, _) in cells.items()}
+        lane = {nid: l for nid, (_, l) in cells.items()}
+        return p.cost(col, lane)
+
+    # three bends leaving the hub's bottom, all turning right: allowed
+    cells = {"b": (2, 1), **{f"t{i}": (3, 2 + i) for i in range(3)}}
+    cost, notes = placed(hub(3), cells)
+    assert cost < layout.HARD, notes
+    # a fourth: the planner routes one of them horizontally first, so it leaves the hub's right side instead
+    cells["t3"] = (3, 5)
+    p = layout.Placement(hub(4))
+    p.col = {nid: c for nid, (c, _) in cells.items()}
+    p.lane = {nid: l for nid, (_, l) in cells.items()}
+    cost, notes = p.cost()
+    assert cost < layout.HARD, notes
+    assert sorted(p.routes.values()) == ["h", "v", "v", "v"]
+    assert sum(1 for e in p.apply()["edges"] if e.get("route") == "h") == 1
+    # with the right side owned by a straight edge, nothing can move there: a hard violation naming the cap
+    spec = hub(4, extra=[{"id": "r", "label": "R", "icon": "sqs", "group": "g"}])
+    spec["edges"].append({"from": "b", "to": "r"})
+    cells["r"] = (3, 1)
+    cost, notes = placed(spec, cells)
+    assert cost >= layout.HARD and any("at most" in n for n in notes), notes
+    # an arriving bend and a leaving bend on one side are separate lines now: not a violation
+    spec = hub(1, extra=[{"id": "src", "label": "Src", "icon": "sqs", "group": "g"}])
+    spec["edges"].append({"from": "src", "to": "b"})
+    cells = {"b": (2, 1), "t0": (3, 2), "src": (1, 2)}
+    p = layout.Placement(spec)
+    col = {nid: c for nid, (c, _) in cells.items()}
+    lane = {nid: l for nid, (_, l) in cells.items()}
+    cost, notes = p.cost(col, lane)
+    assert cost < layout.HARD, notes
+
+
 def test_scaffold_reads_a_brief_into_a_logical_spec():
     brief = (SAMPLES / "order-pipeline.brief.md").read_text()
     spec, warnings = sc.scaffold(brief, STENCILS)

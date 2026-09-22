@@ -179,19 +179,102 @@ def test_builder_rejects_far_bends_and_shared_sides():
     s["edges"] += [{"from": "b", "to": "dn"}, {"from": "b", "to": "up"}]  # one leaves bottom, one leaves top: fine
     assert vd.validate_text(bd.build(s), INDEX) == ([], [])
     s["nodes"].append({"id": "dn2", "label": "Down2", "icon": "s3", "col": 1, "lane": 2, "group": "g"})
-    s["edges"].append({"from": "b", "to": "dn2"})                    # second bend leaving the bottom: a bus, allowed
+    s["edges"].append({"from": "b", "to": "dn2"})                    # second bend leaving the bottom: its own line
     xml = bd.build(s)
     assert vd.validate_text(xml, INDEX) == ([], [])
-    assert xml.count('<mxPoint x="620" y="') == 3                     # every bend pins its corner on b's column
+    # the lone top bend keeps the centre; the two bottom bends fan out 20 px apart, each on the side it turns to
+    assert xml.count('<mxPoint x="620" y="') == 1
+    assert xml.count('<mxPoint x="610" y="') == 1 and xml.count('<mxPoint x="630" y="') == 1
     s["nodes"].append({"id": "st", "label": "Straight", "icon": "kinesis", "col": 2, "lane": 2, "group": "g"})
-    s["edges"].append({"from": "b", "to": "st"})                     # straight down through the bus trunk
+    s["edges"].append({"from": "b", "to": "st"})                     # straight down between the two trunks
     with pytest.raises(bd.SpecError, match="one of them is straight|runs through"):
         bd.build(s)
 
 
-def test_bus_reaches_two_lanes_down_when_the_column_is_empty():
-    # A hub (b at col 2, lane 0) with five neighbours: left/right straight, three bends sharing the bottom trunk,
-    # one of them two lanes down. The hub's own column stays empty below it.
+def hub_spec(targets, edges=None, lanes=(0, 1, 2, 3, 4)):
+    """A hub b at (2, 1) inside one wide group; `targets` are (id, col, lane) triples, each fed from b."""
+    nodes = [{"id": "b", "label": "Hub", "icon": "lambda", "col": 2, "lane": 1, "group": "g"}]
+    nodes += [{"id": i, "label": i.upper(), "icon": "s3", "col": c, "lane": l, "group": "g"} for i, c, l in targets]
+    return {"title": "T", "groups": [{"id": "g", "label": "G", "cols": [1, 2, 3], "lanes": list(lanes)}],
+            "nodes": nodes, "edges": edges if edges is not None else [{"from": "b", "to": i} for i, _, _ in targets]}
+
+
+def crossings(paths):
+    """Pairs of edges whose polylines cross (a horizontal leg of one cutting a vertical leg of the other)."""
+    hits = []
+    ids = sorted(paths)
+    for i, a in enumerate(ids):
+        for b in ids[i + 1:]:
+            for x1, y1, x2, y2 in bd.Builder.segments(paths[a]):
+                for u1, v1, u2, v2 in bd.Builder.segments(paths[b]):
+                    h, v = ((x1, y1, x2, y2), (u1, v1, u2, v2)) if y1 == y2 else ((u1, v1, u2, v2), (x1, y1, x2, y2))
+                    if h[1] != h[3] or v[0] != v[2]:
+                        continue
+                    if min(h[0], h[2]) < v[0] < max(h[0], h[2]) and min(v[1], v[3]) < h[1] < max(v[1], v[3]):
+                        hits.append((a, b))
+    return hits
+
+
+def test_split_trunks_give_every_bend_its_own_line_without_crossings():
+    # Three bends leave the hub's bottom: two turn left (lanes 2 and 3), one turns right (lane 2).
+    s = hub_spec([("l1", 1, 2), ("l2", 1, 3), ("r1", 3, 2)])
+    b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
+    xml = b.build()
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    st = styles(xml)
+    # left-turners on the left, the right-turner on the right; the nearest left turn takes the outermost line
+    ports = {eid: float(st[eid]["exitX"]) for eid in ("e1", "e2", "e3")}
+    assert ports["e1"] < ports["e2"] == 0.5 < ports["e3"]                       # l1, l2 | r1
+    assert [round((p - 0.5) * bd.ICON) for p in (ports["e1"], ports["e2"], ports["e3"])] == [-20, 0, 20]
+    # the corner of each L sits on its own trunk, and the three lines never cross
+    corners = {eid: xml.split(f'id="{eid}"')[1].split("mxPoint x=\"")[1].split('"')[0] for eid in ports}
+    assert corners == {"e1": "600", "e2": "620", "e3": "640"}
+    node_xy = {nid: (b.cx(n["col"]) - bd.ICON // 2, b.ly(n["lane"]) - bd.ICON // 2) for nid, n in b.nodes.items()}
+    label_h = {nid: b.label_h(n) for nid, n in b.nodes.items()}
+    offs = b.side_offsets()
+    paths = {}
+    for i, e in enumerate(s["edges"], 1):
+        d, _, _, kind = b.edge_geometry(e, offs[f"e{i}"])
+        paths[f"e{i}"] = b.edge_path(e, d, kind, node_xy, label_h, offs[f"e{i}"])
+    assert crossings(paths) == []
+    # every edge asks draw.io to hop over lines it crosses elsewhere
+    assert all(st[eid]["jumpStyle"] == "arc" for eid in ports)
+
+
+def test_fan_in_splits_the_arriving_lines_too():
+    # Two sources in column 2 (one above, one below) bend into the target's left side at (3, 1).
+    s = hub_spec([("s1", 2, 0), ("s2", 2, 2), ("t", 3, 1)],
+                 edges=[{"from": "s1", "to": "t"}, {"from": "s2", "to": "t"}], lanes=(0, 1, 2))
+    s["nodes"] = [n for n in s["nodes"] if n["id"] != "b"]
+    xml = bd.build(s)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    st = styles(xml)
+    assert (st["e1"]["entryX"], st["e2"]["entryX"]) == ("0", "0")
+    assert float(st["e1"]["entryY"]) < 0.5 < float(st["e2"]["entryY"])          # from above enters higher
+
+
+def test_arriving_and_leaving_bends_may_share_a_side():
+    # b → dn leaves the bottom and turns right; src → b comes along lane 2 and climbs into the bottom (route h).
+    s = hub_spec([("dn", 3, 2), ("src", 1, 2)],
+                 edges=[{"from": "b", "to": "dn"}, {"from": "src", "to": "b", "route": "h"}], lanes=(0, 1, 2))
+    xml = bd.build(s)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    st = styles(xml)
+    assert float(st["e1"]["exitX"]) > 0.5 > float(st["e2"]["entryX"])
+
+
+def test_more_than_three_bends_on_one_side_is_a_spec_error():
+    s = hub_spec([("l1", 1, 2), ("l2", 1, 3), ("r1", 3, 2)])
+    bd.build(s)                                                       # three fit
+    s["nodes"].append({"id": "r2", "label": "R2", "icon": "s3", "col": 3, "lane": 3, "group": "g"})
+    s["edges"].append({"from": "b", "to": "r2"})
+    with pytest.raises(bd.SpecError, match="at most 3"):
+        bd.build(s)
+
+
+def test_bends_reach_two_lanes_down_when_the_column_is_empty():
+    # A hub (b at col 2, lane 0) with five neighbours: left/right straight, three bends leaving the bottom side by
+    # side, one of them two lanes down. The hub's own column stays empty below it.
     s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2, 3], "lanes": [0, 1, 2]}],
              nodes=[{"id": "u", "label": "Users", "icon": "users", "col": 0, "lane": 0, "outside": True},
                     {"id": "a", "label": "ALB", "icon": "elastic_load_balancing", "col": 1, "lane": 0, "group": "g"},

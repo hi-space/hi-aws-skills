@@ -27,7 +27,7 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       (from-source-code.md § 4), never a relabel.
 - [ ] Every relationship is an edge with the right direction and kind (solid = sync, dashed = async/aux,
       red dashed = error). A Drawer that dropped a *primary* relationship to make layout work is `not ready`
-      (fix the layout: bus, more lanes, split by request path). A brief that lists redundant *aux* edges (one
+      (fix the layout: both sides of the hub, more lanes, split by request path). A brief that lists redundant *aux* edges (one
       into CloudWatch per service) is a brief defect the Reviewer may fix directly: keep the representative
       edge, delete the rest from the table, add a line under Decisions — no Phase 1 restart needed.
 - [ ] Group membership matches the brief's Group column. Users / external systems are outside the AWS Cloud.
@@ -121,8 +121,10 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 | Empty band across the top of the cloud | move upper-lane items there (auth, static assets, memory) or drop lane 0 and fan out downward |
 | Fan-out edge runs through an icon (W5) | the hub's own column must be empty on every lane the trunk crosses; move that icon into an adjacent column |
 | Icon with no edge (W9) | the brief has a relationship for it — draw it; or the component does not belong in this diagram |
-| A hub has more neighbours than free sides | bus: stack the neighbours in the two adjacent columns above and below the hub, keep the hub's column clear (layout-and-style.md §5) |
-| Straight edge and bends on the same side | move the straight target to another side, or make it part of the bus by shifting it one column |
+| A hub has more neighbours than free sides | stack the neighbours in the two adjacent columns above and below the hub (up to three bends per side, drawn as separate lines 20 px apart), keep the hub's column clear (layout-and-style.md §5) |
+| More than three bends on one side (builder error "at most 3") | move some neighbours to another side of the hub (the lanes above instead of below, or `"route": "h"` so the bend leaves its left/right), or split the diagram by request path |
+| Straight edge and bends on the same side | move the straight target to another side, or shift it one column so it becomes one of the bends |
+| Two lines that look like one (W8) | hand-written XML with both edges on the centre port — give them the builder's split ports (`exitX` 0.372 / 0.628 …) or rebuild from the spec |
 | A bend crosses two columns (W4 "adjacent") | the horizontal leg reaches one column only; move the target, or connect via the node in between |
 | Brief has 30+ components and the spec has 8 | not a layout problem: rebuild with `scaffold_spec.py` + auto layout; still too dense → one diagram per deployable unit or per request path (from-source-code.md §1) |
 | Layout `unresolved:` line for one edge | move one endpoint in `<name>.layout.json` (a node with neighbours in four columns wants the middle one), or split the diagram |

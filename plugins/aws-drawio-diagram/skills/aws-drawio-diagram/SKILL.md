@@ -56,9 +56,10 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    flow, 2–7 role groups, the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
 4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): hubs keep their own column free
-   above/below so their neighbours can stack beside them (bus edges), one representative edge into
-   CloudWatch-like sinks, no abstract nodes. Budget problems are solved with lanes, buses and more diagrams —
-   never by merging services or dropping primary relationships.
+   above/below so their neighbours can stack beside them (up to three bent edges per side, drawn as separate
+   lines 20 px apart), one representative edge into CloudWatch-like sinks, no abstract nodes. Budget problems
+   are solved with lanes, all four sides of a hub and more diagrams — never by merging services or dropping
+   primary relationships.
 5. Findings from the sanity checklist (no auth, sync chain of six, store with no writer) go to the user as
    questions or stated assumptions — not silently into the drawing.
 
@@ -247,7 +248,7 @@ https://app.diagrams.net, which is always current.
 - `W4` edge that needs two bends · `W5` edge through an icon · `W6`
   icon inside the cloud but in no group · `W7` edge text on a border, a title row, an icon, another label or
   another line · `W8` two edges drawn on top of
-  each other (bent edges sharing a trunk from one side of one node are a *bus*, allowed) · `W9` icon with no
+  each other (bent edges leaving one side are separate lines 20 px apart, never a shared trunk) · `W9` icon with no
   edge. All six are defects: the validator and the builder exit 1 on them. `W1`–`W3` are style hints. The
   builder refuses specs that would produce `W4`/`W8` and prints `hint:` lines for sparse groups and
   single-icon lanes — act on them.

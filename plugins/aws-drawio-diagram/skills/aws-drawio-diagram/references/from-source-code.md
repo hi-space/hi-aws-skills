@@ -163,7 +163,7 @@ secrets reads, health checks. The diagram budget (architecture-brief.md) then de
 - **Do not draw** IAM roles, KMS keys, ECR repositories, CodeBuild, log groups as nodes unless the request is
   about security/delivery/observability — mention them under *Out of scope* in the brief.
 - **Budget pressure is solved by layout, not by deletion.** `scaffold_spec.py` + the builder's auto layout place
-  30–40 nodes with all their edges (hubs fan out along their column — layout-and-style.md § 5, "bus"). If the
+  30–40 nodes with all their edges (hubs fan out along their column as separate lines — layout-and-style.md § 5). If the
   layout reports `unresolved:` edges after a hand adjustment, split by request path (§1). Dropping a *primary*
   relationship or a `deployed` component to make the picture fit is never an option the Drawer has, and neither
   is rewriting the brief to match a smaller spec — the brief's `Components: N · Relationships: M` line (write it

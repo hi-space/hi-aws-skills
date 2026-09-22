@@ -32,8 +32,13 @@ joined with ONE bend: first along the source's column to the target's lane, then
 pattern), or first across on the source's lane, then along the target's column ("h") — whichever route
 crosses no icon (the builder picks "v" when both are free; `"route": "h"` forces the other). Both legs must
 be empty of icons, else it is a spec error naming the blockers. A node side carries one straight edge, or
-a *bus* of bent edges that all leave (or all arrive) there and share the first/last leg — so a hub keeps
-its own column clear above/below and stacks its neighbours in the columns around it. Cross-cutting sinks (CloudWatch) still get one representative edge.
+up to MAX_PER_SIDE (3) bent edges (leaving, arriving or both) drawn as separate lines TRUNK_GAP (20) px apart —
+never merged into one trunk, so every arrow can be followed from its source to its target. On a side the
+lines are ordered so they never cross each other: the edges turning to the negative side of the axis take the
+negative half (nearest turn outermost), the others the positive half. A hub therefore keeps its own column
+clear above/below and stacks its neighbours in the columns around it. Where a line does cross another
+edge, draw.io draws a small arc (`jumpStyle=arc`), so a crossing never reads as a junction. Cross-cutting
+sinks (CloudWatch) still get one representative edge.
 Edge `label` is the brief's *What flows* phrase, drawn on the edge: wrapped into at most 3 lines and placed on
 the longest leg that has a clear spot (above/below a horizontal leg, beside a vertical one), off every border,
 title row, icon, other label and other line — a bent edge carries it on one of its legs. A solid (primary)
@@ -96,15 +101,22 @@ GROUP_PTS = ("points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[0,1],[0.25,1],[0.5,
              "[0,0.5],[0,0.75],[1,0.25],[1,0.5],[1,0.75]];")
 LABEL_STYLE = "verticalLabelPosition=bottom;verticalAlign=top;align=center;"
 # {B} is the bottom port ratio of the node whose bottom the edge touches: (icon + label height) / icon, so a
-# vertical edge starts or ends under the label instead of running through it.
+# vertical edge starts or ends under the label instead of running through it. {A} is the position along the
+# side (0.5 = centre): bent edges sharing a side fan out TRUNK_GAP px apart (side_offsets).
 PORTS = {
-    "right": ("exitX=1;exitY=0.5;exitDx=0;exitDy=0;", "entryX=0;entryY=0.5;entryDx=0;entryDy=0;"),
-    "left": ("exitX=0;exitY=0.5;exitDx=0;exitDy=0;", "entryX=1;entryY=0.5;entryDx=0;entryDy=0;"),
-    "up": ("exitX=0.5;exitY=0;exitDx=0;exitDy=0;", "entryX=0.5;entryY={B};entryDx=0;entryDy=0;entryPerimeter=0;"),
-    "down": ("exitX=0.5;exitY={B};exitDx=0;exitDy=0;exitPerimeter=0;", "entryX=0.5;entryY=0;entryDx=0;entryDy=0;"),
+    "right": ("exitX=1;exitY={A};exitDx=0;exitDy=0;", "entryX=0;entryY={A};entryDx=0;entryDy=0;"),
+    "left": ("exitX=0;exitY={A};exitDx=0;exitDy=0;", "entryX=1;entryY={A};entryDx=0;entryDy=0;"),
+    "up": ("exitX={A};exitY=0;exitDx=0;exitDy=0;", "entryX={A};entryY={B};entryDx=0;entryDy=0;entryPerimeter=0;"),
+    "down": ("exitX={A};exitY={B};exitDx=0;exitDy=0;exitPerimeter=0;", "entryX={A};entryY=0;entryDx=0;entryDy=0;"),
 }
 # side of the node an edge touches, per direction (source side, target side)
 SIDES = {"right": ("R", "L"), "left": ("L", "R"), "up": ("T", "B"), "down": ("B", "T")}
+# Bent edges touching one side of a node are drawn side by side, TRUNK_GAP px apart, centred on the side — at
+# most MAX_PER_SIDE of them (3 × 20 px = 40 px on a 78 px icon). A shared trunk read as one line; 14 px apart
+# they still read as one bundle; 26 px apart they looked scattered (user feedback on real renders, 2026-09-22).
+# More neighbours go to the hub's other sides — the planner spreads them (layout.py) and refuses a fourth.
+TRUNK_GAP, MAX_PER_SIDE = 20, 3
+JUMP_SIZE = 6                                            # px: the arc draw.io draws where one edge crosses another
 
 
 class SpecError(ValueError):
@@ -264,27 +276,41 @@ class Builder:
                                 "the icon). A retry/loop is a note in the brief's Flow, not an edge")
 
     # ---- edges --------------------------------------------------------------------------------
-    def edge_geometry(self, e: dict) -> tuple[str, str, str, str]:
-        """(direction, exit ports, entry ports, kind) — kind is 'straight' or 'bend'."""
+    def edge_route(self, e: dict) -> tuple[str, str]:
+        """(direction, kind): 'up'/'down'/'left'/'right' + 'straight', or 'down-right'-style + 'bend' (vertical
+        first, corner on the source's column) / 'bend-h' (horizontal first, corner on the target's column)."""
         s, t = self.nodes[e["from"]], self.nodes[e["to"]]
-        ports = lambda d, n: tuple(p.replace("{B}", str(self.bottom_ratio(n))) for p in PORTS[d])
         if s["col"] == t["col"]:
-            d = "up" if t["lane"] < s["lane"] else "down"
-            return d, *ports(d, t if d == "up" else s), "straight"
+            return ("up" if t["lane"] < s["lane"] else "down"), "straight"
         if s["lane"] == t["lane"]:
-            d = "right" if t["col"] > s["col"] else "left"
-            return d, *ports(d, s), "straight"
+            return ("right" if t["col"] > s["col"] else "left"), "straight"
         vertical = "up" if t["lane"] < s["lane"] else "down"
         horizontal = "right" if t["col"] > s["col"] else "left"
         route = e.get("route") or self.bend_route(s, t)
         if route == "v":                                  # trunk down/up the source's column, then across on the target's lane
-            return f"{vertical}-{horizontal}", ports(vertical, s)[0], PORTS[horizontal][1], "bend"
+            return f"{vertical}-{horizontal}", "bend"
         if route == "h":                                  # across on the source's lane, then down/up the target's column
-            return f"{horizontal}-{vertical}", PORTS[horizontal][0], ports(vertical, t)[1], "bend-h"
+            return f"{horizontal}-{vertical}", "bend-h"
         bv, bh = self.bend_blockers(s, t, "v"), self.bend_blockers(s, t, "h")
         raise SpecError(f"edge {e['from']}→{e['to']}: cells ({s['col']},{s['lane']})→({t['col']},{t['lane']}) cannot be joined "
                         f"with one bend: the vertical-first route runs through {', '.join(bv)}; the horizontal-first route "
                         f"through {', '.join(bh)}. Move one of them, or route via a node in between")
+
+    def edge_geometry(self, e: dict, offs: tuple[float, float] = (0.0, 0.0)) -> tuple[str, str, str, str]:
+        """(direction, exit ports, entry ports, kind). `offs` = (source, target) offsets in px along the side each
+        end touches (side_offsets): 0 is the centre of the side."""
+        s, t = self.nodes[e["from"]], self.nodes[e["to"]]
+        d, kind = self.edge_route(e)
+
+        def port(direction: str, which: int, n: dict, off: float) -> str:
+            along = f"{round(0.5 + off / ICON, 3):g}"
+            return PORTS[direction][which].replace("{A}", along).replace("{B}", str(self.bottom_ratio(n)))
+
+        if kind == "straight":
+            n = t if d == "up" else s                     # whose bottom the edge touches (the B port)
+            return d, port(d, 0, n, offs[0]), port(d, 1, n, offs[1]), kind
+        first, second = d.split("-")                      # 'bend': leave along first (T/B), enter along second (L/R); 'bend-h' the reverse
+        return d, port(first, 0, s, offs[0]), port(second, 1, t, offs[1]), kind
 
     def bend_blockers(self, s: dict, t: dict, route: str) -> list[str]:
         """Nodes sitting on the two legs of an L from s to t. 'v': trunk in s's column to t's lane, then across.
@@ -309,36 +335,58 @@ class Builder:
             return "h"
         return None
 
-    def incident_sides(self) -> dict[str, set[str]]:
-        """Sides of each node touched by edges. A side carries either one straight edge or a *bus* of bent
-        edges that all leave (or all arrive) there: those share their first (last) leg and read as one trunk with
-        branches. A straight edge next to a bend, or leaving and arriving bends on one side, would draw two
-        arrows on the same line (validator W8) — refused."""
-        sides: dict[str, set[str]] = {nid: set() for nid in self.nodes}
-        owner: dict[tuple[str, str], tuple[str, str, str]] = {}   # (node, side) -> (edge id, kind, role)
+    @staticmethod
+    def edge_sides(d: str, kind: str) -> tuple[str, str]:
+        """(source side, target side) touched by an edge of this direction and kind: T/B/L/R."""
+        if kind == "straight":
+            return SIDES[d]
+        first, second = d.split("-")
+        return SIDES[first][0], SIDES[second][1]
+
+    def side_offsets(self) -> dict[str, tuple[float, float]]:
+        """Per edge id, (source, target) offset in px along the side each end touches. A straight edge owns its
+        side (offset 0). Bent edges touching one side — leaving, arriving or both — are drawn as separate lines
+        TRUNK_GAP px apart, centred on the side, so no two share a trunk (each arrow can be followed on its own
+        line; a shared trunk is validator W8). Their order keeps siblings from crossing: along the side's axis, the
+        edges whose other end lies on the negative side come first, nearest turn first; then those on the positive
+        side, nearest turn last — so the nearest turn always takes the outermost line on its own half, and a leg
+        turning away never cuts through a sibling that runs on. More than MAX_PER_SIDE bends on a side, or a
+        straight edge next to a bend (which would run between the trunks, through its target's cell), is refused."""
         names = {"T": "top", "B": "bottom", "L": "left", "R": "right"}
-        for i, e in enumerate(self.spec.get("edges", []), 1):
-            d, _, _, kind = self.edge_geometry(e)
-            if kind == "straight":
-                ss, ts = SIDES[d]
-            else:
-                first, second = d.split("-")
-                ss, ts = SIDES[first][0], SIDES[second][1]
-            eid = e.get("id", f"e{i}")
-            for nid, side, role in ((e["from"], ss, "out"), (e["to"], ts, "in")):
-                prev = owner.get((nid, side))
-                if prev is not None:
-                    pid, pkind, prole = prev
-                    if kind == "straight" or pkind == "straight":
-                        raise SpecError(f"node '{nid}': edges {pid} and {eid} both use its {names[side]} side and one of them is "
-                                        "straight — they would overlap. Only bent edges may share a side (as a bus); move one "
-                                        "neighbour to another lane/column")
-                    if prole != role:
-                        raise SpecError(f"node '{nid}': edges {pid} and {eid} both use its {names[side]} side but one arrives and "
-                                        "one leaves — two arrowheads on one trunk. Put the arriving edge on another side")
-                owner[(nid, side)] = (eid, kind, role)
-                sides[nid].add(side)
-        return sides
+        edges = self.spec.get("edges", [])
+        ids = [e.get("id", f"e{i}") for i, e in enumerate(edges, 1)]
+        per_side: dict[tuple[str, str], list[tuple[tuple, int, str]]] = {}   # (node, side) -> [(sort key, edge index, kind)]
+        for i, e in enumerate(edges):
+            d, kind = self.edge_route(e)
+            ss, ts = self.edge_sides(d, kind)
+            for nid, side, oid in ((e["from"], ss, e["to"]), (e["to"], ts, e["from"])):
+                n, o = self.nodes[nid], self.nodes[oid]
+                if side in "TB":                          # axis = columns; the line turns at the other end's lane
+                    sign, dist = (o["col"] > n["col"]) - (o["col"] < n["col"]), abs(o["lane"] - n["lane"])
+                else:                                     # axis = lanes; the line turns at the other end's column
+                    sign, dist = (o["lane"] > n["lane"]) - (o["lane"] < n["lane"]), abs(o["col"] - n["col"])
+                key = (sign, dist if sign < 0 else -dist, i)
+                per_side.setdefault((nid, side), []).append((key, i, kind))
+        offs: dict[str, list[float]] = {eid: [0.0, 0.0] for eid in ids}
+        for (nid, side), uses in per_side.items():
+            if len(uses) == 1:
+                continue
+            straight = [i for _, i, kind in uses if kind == "straight"]
+            if straight:
+                others = [i for _, i, _ in uses if i != straight[0]]
+                raise SpecError(f"node '{nid}': edges {ids[straight[0]]} and {ids[others[0]]} both use its {names[side]} side and "
+                                "one of them is straight — they would overlap. Only bent edges may share a side (drawn side by "
+                                "side); move one neighbour to another lane/column")
+            if len(uses) > MAX_PER_SIDE:
+                raise SpecError(f"node '{nid}': {len(uses)} bent edges touch its {names[side]} side — at most {MAX_PER_SIDE} fit "
+                                f"as separate lines ({TRUNK_GAP} px apart on a {ICON} px icon). Move some neighbours to the "
+                                "opposite side (the lanes above instead of below, or the other way round) or split the diagram")
+            uses.sort()
+            for k, (_, i, _) in enumerate(uses):
+                e = edges[i]
+                end = 0 if e["from"] == nid else 1
+                offs[ids[i]][end] = (k - (len(uses) - 1) / 2) * TRUNK_GAP
+        return {eid: (o[0], o[1]) for eid, o in offs.items()}
 
     # ---- labels -------------------------------------------------------------------------------
     @staticmethod
@@ -364,11 +412,13 @@ class Builder:
         return round((ICON + self.label_h(n)) / ICON, 3)
 
     @staticmethod
-    def edge_path(e, d, kind, node_xy, label_h) -> list[tuple[float, float]]:
+    def edge_path(e, d, kind, node_xy, label_h, offs=(0.0, 0.0)) -> list[tuple[float, float]]:
         """The polyline draw.io draws for the edge, source port first: two points for a straight edge, three for
-        an L (the corner is pinned as a waypoint). Vertical runs start or end under a node's label (the B port)."""
+        an L (the corner is pinned as a waypoint). Vertical runs start or end under a node's label (the B port).
+        `offs` shifts each end along its side (side_offsets), and the corner with it."""
         sx, sy = node_xy[e["from"]]
         tx, ty = node_xy[e["to"]]
+        os_, ot = offs
         if kind == "straight":
             if d == "right":
                 return [(sx + ICON, sy + ICON / 2), (tx, sy + ICON / 2)]
@@ -377,14 +427,14 @@ class Builder:
             if d == "down":
                 return [(sx + ICON / 2, sy + ICON + label_h[e["from"]]), (sx + ICON / 2, ty)]
             return [(sx + ICON / 2, sy), (sx + ICON / 2, ty + ICON + label_h[e["to"]])]
-        if kind == "bend":                                   # vertical first: corner on the source's column
-            corner = (sx + ICON / 2, ty + ICON / 2)
-            p = (sx + ICON / 2, sy if corner[1] < sy else sy + ICON + label_h[e["from"]])
-            q = (tx if corner[0] < tx else tx + ICON, ty + ICON / 2)
-        else:                                                # horizontal first: corner on the target's column
-            corner = (tx + ICON / 2, sy + ICON / 2)
-            p = (sx if corner[0] < sx else sx + ICON, sy + ICON / 2)
-            q = (tx + ICON / 2, ty if corner[1] < ty else ty + ICON + label_h[e["to"]])
+        if kind == "bend":                                   # vertical first: trunk on the source's column
+            corner = (sx + ICON / 2 + os_, ty + ICON / 2 + ot)
+            p = (corner[0], sy if corner[1] < sy else sy + ICON + label_h[e["from"]])
+            q = (tx if corner[0] < tx else tx + ICON, corner[1])
+        else:                                                # horizontal first: trunk on the target's column
+            corner = (tx + ICON / 2 + ot, sy + ICON / 2 + os_)
+            p = (sx if corner[0] < sx else sx + ICON, corner[1])
+            q = (corner[0], ty if corner[1] < ty else ty + ICON + label_h[e["to"]])
         return [p, corner, q]
 
     @staticmethod
@@ -419,27 +469,17 @@ class Builder:
     @staticmethod
     def place_label(text, path, borders, obstacles, segments, offset=None):
         """Where the edge's text goes: (lines, relative x along the edge, place, box) or None when no leg has a
-        clear spot. Legs are tried branch before trunk (a leg shared with other edges — a bus — comes last), then
-        longest first; on each, the text is wrapped to what the leg holds (≤ 3 lines) and slid from the leg's
-        middle outwards in 1/20 steps — above then below a horizontal leg, left then right of a vertical one.
+        clear spot. Legs are tried longest first; on each, the text is wrapped to what the leg holds (≤ 3 lines)
+        and slid from the leg's middle outwards in 1/20 steps — above then below a horizontal leg, left then right
+        of a vertical one. The middle trunk of a three-line fan-out (20 px from its neighbours) has no room
+        beside it, so that edge ends up with its text on its horizontal leg, next to its own arrowhead.
         `offset` (the spec's `label_offset`, −1 source … 1 target) pins the position instead and only picks the
         side."""
         legs = Builder.segments(path)
         lens = [abs(x2 - x1) + abs(y2 - y1) for x1, y1, x2, y2 in legs]
         total = sum(lens) or 1.0
 
-        def shared(leg) -> bool:
-            """Is this leg the trunk of a bus — collinear with a leg of another edge? Text there could belong to
-            any branch, so the branch leg (unique to this edge) is tried first even when it is shorter."""
-            x1, y1, x2, y2 = leg
-            for ox1, oy1, ox2, oy2 in segments:
-                if y1 == y2 and oy1 == oy2 and abs(y1 - oy1) <= 1 and min(x1, x2) < max(ox1, ox2) and max(x1, x2) > min(ox1, ox2):
-                    return True
-                if x1 == x2 and ox1 == ox2 and abs(x1 - ox1) <= 1 and min(y1, y2) < max(oy1, oy2) and max(y1, y2) > min(oy1, oy2):
-                    return True
-            return False
-
-        order = sorted(range(len(legs)), key=lambda i: (shared(legs[i]), -lens[i]))
+        order = sorted(range(len(legs)), key=lambda i: -lens[i])
         for i in order:
             x1, y1, x2, y2 = legs[i]
             horizontal = y1 == y2
@@ -560,7 +600,7 @@ class Builder:
         for gid, (x, y, w, h) in rects.items():
             self.vertex(gid, self.groups[gid]["label"], gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
 
-        self.incident_sides()                                   # raises on a shared side
+        offs = self.side_offsets()                              # raises on an overcrowded or mixed side
         for nid, n in self.nodes.items():
             x, y = node_xy[nid]
             parent = n.get("group") or "1"
@@ -570,13 +610,17 @@ class Builder:
             self.vertex(nid, self.wrap(n["label"]), self.node_style(n), x, y, ICON, ICON, parent)
 
         borders = list(rects.values()) + ([cloud] if cloud else [])
+        # jumpStyle=arc: where one edge crosses another, draw.io draws a small hop, so a crossing never reads as a
+        # junction (lines that touch a node side by side are separate edges — see side_offsets)
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
+                     f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
                      f"fontFamily={font};fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;")
         # geometry of every edge first: the text of one edge must not sit on the line of another
         geom = []
         for i, e in enumerate(edges, 1):
-            d, exit_p, entry_p, kind = self.edge_geometry(e)
-            geom.append((e.get("id", f"e{i}"), e, d, exit_p, entry_p, kind, self.edge_path(e, d, kind, node_xy, label_h)))
+            eid = e.get("id", f"e{i}")
+            d, exit_p, entry_p, kind = self.edge_geometry(e, offs[eid])
+            geom.append((eid, e, d, exit_p, entry_p, kind, self.edge_path(e, d, kind, node_xy, label_h, offs[eid])))
         icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()]
         # then the text — the brief's *What flows* phrase — solid (primary) edges first so they get the room
         placed: dict[str, tuple] = {}

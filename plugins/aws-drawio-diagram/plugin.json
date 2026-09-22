@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "aws-drawio-diagram",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Editable draw.io (.drawio) files you open and modify in diagrams.net — an editable file, not a finished image (for a ready-to-embed picture, use aws-diagram-design). AWS architecture diagrams from draw.io's official icon stencils, with a verified stencil catalog regenerated from draw.io sources, two-pattern icon rule, layout conventions, templates, validator, and SVG fallback for icons draw.io lacks.",
   "author": { "name": "hi-space" },
   "keywords": ["aws diagram", "drawio", "draw.io", "architecture diagram", "aws icons", "editable diagram"],

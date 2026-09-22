@@ -158,13 +158,23 @@ required, otherwise draw.io snaps the point back onto the icon.
   label. Both legs may be long, but **every cell they cross must be empty** (builder error naming the blockers,
   validator `W5`); the builder picks vertical-first when both are free (`"route": "h"` in the spec forces the
   other). Never an S: a path that needs two bends is `W4`.
-- **A side holds one straight edge, or a bus of bends.** A straight edge owns its side. Bent edges that all
-  *leave* one side (or all *arrive* at one side) may share it: they run on the same trunk and branch off at
-  their targets' lanes — one line, several arrowheads, no ambiguity. That is how a hub draws eight
-  neighbours: left/right straight, the rest stacked in the columns beside it above and below, the hub's own
-  column kept clear. `scripts/layout.py` does this placement for you (SKILL.md Phase 3). Mixing a straight edge with bends, or arriving with leaving bends, on one side puts two
-  arrowheads on one line (validator `W8`, builder error). Dashed and solid edges may share a trunk; the trunk
-  renders solid and the dashing shows on the branches.
+- **A side holds one straight edge, or up to three bends side by side.** A straight edge owns its side. Bent
+  edges that touch one side — leaving, arriving or both — are **separate lines**, never one shared trunk: each
+  leaves from its own port, 20 px apart (`exitX` / `entryY` = 0.5 ± 0.256 k), so the reader follows one line from
+  its source to its arrowhead. A shared trunk with several branches was tried (1.3–1.5, the "bus") and read
+  badly: two branches turning left and right at the same lane looked like one line passing through, and a
+  branch crossing another hub's trunk looked like it belonged to that hub. The spacing is a judged middle:
+  14 px still read as one bundle, 26 px looked scattered. The builder orders the lines so siblings never cross:
+  along the side, the edges turning to one direction take that half, the nearest turn outermost (its leg turns
+  away before the longer trunks reach it). That is how a hub draws eight neighbours: **all four sides** — a
+  straight edge or up to three bends per side, neighbours stacked in the columns beside it above and below,
+  the hub's own column kept clear. `scripts/layout.py` does this placement for you (SKILL.md Phase 3): it pays
+  a small cost for every extra line on a side and, when a side is full, routes a bend horizontally first
+  (`"route": "h"` in the placed spec) so it leaves the hub's left or right instead. A straight edge next to
+  bends on one side would run between the trunks through its own target's cell (builder error); a fourth bend
+  on a side is a builder error too; two edges on one line is validator `W8`. Every edge carries
+  `jumpStyle=arc;jumpSize=6;`: where a line does cross another, draw.io draws a small hop, so a crossing never
+  reads as a junction.
 - **Empty corridor.** No other icon on any leg of the edge; no two edges in the same corridor.
 - Every edge has `source`, `target`, `<mxGeometry relative="1" as="geometry" />` and, as `value`, the brief's
   *What flows* phrase (see *Edge text* below). No `value` only for a `—` row.
@@ -190,7 +200,7 @@ by situation (`chars_that_fit` in `build_diagram.py`):
 | Horizontal, inside one group box (or on an empty column) | **22–24** | 162 px clear between two icons on a lane; 201 px on the horizontal leg of a bend |
 | Horizontal, the first hop into the cloud (users → first service) | **16** | users sit `OUTSIDE_GAP` = 60 px further from the cloud than the grid column, so the pocket outside the cloud border is 121 px |
 | Horizontal, between two neighbouring group boxes | **6 characters** (per line, up to 3 lines) | two 61 px pockets either side of the 40 px gap — `HTTPS`, `invoke`, `put` / `order`, `start` / `saga`. The one tight spot: condense the phrase to short words here |
-| Vertical (straight, or the trunk of a bend) | **12 characters** | hangs beside the line inside the 100 px to the box border; must stay below the target box's title row — a vertical hop between two group rows is a roomy place for text |
+| Vertical (straight, or the trunk of a bend) | **12 characters** | hangs beside the line inside the 100 px to the box border; must stay below the target box's title row — a vertical hop between two group rows is a roomy place for text. Between two neighbouring trunks (20 px) there is no room, so the middle line of a fan-out carries its text on its horizontal leg |
 
 - **Nothing is dropped silently.** A phrase with no clear spot on a **primary (solid) edge** stops the build
   (`ERROR label`, naming the characters per line the edge offers): condense it in the brief (`StartExecution` →

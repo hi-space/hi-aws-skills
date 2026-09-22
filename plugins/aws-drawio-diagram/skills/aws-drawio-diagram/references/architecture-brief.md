@@ -82,15 +82,15 @@ their numbers even when not drawn; their step in the guide says so.
 
 ## Diagram budget — decide it here, not in the drawing
 
-The grid gives every node a left and a right slot (one straight edge each) and a top and a bottom slot that can
-carry a **bus**: any number of bent edges that all leave (or all arrive) there, run along the node's own column
-and turn into the neighbouring columns (layout-and-style.md § 5). So a hub with eight neighbours is drawable —
-as long as its own column stays empty above/below it and the neighbours stack in the adjacent columns. The
-brief has to respect the following, or the Drawer will run out of cells:
+The grid gives every node four sides; each carries one straight edge or up to **three bent edges** — leaving,
+arriving or both — drawn as separate lines 20 px apart that run along the node's own column (or lane) and turn
+into the neighbouring columns (layout-and-style.md § 5). So a hub with eight neighbours is drawable — as long as
+its own column stays empty above/below it and the neighbours spread around it on all four sides. The brief has
+to respect the following, or the Drawer will run out of cells:
 
 - **Hubs keep their column.** A component with more than four relationships is a hub: plan its neighbours in
-  the two adjacent columns, on the lanes above and below, and leave the hub's own column free there. Two hubs
-  never share a column.
+  the two adjacent columns, on the lanes above **and** below (at most three bends per side — a hub with eight
+  neighbours needs all four sides), and leave the hub's own column free there. Two hubs never share a column.
 - **One representative edge per cross-cutting sink.** CloudWatch, X-Ray, KMS, IAM, Secrets Manager receive
   from everything; draw **one** edge into them from the most telling source (the stream, the API, the main
   service) and say "all services log to CloudWatch" in Flow. Never one edge per service.

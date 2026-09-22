@@ -258,13 +258,21 @@ def test_w8_two_edges_sharing_a_segment():
     up_left = icon("b", "1", 60, 130)
     e1 = edge_cell("e1", "s", "a", UP_THEN_RIGHT)
     e2 = edge_cell("e2", "s", "b", "exitX=0.5;exitY=0;entryX=1;entryY=0.5;")
-    # Two bends leaving the same side of one node share their trunk: a bus, not an overlap.
+    # Two bends leaving the same side of one node from the same port share their trunk: one line, W8.
     _, warnings = vd.validate_text(wrap(src + up_right + up_left + e1 + e2), INDEX)
+    assert codes(warnings) == ["W8"]
+    # Split ports (the builder's 20 px fan-out) give each its own trunk: clean, and still a single bend each.
+    e1s = edge_cell("e1", "s", "a", "exitX=0.628;exitY=0;entryX=0;entryY=0.5;")
+    e2s = edge_cell("e2", "s", "b", "exitX=0.372;exitY=0;entryX=1;entryY=0.5;")
+    _, warnings = vd.validate_text(wrap(src + up_right + up_left + e1s + e2s), INDEX)
     assert warnings == []
-    # One leaving, one arriving on that trunk → two arrowheads on one line: W8.
+    # One leaving, one arriving on the same trunk → W8; on split trunks → clean.
     back = edge_cell("e3", "a", "s", "exitX=0;exitY=0.5;entryX=0.5;entryY=0;")
     _, warnings = vd.validate_text(wrap(src + up_right + e1 + back), INDEX)
     assert codes(warnings) == ["W8"]
+    back_s = edge_cell("e3", "a", "s", "exitX=0;exitY=0.372;entryX=0.372;entryY=0;")
+    _, warnings = vd.validate_text(wrap(src + up_right + e1s + back_s), INDEX)
+    assert warnings == []
     # Two edges into the same node from opposite sides do not share a segment.
     left = icon("l", "1", 60, 300)
     right = icon("r", "1", 540, 300)
