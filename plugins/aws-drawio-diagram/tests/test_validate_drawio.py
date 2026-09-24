@@ -358,3 +358,25 @@ def test_w7_label_covering_an_icon_or_another_label():
     down = edge_cell("f", "c", "a", "exitX=0.5;exitY=1.282;exitPerimeter=0;entryX=0.5;entryY=0;align=right;spacingRight=4;", "session lookup")
     _, warnings = vd.validate_text(wrap(a + b + c + down + edge_cell("e", "a", "b", RIGHT_TO_LEFT + "verticalAlign=bottom;", "HTTPS")), INDEX)
     assert warnings == [], warnings                                # two labels, different places: clean
+
+
+def test_w6_accepts_a_boundary_inside_a_role_group_but_not_one_in_the_cloud():
+    # 1.7.0: a service boundary (aws4 group with a service badge) may sit between the icon and its role group
+    def boundary(cid, parent, x, y):
+        # the builder's plain-rectangle boundary (awsBoundary=1) with its filled-square badge (awsBadge=1)
+        return (f'<mxCell id="{cid}" value="Amazon Bedrock" style="rounded=0;strokeColor=#01A88D;fontColor=#01A88D;'
+                f'fillColor=none;awsBoundary=1;container=1;dropTarget=1;" vertex="1" parent="{parent}">'
+                f'<mxGeometry x="{x}" y="{y}" width="180" height="140" as="geometry"/></mxCell>'
+                f'<mxCell id="{cid}_badge" value="" style="fillColor=#01A88D;strokeColor=#ffffff;shape=mxgraph.aws4.resourceIcon;'
+                f'resIcon=mxgraph.aws4.bedrock;awsBadge=1;" vertex="1" parent="{cid}"><mxGeometry x="0" y="0" width="24" height="24" as="geometry"/></mxCell>')
+    official = ('<mxCell id="b3" value="Workflow" style="shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_step_functions_workflow;'
+                'strokeColor=#CD2264;fillColor=none;awsBoundary=1;container=1;dropTarget=1;" vertex="1" parent="g1">'
+                '<mxGeometry x="12" y="180" width="180" height="100" as="geometry"/></mxCell>')
+    in_group = boundary("b1", "g1", 12, 30) + icon("ok", "b1", 49, 30)            # icon → boundary → role group → cloud
+    in_cloud = boundary("b2", "cloud", 400, 300) + icon("bad", "b2", 49, 30)      # icon → boundary → cloud: no role group
+    in_official = official + icon("ok2", "b3", 49, 30)
+    errors, warnings = vd.validate_text(wrap(CLOUD + ROLE_GROUP + in_group + in_cloud + in_official), INDEX)
+    assert errors == []
+    w6 = [w for w in warnings if w.startswith("W6")]
+    assert len(w6) == 1 and "'bad'" in w6[0] and "'ok" not in " ".join(warnings)
+    assert not [w for w in warnings if w.startswith("W9") and "badge" in w]      # badges are not floating components

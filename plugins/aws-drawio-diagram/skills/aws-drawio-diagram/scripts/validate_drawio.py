@@ -96,6 +96,8 @@ def _abs_geometry(cells: dict[str, ET.Element]) -> dict[str, tuple[float, float,
 
 
 def _is_icon(style: dict[str, str]) -> bool:
+    if style.get("awsBadge") == "1":                    # a boundary's corner badge is decoration, not a component
+        return False
     shape = style.get("shape", "")
     if shape == "image":
         return True
@@ -393,12 +395,24 @@ def _grouping_warnings(cells: dict[str, ET.Element]) -> list[str]:
         ox, oy, ow, oh = geo[outer]
         return ix >= ox and iy >= oy and ix + iw <= ox + ow and iy + ih <= oy + oh
 
+    def role_grouped(cid: str) -> bool:
+        """True when some ancestor is a role group: a plain container that is neither a cloud nor an aws4 badge
+        group. A service boundary (aws4 group with a service badge) between the icon and its role group is fine
+        (1.7.0); a boundary parented straight to the cloud is not."""
+        p, hops = cells[cid].get("parent", "1"), 0
+        while p not in ("1", "0", None) and p in cells and hops < 8:
+            st = parse_style(cells[p].get("style"))
+            if (st.get("container") == "1" and p not in clouds and st.get("awsBoundary") != "1"
+                    and _aws4_name(st.get("shape", "")) not in GROUP_SHAPES):
+                return True
+            p, hops = cells[p].get("parent", "1"), hops + 1
+        return False
+
     warnings: list[str] = []
     for cid, cell in cells.items():
         if cid not in geo or not _is_icon(parse_style(cell.get("style"))):
             continue
-        parent = cell.get("parent", "1")
-        if parent != "1" and parent not in clouds:
+        if role_grouped(cid):
             continue
         for cloud in clouds:
             if cid != cloud and inside(cid, cloud):

@@ -65,11 +65,12 @@ def test_edge_text_is_the_what_flows_phrase():
         assert needle in section, needle
     assert "badge" not in section and "cannot carry a label" not in section
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
-    assert "## Edge text" in brief and "What flows" in brief and "Label on diagram" not in brief and "badge" not in brief
+    # "badge" alone is allowed since 1.7.0 (a group's / boundary's corner badge); edge-number badges are not
+    assert "## Edge text" in brief and "What flows" in brief and "Label on diagram" not in brief and "number badge" not in brief
     skill = SKILL_MD.read_text()
     assert "What flows" in skill and "number badge" not in skill        # "corner badge" of a group is a different thing
     review = (SKILL / "references" / "review-checklist.md").read_text()
-    assert "≤ 5 edge labels" not in review and "badge" not in review and "What flows" in review
+    assert "≤ 5 edge labels" not in review and "number badge" not in review and "What flows" in review
 
 
 def test_contract_lock_and_title_band_are_documented():
@@ -127,3 +128,17 @@ def test_codebase_input_rules_are_present():
     assert "No abstract nodes" in review and "not ready" in review and "W9" in review
     assess = (SKILL / "references" / "architecture-review.md").read_text()
     assert "Spot-check" in assess and "call count" in assess
+
+
+def test_generic_groups_and_service_boundaries_are_documented():
+    # 1.8.0: role groups are the official AWS Generic group; same-service icons that land adjacent get a badge box
+    skill = SKILL_MD.read_text()
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    brief = (SKILL / "references" / "architecture-brief.md").read_text()
+    review = (SKILL / "references" / "review-checklist.md").read_text()
+    assert "Generic group" in style and "strokeColor=#5A6C86" in style and "dashed=1" in style
+    assert "bedrock_agentcore" in style and "sagemaker_2" in style and "bedrock_agentcore" in brief   # four distinct services
+    assert "Service boundaries" in style and "BOUNDARY_ABOVE" in style and "awsBadge" in style
+    assert "Boundary" in brief and "copies" in brief and "[edge]" not in brief
+    assert "Boundary" in skill and "[kind]" not in skill and "[edge]" not in skill
+    assert "oundar" in review and "Generic group" in review

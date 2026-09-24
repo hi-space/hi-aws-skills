@@ -5,21 +5,21 @@ S3 data lake for SQL analytics and dashboards, and threshold breaches page the o
 Language: ko
 
 ## Components
-| id | Service (stencil) | Role in this system | Group |
-|---|---|---|---|
-| sensors | Sensor (`sensor`, resource) | Factory-floor devices | outside |
-| iotcore | AWS IoT Core (`iot_core`) | MQTT broker, device auth, rules | Ingestion |
-| kinesis | Kinesis Data Streams (`kinesis_data_streams`) | Ordered telemetry stream | Ingestion |
-| normalize | Lambda (`lambda`) | Normalize units, enrich, detect thresholds | Processing |
-| s3lake | S3 (`s3`) | Data lake (raw + curated) | Storage |
-| ddb | DynamoDB (`dynamodb`) | Latest state per device | Storage |
-| crawler | Glue crawler (`glue_crawlers`, resource) | Schema discovery | Analytics |
-| catalog | Glue Data Catalog (`glue_data_catalog`, resource) | Table metadata | Analytics |
-| athena | Athena (`athena`) | SQL over the lake | Analytics |
-| quicksight | QuickSight (`quicksight`, retired name) | Dashboards | Analytics |
-| cw | CloudWatch (`cloudwatch_2`) | Stream metrics, Lambda logs, alarms | Observability |
-| sns | SNS (`sns`) | Threshold alert topic | Notification |
-| ops | User (`user`, resource) | Ops team on call | outside |
+| id | Service (stencil) | Role in this system | Group | Boundary |
+|---|---|---|---|---|
+| sensors | Sensor (`sensor`, resource) | Factory-floor devices | outside |  |
+| iotcore | AWS IoT Core (`iot_core`) | MQTT broker, device auth, rules | Ingestion |  |
+| kinesis | Kinesis Data Streams (`kinesis_data_streams`) | Ordered telemetry stream | Ingestion |  |
+| normalize | Lambda (`lambda`) | Normalize units, enrich, detect thresholds | Processing |  |
+| s3lake | S3 (`s3`) | Data lake (raw + curated) | Storage |  |
+| ddb | DynamoDB (`dynamodb`) | Latest state per device | Storage |  |
+| crawler | Glue crawler (`glue_crawlers`, resource) | Schema discovery | Analytics | glue: AWS Glue |
+| catalog | Glue Data Catalog (`glue_data_catalog`, resource) | Table metadata | Analytics | glue |
+| athena | Athena (`athena`) | SQL over the lake | Analytics |  |
+| quicksight | QuickSight (`quicksight`, retired name) | Dashboards | Analytics |  |
+| cw | CloudWatch (`cloudwatch_2`) | Stream metrics, Lambda logs, alarms | Observability |  |
+| sns | SNS (`sns`) | Threshold alert topic | Notification |  |
+| ops | User (`user`, resource) | Ops team on call | outside |  |
 
 ## Relationships
 | # | From → To | What flows | Kind |
@@ -46,6 +46,8 @@ Language: ko
 
 ## Groups
 Ingestion · Processing · Storage · Analytics · Observability · Notification
+
+Boundary: the Glue crawler and the Glue Data Catalog share an `AWS Glue` box inside Analytics.
 
 ## Checks
 - [x] Entry: IoT Core (device certificates authenticate sensors).

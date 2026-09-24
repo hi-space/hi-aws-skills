@@ -25,10 +25,17 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_diagram import (CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, MAX_PER_SIDE, OUTSIDE_GAP,  # noqa: E402
-                           chars_that_fit, label_lines)
+from build_diagram import (BOUNDARY_INSET, CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, MAX_PER_SIDE,  # noqa: E402
+                           OUTSIDE_GAP, chars_that_fit, label_lines)
 
 HARD = 1000.0
+# A service boundary (nodes sharing `boundary` inside one group — AgentCore Runtime + Memory, Glue crawler + catalog) is
+# drawn by the builder only when its members form a clean rectangle inside one group box. The planner prefers that
+# with a soft cost, never a hard one: keeping two members together typically costs two bends instead of two straight
+# edges (2 × 3 − 2 × 1) plus a shared side (3) and a step of distance (1) — about 10 — so the price of a split boundary
+# sits above that and a little above a split group (12). Nudged, not forced: when only a sprawl would join them, the
+# search still prefers the compact picture and the builder prints a hint instead of a box.
+BOUNDARY_SPLIT_COST = 14.0
 
 # Edge text is the brief's *What flows* phrase; the builder wraps it (≤ 3 lines) and puts it on the longest leg
 # of the edge that has a clear spot (build_diagram.py § edge text). The planner estimates that room the same way,
@@ -87,6 +94,10 @@ class Placement:
         self.nodes = {n["id"]: n for n in spec["nodes"]}
         self.edges = spec.get("edges", [])
         self.groups = {g["id"]: g for g in spec.get("groups", [])}
+        self.boundaries: dict[tuple[str, str], list[str]] = defaultdict(list)   # (group, boundary stencil) -> members
+        for nid, n in self.nodes.items():
+            if n.get("boundary") and n.get("group"):
+                self.boundaries[(n["group"], n["boundary"])].append(nid)
         self.rng = random.Random(seed)
         self.layer = layering(self.nodes, self.edges)
         self.max_col = max(self.layer.values()) + 1
@@ -147,11 +158,18 @@ class Placement:
             u = queue.pop(0)
             cu, lu = col[u], lane[u]
             pend = [v for v in out[u] if v not in col] + [v for v in inc[u] if v not in col]
-            pend.sort(key=lambda v: (not inside(v), self.nodes[v].get("group") or "", v))
+            pend.sort(key=lambda v: (not inside(v), self.nodes[v].get("group") or "", self.nodes[v].get("boundary") or "", v))
             side, k_up, k_dn = 1, 1, 1
+            prev_boundary = None
             for v in pend:
                 if v in col:
                     continue
+                # members of one service boundary stack on the same side, consecutively, so they start adjacent
+                # (the search only has to keep them there; see BOUNDARY_SPLIT_COST)
+                this_boundary = (self.nodes[v].get("group"), self.nodes[v].get("boundary")) if self.nodes[v].get("boundary") else None
+                if this_boundary is not None and this_boundary == prev_boundary:
+                    side = -side                                          # undo the flip the previous member caused
+                prev_boundary = this_boundary
                 if not inside(v):
                     cv = 0 if v in inc[u] else out_col
                     between = range(min(cu, cv) + 1, max(cu, cv))
@@ -226,6 +244,22 @@ class Placement:
         # logical group — one group split into two boxes puts a border between two of its own members
         boxes = self.boxes(col, lane)
         inside_cols = [col[n] for n, d in self.nodes.items() if not d.get("outside")]
+        # service boundaries: members together in a clean rectangle inside one group box (see module comment)
+        bcuts: list[tuple[int, int, float, float]] = []                 # (l0, l1, x_left, x_right) of drawn boundaries
+        for (gid, _), members in self.boundaries.items():
+            if len(members) < 2:
+                continue
+            c0, c1 = min(col[m] for m in members), max(col[m] for m in members)
+            l0, l1 = min(lane[m] for m in members), max(lane[m] for m in members)
+            inside_box = {cells.get((c, l)) for c in range(c0, c1 + 1) for l in range(l0, l1 + 1)} - {None}
+            own_boxes = {next((i for i, b in enumerate(boxes) if b[0] == gid and b[1] <= col[m] <= b[2] and b[3] <= lane[m] <= b[4]), None)
+                         for m in members}
+            if inside_box - set(members) or len(own_boxes) > 1:
+                soft += BOUNDARY_SPLIT_COST
+            else:
+                soft += 1.0 * ((c1 - c0 + 1) * (l1 - l0 + 1) - len(members))
+                bcuts.append((l0, l1, COL0 + COL_PITCH * c0 - GROUP_HALF_W + BOUNDARY_INSET,
+                              COL0 + COL_PITCH * c1 + GROUP_HALF_W - BOUNDARY_INSET))
 
         def x_of(nid: str) -> float:                                # icon centre x as the builder draws it
             x = COL0 + COL_PITCH * col[nid]
@@ -244,6 +278,9 @@ class Placement:
             for _, c0, c1, l0, l1 in boxes:
                 if l0 <= lane_ <= l1:
                     cuts += [COL0 + COL_PITCH * c0 - GROUP_HALF_W, COL0 + COL_PITCH * c1 + GROUP_HALF_W]
+            for l0, l1, xl, xr in bcuts:                              # a boundary border cuts the room like a group border
+                if l0 <= lane_ <= l1:
+                    cuts += [xl, xr]
             xs = [xa] + sorted(x for x in cuts if xa < x < xb) + [xb]
             return chars_that_fit(max(b - a for a, b in zip(xs, xs[1:])))
 
@@ -367,6 +404,9 @@ class Placement:
         for gid in self.groups:
             n_boxes = sum(1 for b in boxes if b[0] == gid)
             soft += 12.0 * max(0, n_boxes - 1)
+            members = sum(1 for d in self.nodes.values() if d.get("group") == gid)
+            area = sum((c1 - c0 + 1) * (l1 - l0 + 1) for g, c0, c1, l0, l1 in boxes if g == gid)
+            soft += 2.0 * max(0, area - members)                     # an empty cell inside a card is cheaper than a split card
         gcols = [c for _, c0, c1, _, _ in boxes for c in (c0, c1)]
         if gcols:
             gc0, gc1 = min(gcols), max(gcols)
@@ -413,12 +453,33 @@ class Placement:
         return chosen
 
     def boxes(self, col, lane) -> list[tuple[str, int, int, int, int]]:
-        """(group, c0, c1, l0, l1) rectangles: per group, per column, maximal runs of lanes whose cells are
-        members or empty; runs in neighbouring columns with identical lane ranges merge into one rectangle."""
+        """(group, c0, c1, l0, l1) rectangles per group. First choice: the members' bounding box as ONE rectangle,
+        empty cells included, when no other node sits inside it and no other group's box would overlap it (an
+        L-shaped group of three is one card with an empty corner, not two cards with a 40 px gap between them —
+        the gap costs every edge that crosses it its text room). Otherwise: per column, maximal runs of lanes
+        whose cells are members or empty; runs in neighbouring columns with identical lane ranges merge."""
         owner = {(col[n], lane[n]): d.get("group") for n, d in self.nodes.items() if d.get("group")}
         occupied = {(col[n], lane[n]) for n in self.nodes}
-        out = []
+        bbox: dict[str, tuple[int, int, int, int]] = {}
         for gid in self.groups:
+            cells = [(col[n], lane[n]) for n, d in self.nodes.items() if d.get("group") == gid]
+            if not cells:
+                continue
+            c0, c1 = min(c for c, _ in cells), max(c for c, _ in cells)
+            l0, l1 = min(l for _, l in cells), max(l for _, l in cells)
+            if all(owner.get((c, l), gid) == gid and ((c, l) not in occupied or (c, l) in cells)
+                   for c in range(c0, c1 + 1) for l in range(l0, l1 + 1)):
+                bbox[gid] = (c0, c1, l0, l1)
+        whole = set(bbox)
+        for a in list(bbox):
+            for b in list(bbox):
+                if a < b and bbox[a][0] <= bbox[b][1] and bbox[b][0] <= bbox[a][1] and bbox[a][2] <= bbox[b][3] and bbox[b][2] <= bbox[a][3]:
+                    whole.discard(a)
+                    whole.discard(b)
+        out = [(gid, *bbox[gid]) for gid in self.groups if gid in whole]
+        for gid in self.groups:
+            if gid in whole:
+                continue
             cells = sorted((col[n], lane[n]) for n, d in self.nodes.items() if d.get("group") == gid)
             if not cells:
                 continue

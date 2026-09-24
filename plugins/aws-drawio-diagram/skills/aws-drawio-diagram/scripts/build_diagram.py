@@ -100,6 +100,32 @@ PTS = ("points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,
 GROUP_PTS = ("points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[0,1],[0.25,1],[0.5,1],[0.75,1],[1,1],[0,0.25],"
              "[0,0.5],[0,0.75],[1,0.25],[1,0.5],[1,0.75]];")
 LABEL_STYLE = "verticalLabelPosition=bottom;verticalAlign=top;align=center;"
+# Role groups are drawn as the official AWS "Generic group": dashed #5A6C86 border, no fill, title in the same grey.
+# Tinted per-kind cards (1.7.x) and the filled variant (1.8.1) were tried and dropped: the user wants the official
+# icon-deck look, and the service boundary boxes inside the groups carry the colour. The title keeps 13 bold (the
+# plugin's one visual level for names). GROUP_FILL is what a label inside a group sits on — the canvas, since the
+# group has no fill.
+GROUP_FILL = "#FFFFFF"
+GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;"
+# Service boundary box (nodes sharing `boundary` inside one role group), drawn the way the official AWS
+# architecture icons draw a group: a filled square badge in the top-left corner, a 1 px border and a bold title in the
+# service's own category colour. Official group badges (`group_*` stencils: Step Functions workflow, Auto Scaling
+# group, EC2 instance contents, …) are the aws4 group shape with the catalog's colour; any other stencil becomes a
+# BADGE_PX filled square (resourceIcon) on a plain rectangle. Inset from the group's sides, title row under the
+# group's own (TITLE_BAND) and above the first icon, closing under a one-line node label.
+BOUNDARY_INSET, BOUNDARY_ABOVE, BOUNDARY_BELOW, BADGE_PX = 12, 30, 10, 24
+BOUNDARY_TITLE_CHAR_PX = 6.6                             # 12 pt bold Ember, average; the title is one line and never wraps
+# Stencils that exist in the catalog (generated from draw.io's dev branch) but render as a blank square in the draw.io
+# builds most people run today: the boundary badge for them is the bundled official SVG instead (assets/extra-icons,
+# allow-listed in extra-icons.txt). The spec still names the stencil, so the brief stays canonical. These are
+# distinct services with distinct badges — Amazon Bedrock (`bedrock`), Amazon Bedrock AgentCore (`bedrock_agentcore`),
+# Amazon SageMaker AI (`sagemaker`), Amazon SageMaker / Unified Studio (`sagemaker_2`) — never one box for two of them.
+BADGE_IMAGE = {
+    "bedrock_agentcore": "Arch_Amazon-Bedrock-AgentCore_48.svg",
+    "sagemaker_2": "Arch_Amazon-SageMaker_48.svg",
+}
+
+
 # {B} is the bottom port ratio of the node whose bottom the edge touches: (icon + label height) / icon, so a
 # vertical edge starts or ends under the label instead of running through it. {A} is the position along the
 # side (0.5 = centre): bent edges sharing a side fan out TRUNK_GAP px apart (side_offsets).
@@ -117,6 +143,11 @@ SIDES = {"right": ("R", "L"), "left": ("L", "R"), "up": ("T", "B"), "down": ("B"
 # More neighbours go to the hub's other sides — the planner spreads them (layout.py) and refuses a fourth.
 TRUNK_GAP, MAX_PER_SIDE = 20, 3
 JUMP_SIZE = 6                                            # px: the arc draw.io draws where one edge crosses another
+
+
+def cx_of(col: int) -> int:
+    """Centre x of grid column `col` (the builder's cx without an instance)."""
+    return COL0 + COL_PITCH * col
 
 
 class SpecError(ValueError):
@@ -177,6 +208,37 @@ def label_lines(text: str, width: int) -> list[str] | None:
 def label_box_size(lines: list[str]) -> tuple[float, float]:
     """(half width, half height) of the drawn label box."""
     return (LABEL_CHAR_PX * max(len(l) for l in lines) / 2 + LABEL_PAD_PX, (EDGE_LINE_H * len(lines) + 2) / 2)
+
+
+def boundary_plan(spec: dict, index: dict | None = None) -> tuple[dict[str, dict], list[str]]:
+    """Which service boundaries get a box. Nodes sharing `boundary` inside one group are a candidate; it is drawn
+    when there are at least two of them and their cells form a clean rectangle (every cell a member or empty) —
+    the layout planner nudges members together (layout.py BOUNDARY_SPLIT_COST) but never forces it. Returns
+    ({box id: {gid, name, members, c0, c1, l0, l1}}, [hint lines for the ones not drawn])."""
+    nodes = {n["id"]: n for n in spec.get("nodes", [])}
+    occupied = {(n["col"], n["lane"]): nid for nid, n in nodes.items() if "col" in n and "lane" in n}
+    sets: dict[tuple[str, str], list[str]] = {}
+    for nid, n in nodes.items():
+        if n.get("boundary") and n.get("group"):
+            sets.setdefault((n["group"], n["boundary"]), []).append(nid)
+    drawn, skipped = {}, []
+    for (gid, name), members in sets.items():
+        if len(members) < 2:
+            skipped.append(f"hint: boundary '{name}' in group '{gid}' has one member ('{members[0]}') — not drawn; a service box "
+                           "needs two or more resources of the service")
+            continue
+        cells = [(nodes[m]["col"], nodes[m]["lane"]) for m in members]
+        c0, c1 = min(c for c, _ in cells), max(c for c, _ in cells)
+        l0, l1 = min(l for _, l in cells), max(l for _, l in cells)
+        intruders = sorted(occupied[(c, l)] for c in range(c0, c1 + 1) for l in range(l0, l1 + 1)
+                           if (c, l) in occupied and occupied[(c, l)] not in members)
+        if intruders:
+            skipped.append(f"hint: boundary '{name}' in group '{gid}' not drawn — its members {members} are not adjacent "
+                           f"({', '.join(intruders)} sits between them at cells {[(nodes[i]['col'], nodes[i]['lane']) for i in intruders]}); "
+                           "move a node in the .layout.json if the box matters, otherwise leave it")
+            continue
+        drawn[f"{gid}__{name}"] = {"gid": gid, "name": name, "members": members, "c0": c0, "c1": c1, "l0": l0, "l1": l1}
+    return drawn, skipped
 
 
 class Builder:
@@ -247,6 +309,12 @@ class Builder:
             g = n.get("group")
             if g is None and not n.get("outside") and self.spec.get("cloud", "AWS Cloud"):
                 raise SpecError(f"node '{nid}': inside the cloud but has no 'group' (set \"outside\": true for users/on-prem)")
+            if n.get("boundary") is not None:
+                if not isinstance(n["boundary"], str) or n["boundary"] not in self.index:
+                    raise SpecError(f"node '{nid}': boundary '{n['boundary']}' is not a stencil name — the badge of the service box "
+                                    "(e.g. bedrock, glue, step_functions, ecs); look it up in references/aws-icons-*.md")
+                if g is None or n.get("outside"):
+                    raise SpecError(f"node '{nid}': a boundary needs a role group — an outside node (users, on-prem) cannot be in one")
             if g is not None:
                 if g not in self.groups:
                     raise SpecError(f"node '{nid}': group '{g}' is not defined")
@@ -528,9 +596,9 @@ class Builder:
             f'<mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" as="geometry"/></mxCell>')
 
     def node_style(self, n: dict) -> str:
-        # labelBackgroundColor matches the container so the label reads as part of the node and hides
-        # nothing unless a line strays under it (which the port ratios prevent)
-        label = f"{LABEL_STYLE}labelBackgroundColor={'#F7F8FA' if n.get('group') else '#FFFFFF'};"
+        # the label background matches what it sits on — the group's fill inside a group (a boundary has none), the
+        # canvas outside — so it hides nothing unless a line strays under it (which the port ratios prevent)
+        label = f"{LABEL_STYLE}labelBackgroundColor={GROUP_FILL if n.get('group') else '#FFFFFF'};"
         base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=13;fontStyle=1;"
                 f"fontFamily={self.font};aspect=fixed;{label}")
         if "icon" in n:
@@ -595,26 +663,77 @@ class Builder:
                         "verticalAlign=top;align=left;spacingLeft=30;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;"
                         "strokeColor=#232F3E;fontColor=#232F3E;fillColor=none;container=1;dropTarget=1;", *cloud)
         ox, oy = (cloud[0], cloud[1]) if cloud else (0, 0)
-        gstyle = (f"rounded=0;whiteSpace=wrap;html=1;fillColor=#F7F8FA;strokeColor=#C9D1D9;strokeWidth=1;fontColor=#232F3E;"
-                  f"fontFamily={font};fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;")
+        gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;"
+                  "spacingTop=4;container=1;dropTarget=1;")
         for gid, (x, y, w, h) in rects.items():
             self.vertex(gid, self.groups[gid]["label"], gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
+
+        # service boundaries: a badge-titled box inside the role group around members that landed adjacent
+        boundaries, _ = boundary_plan(spec, self.index)
+        brects: dict[str, tuple[int, int, int, int]] = {}
+        parent_of: dict[str, str] = {}
+        for bid, b in boundaries.items():
+            for m in b["members"]:
+                if "<br>" in self.wrap(self.nodes[m]["label"]):
+                    raise SpecError(f"node '{m}': label '{self.nodes[m]['label']}' inside boundary '{b['name']}' must fit one line "
+                                    f"(≤ {LABEL_WRAP} characters) — the boundary title already names the service, drop it from the label")
+                parent_of[m] = bid
+            bx = self.cx(b["c0"]) - GROUP_HALF_W + BOUNDARY_INSET
+            bw = self.cx(b["c1"]) - self.cx(b["c0"]) + 2 * GROUP_HALF_W - 2 * BOUNDARY_INSET
+            by = self.ly(b["l0"]) - ICON // 2 - BOUNDARY_ABOVE
+            bh = self.ly(b["l1"]) - self.ly(b["l0"]) + ICON + BOUNDARY_ABOVE + LABEL_TOP_PAD + LABEL_LINE_H + BOUNDARY_BELOW
+            st = self.index[b["name"]]
+            title = (spec.get("boundaries") or {}).get(b["name"]) or st.get("label") or b["name"]
+            gx, gy, gw, _ = rects[b["gid"]]
+            # the title never wraps (it would land on the first icon); a title wider than the cells is given room to
+            # the right — inside the group and only where the neighbouring cells on these lanes hold no node — else a note
+            title_px = int(len(title) * BOUNDARY_TITLE_CHAR_PX) + 30 + 10
+            if title_px > bw:
+                limit = gx + gw - BOUNDARY_INSET                       # inside the group …
+                if any(n["col"] == b["c1"] + 1 and b["l0"] <= n["lane"] <= b["l1"] for n in self.nodes.values()):
+                    limit = min(limit, self.cx(b["c1"] + 1) - ICON // 2 - 2 * BOUNDARY_INSET)   # … and short of the next icon
+                grow = min(title_px - bw, max(limit - (bx + bw), 0))
+                if grow < title_px - bw:
+                    self.notes.append(f"boundary '{b['name']}': title '{title}' is wider than its box by {title_px - bw - grow} px — "
+                                      "shorten the title in the Boundary column (`stencil: Title`) or give the members another column")
+                bw += grow
+            brects[bid] = (bx, by, bw, bh)
+            common = (f"html=1;fontFamily={font};fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;"
+                      "fillColor=none;strokeWidth=1;awsBoundary=1;container=1;dropTarget=1;")   # no whiteSpace=wrap: one-line title
+            if st["kind"] == "group":                             # an official AWS group badge: the aws4 group shape, official colour
+                color = st.get("strokeColor") or "#232F3E"
+                self.vertex(bid, title, f"{GROUP_PTS}outlineConnect=0;gradientColor=none;shape=mxgraph.aws4.group;"
+                            f"grIcon=mxgraph.aws4.{b['name']};strokeColor={color};fontColor={color};{common}",
+                            bx - gx, by - gy, bw, bh, b["gid"])
+            else:                                                 # any service: filled square badge in the service's category colour
+                color = st.get("fillColor") or "#232F3E"
+                self.vertex(bid, title, f"rounded=0;strokeColor={color};fontColor={color};spacingTop=0;{common}",
+                            bx - gx, by - gy, bw, bh, b["gid"])
+                if b["name"] in BADGE_IMAGE:                     # newer stencil: the official SVG renders in every draw.io
+                    b64 = base64.b64encode((EXTRA_ICONS / BADGE_IMAGE[b["name"]]).read_bytes()).decode()
+                    badge = f"shape=image;aspect=fixed;imageAspect=0;html=1;image=data:image/svg+xml,{b64};awsBadge=1;"
+                else:
+                    badge = (f"sketch=0;outlineConnect=0;html=1;fillColor={color};strokeColor=#ffffff;"
+                             f"shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.{b['name']};awsBadge=1;")
+                self.vertex(f"{bid}_badge", "", badge, 0, 0, BADGE_PX, BADGE_PX, bid)
 
         offs = self.side_offsets()                              # raises on an overcrowded or mixed side
         for nid, n in self.nodes.items():
             x, y = node_xy[nid]
-            parent = n.get("group") or "1"
-            if parent != "1":
+            parent = parent_of.get(nid) or n.get("group") or "1"
+            if parent in brects:
+                x, y = x - brects[parent][0], y - brects[parent][1]
+            elif parent != "1":
                 gx, gy = rects[parent][0], rects[parent][1]
                 x, y = x - gx, y - gy
             self.vertex(nid, self.wrap(n["label"]), self.node_style(n), x, y, ICON, ICON, parent)
 
-        borders = list(rects.values()) + ([cloud] if cloud else [])
+        borders = list(rects.values()) + list(brects.values()) + ([cloud] if cloud else [])
         # jumpStyle=arc: where one edge crosses another, draw.io draws a small hop, so a crossing never reads as a
         # junction (lines that touch a node side by side are separate edges — see side_offsets)
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
-                     f"fontFamily={font};fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;")
+                     f"fontFamily={font};fontSize=11;fontColor=#232F3E;endArrow=block;endFill=1;")
         # geometry of every edge first: the text of one edge must not sit on the line of another
         geom = []
         for i, e in enumerate(edges, 1):
@@ -657,8 +776,12 @@ class Builder:
             if e.get("error"):
                 style += "dashed=1;strokeColor=#DD344C;"
             val, geo_x = "", ""
+            bg = "#FFFFFF"
             if eid in placed:
-                lines, rel, place, _ = placed[eid]
+                lines, rel, place, box = placed[eid]
+                mx, my = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2           # the text's centre: on a group's fill or the canvas
+                if any(gx <= mx <= gx + gw and gy <= my <= gy + gh for gx, gy, gw, gh in rects.values()):
+                    bg = GROUP_FILL
                 style += {"above": "align=center;verticalAlign=bottom;",
                           "below": "align=center;verticalAlign=top;",
                           "left": f"align=right;spacingRight={LABEL_SIDE_GAP};verticalAlign=middle;",
@@ -666,6 +789,7 @@ class Builder:
                 val = f' value="{attr("<br>".join(lines))}"'
                 if rel:
                     geo_x = f' x="{rel}"'
+            style += f"labelBackgroundColor={bg};"
             # A bent edge leaves under the source label, i.e. from a point outside the shape; draw.io's router
             # then picks the first leg's direction itself and may go sideways along the label. Pin the corner.
             pts = ""
@@ -694,6 +818,7 @@ def hints(spec: dict) -> list[str]:
     """Non-blocking layout hints: groups with more empty cells than icons, lanes with a single icon."""
     out: list[str] = []
     nodes = spec.get("nodes", [])
+    out += boundary_plan(spec)[1]
     for g in spec.get("groups", []):
         cells = len(g["cols"]) * len(g["lanes"])
         used = sum(1 for n in nodes if n.get("group") == g["id"])

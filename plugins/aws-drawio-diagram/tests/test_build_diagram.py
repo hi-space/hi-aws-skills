@@ -14,6 +14,7 @@ import build_diagram as bd  # noqa: E402
 import validate_drawio as vd  # noqa: E402
 
 INDEX = vd.load_index()
+INDEX_FULL = json.loads((SCRIPTS / "stencil-index.json").read_text())
 
 
 def spec(**over):
@@ -82,7 +83,7 @@ def test_labels_always_below_with_container_background():
         assert st[nid]["verticalLabelPosition"] == "bottom" and st[nid]["align"] == "center", nid
         assert "labelPosition" not in st[nid]
     assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud
-    assert st["a"]["labelBackgroundColor"] == "#F7F8FA"           # inside a role group
+    assert st["a"]["labelBackgroundColor"] == "#FFFFFF"           # inside a role group: groups have no fill
     # bottom-touching edges attach under the label, not on the icon edge
     e_ac = styles(xml)["e3"]                                        # a (lane 1) → c (lane 0): enters c's bottom
     assert e_ac["entryY"] == "1.282" and e_ac["entryPerimeter"] == "0"
@@ -430,3 +431,150 @@ def test_label_placement_avoids_other_edges_lines():
     s["edges"][2]["label"] = "verify"
     xml = bd.build(s)
     assert vd.validate_text(xml, INDEX) == ([], [])
+
+
+# ---- 1.8.0: role groups are the official AWS Generic group ---------------------------------------------
+def test_role_groups_are_the_official_generic_group():
+    # the icon deck's Generic group: dashed #5A6C86, no fill; labels sit on the white canvas everywhere
+    xml = bd.build(spec(edges=[{"from": "u", "to": "a", "label": "HTTPS"}, {"from": "a", "to": "b", "label": "invoke"}, {"from": "a", "to": "c", "dashed": True}]))
+    st = styles(xml)
+    g = st["g"]
+    assert g["fillColor"] == "none" and g["strokeColor"] == "#5A6C86" and g["dashed"] == "1" and g["fontColor"] == "#5A6C86"
+    assert g["fontSize"] == "13" and g["fontStyle"] == "1" and g["container"] == "1"
+    assert st["a"]["labelBackgroundColor"] == "#FFFFFF" and st["u"]["labelBackgroundColor"] == "#FFFFFF"
+    assert st["e1"]["labelBackgroundColor"] == "#FFFFFF" and st["e2"]["labelBackgroundColor"] == "#FFFFFF"
+
+
+def test_newer_stencils_get_their_badge_from_the_bundled_svg():
+    # bedrock_agentcore renders blank in older draw.io builds: the badge is the official SVG, the colour the catalog's
+    s = bspec(boundaries={"bedrock_agentcore": "Amazon Bedrock AgentCore"})
+    for n in s["nodes"][1:3]:
+        n["boundary"] = "bedrock_agentcore"
+    xml = bd.build(s)
+    st = styles(xml)
+    b = st["g__bedrock_agentcore"]
+    assert b["strokeColor"] == "#01A88D" and 'value="Amazon Bedrock AgentCore"' in xml
+    badge = st["g__bedrock_agentcore_badge"]
+    assert badge["shape"] == "image" and badge["image"].startswith("data:image/svg+xml,") and badge["awsBadge"] == "1"
+    errors, warnings = vd.validate_text(xml, INDEX)
+    assert errors == [] and not [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS], warnings
+
+
+# ---- 1.7.0: service boundaries ----------------------------------------------------------------------
+def bspec(cells=((1, 0), (2, 0), (1, 1)), labels=("AgentCore Memory", "Claude"), boundaries=None):
+    g = {"id": "g", "label": "Agent runtime", "cols": [1, 2], "lanes": [0, 1]}
+    (c1, l1), (c2, l2), (c3, l3) = cells
+    s = {"title": "T", "groups": [g],
+         "nodes": [{"id": "u", "label": "Users", "icon": "users", "col": 0, "lane": 1, "outside": True},
+                   {"id": "m1", "label": labels[0], "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg", "col": c1, "lane": l1,
+                    "group": "g", "boundary": "bedrock"},
+                   {"id": "m2", "label": labels[1], "icon": "bedrock", "col": c2, "lane": l2, "group": "g", "boundary": "bedrock"},
+                   {"id": "x", "label": "Chat agent", "icon": "lambda", "col": c3, "lane": l3, "group": "g"}],
+         "edges": [{"from": "u", "to": "x", "label": "HTTPS"}, {"from": "x", "to": "m1"}, {"from": "x", "to": "m2"}]}
+    if boundaries:
+        s["boundaries"] = boundaries
+    return s
+
+
+def geometry(xml: str) -> dict[str, tuple]:
+    import xml.etree.ElementTree as ET
+    out = {}
+    for c in ET.fromstring(xml).iter("mxCell"):
+        g = c.find("mxGeometry")
+        if g is not None and c.get("vertex") == "1":
+            out[c.get("id")] = (c.get("parent"), float(g.get("x")), float(g.get("y")), float(g.get("width")), float(g.get("height")))
+    return out
+
+
+def test_boundary_box_is_drawn_around_adjacent_members():
+    xml = bd.build(bspec(boundaries={"bedrock": "Amazon Bedrock"}))
+    st, geo = styles(xml), geometry(xml)
+    b = st["g__bedrock"]
+    # the official AWS group look: filled square badge, 1 px border and bold title in the service's category colour
+    assert b["awsBoundary"] == "1" and b["container"] == "1" and "shape" not in b
+    assert b["fillColor"] == "none" and b["strokeColor"] == "#01A88D" and b["fontColor"] == "#01A88D"
+    assert b["fontSize"] == "12" and b["fontStyle"] == "1"
+    assert 'value="Amazon Bedrock"' in xml
+    badge = st["g__bedrock_badge"]
+    assert badge["shape"] == "mxgraph.aws4.resourceIcon" and badge["resIcon"] == "mxgraph.aws4.bedrock"
+    assert badge["fillColor"] == "#01A88D" and badge["strokeColor"] == "#ffffff" and badge["awsBadge"] == "1"
+    assert geo["g__bedrock_badge"] == ("g__bedrock", 0.0, 0.0, float(bd.BADGE_PX), float(bd.BADGE_PX))
+    parent, x, y, w, h = geo["g__bedrock"]
+    assert parent == "g"
+    assert (x, y) == (bd.BOUNDARY_INSET, bd.BOUNDARY_ABOVE)                     # 30 px: under the group's 28 px title band
+    assert w == 2 * bd.GROUP_HALF_W * 2 + bd.GROUP_GAP - 2 * bd.BOUNDARY_INSET   # two columns, inset both sides
+    assert h == bd.BOUNDARY_ABOVE + bd.ICON + bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW
+    # members are children of the boundary, coordinates relative to it; the icon lands on the same absolute cell
+    p1, x1, y1, _, _ = geo["m1"]
+    assert p1 == "g__bedrock" and (x1, y1) == (bd.GROUP_HALF_W - bd.ICON // 2 - bd.BOUNDARY_INSET, bd.BOUNDARY_ABOVE)
+    assert geo["x"][0] == "g"                                                    # the non-member stays in the group
+    assert st["m1"]["labelBackgroundColor"] == "#FFFFFF"                         # nothing is filled: canvas white
+    # default title = catalog label
+    xml = bd.build(bspec())
+    st = styles(xml)
+    assert st["g__bedrock"]["strokeColor"] == "#01A88D" and 'value="Bedrock"' in xml
+    # the badge is decoration: the validator must not count it as a floating component (W9) or an obstacle
+    errors, warnings = vd.validate_text(xml, INDEX)
+    assert errors == [] and not [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS], warnings
+
+
+def test_boundary_title_never_wraps_and_widens_the_box_when_there_is_room():
+    # m1 (1,0) over m2 (1,1): a one-column box; x sits in column 3 so column 2 is free on both lanes
+    s = bspec(cells=((1, 0), (1, 1), (3, 1)), boundaries={"bedrock": "Amazon Bedrock Knowledge Bases"})
+    s["groups"][0]["cols"] = [1, 2, 3]
+    s["edges"] = [{"from": "u", "to": "m2", "label": "HTTPS"}, {"from": "m2", "to": "m1"}, {"from": "m2", "to": "x"}]
+    xml = bd.build(s)
+    st, geo = styles(xml), geometry(xml)
+    assert "whiteSpace" not in st["g__bedrock"]                    # one line, never wraps onto the icon
+    one_col = 2 * bd.GROUP_HALF_W - 2 * bd.BOUNDARY_INSET
+    assert geo["g__bedrock"][3] >= int(len("Amazon Bedrock Knowledge Bases") * bd.BOUNDARY_TITLE_CHAR_PX) + 40 > one_col
+    # with a node in the next column on those lanes the box may grow only up to that icon's left edge; a title that
+    # still does not fit is noted
+    blocked = bspec(cells=((1, 0), (1, 1), (2, 0)), boundaries={"bedrock": "Amazon Bedrock Knowledge Bases and Guardrails"})
+    blocked["edges"] = [{"from": "u", "to": "m2", "label": "HTTPS"}, {"from": "m2", "to": "m1"}, {"from": "m1", "to": "x"}]
+    b = bd.Builder(blocked, INDEX_FULL)
+    xml = b.build()
+    w = geometry(xml)["g__bedrock"][3]
+    assert one_col < w <= (bd.cx_of(2) - bd.ICON // 2 - 2 * bd.BOUNDARY_INSET) - (bd.cx_of(1) - bd.GROUP_HALF_W + bd.BOUNDARY_INSET)
+    assert any("wider than its box" in n for n in b.notes)
+
+
+def test_official_group_badge_uses_the_aws4_group_shape():
+    s = bspec()
+    for n in s["nodes"][1:3]:
+        n["boundary"] = "group_aws_step_functions_workflow"
+    xml = bd.build(s)
+    st = styles(xml)
+    b = st["g__group_aws_step_functions_workflow"]
+    assert b["shape"] == "mxgraph.aws4.group" and b["grIcon"] == "mxgraph.aws4.group_aws_step_functions_workflow"
+    assert b["strokeColor"] == "#CD2264" and b["fontColor"] == "#CD2264" and b["fillColor"] == "none" and b["awsBoundary"] == "1"
+    assert "g__group_aws_step_functions_workflow_badge" not in st                # the shape draws its own badge
+    assert 'value="AWS Step Functions workflow"' in xml
+    errors, warnings = vd.validate_text(xml, INDEX)
+    assert errors == [] and not [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS], warnings
+
+
+def test_boundary_skipped_when_not_adjacent_or_single():
+    diagonal = bspec(cells=((1, 0), (2, 1), (1, 1)))                          # x sits in the members' bounding box
+    xml = bd.build(diagonal)
+    assert "g__bedrock" not in xml and geometry(xml)["m1"][0] == "g"
+    assert any("bedrock" in h and "not drawn" in h and "adjacent" in h for h in bd.hints(diagonal))
+    single = bspec()
+    single["nodes"][2].pop("boundary")
+    xml = bd.build(single)
+    assert "g__bedrock" not in xml
+    assert any("bedrock" in h and "one member" in h for h in bd.hints(single))
+
+
+def test_boundary_errors():
+    with pytest.raises(bd.SpecError, match="one line"):
+        bd.build(bspec(labels=("AgentCore Memory", "Bedrock foundation model (Claude)")))
+    bad = bspec()
+    bad["nodes"][0]["boundary"] = "bedrock"                                     # users, outside the cloud
+    with pytest.raises(bd.SpecError, match="outside"):
+        bd.build(bad)
+    unknown = bspec()
+    for n in unknown["nodes"][1:3]:
+        n["boundary"] = "bedrockk"
+    with pytest.raises(bd.SpecError, match="bedrockk"):
+        bd.build(unknown)

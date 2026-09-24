@@ -44,8 +44,8 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
 - **AWS Cloud** (badge group) contains the role groups; **Users / on-premise / SaaS** sit outside it, on the
   main lane, in column 0 shifted 60 px further out (`OUTSIDE_GAP`) so the first edge into the cloud has room for
   its text.
-- Nesting deeper than *AWS Cloud → role group → icons* only when the request is about networking (then Region →
-  VPC → AZ → subnet from the table below, same 200/40 arithmetic).
+- Nesting deeper than *AWS Cloud → role group → (service boundary) → icons* only when the request is about
+  networking (then Region → VPC → AZ → subnet from the table below, same 200/40 arithmetic).
 - Validator `W6`: a service icon whose parent is the canvas while an AWS Cloud group exists → put it in a group.
 - **Orchestrators at overview level.** Step Functions, EventBridge rules, Batch: one icon stands for the
   workflow; its steps are listed in the brief's Flow. Draw the steps as icons only when they are ≤ 3 and fit the
@@ -54,28 +54,75 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
   more empty cells than icons, or an empty band across the top of the cloud, means the lane plan is wrong: move
   upper-lane items there (auth, static assets, memory) or fan out downward instead.
 
-**Role group style** (no badge — this is the modern light card look):
+**Role group style — the official AWS "Generic group"** (dashed grey border, no fill, no badge; the icon deck's own
+group for "things that belong together" without a service or network meaning). The builder emits it as
+`GENERIC_GROUP` in `build_diagram.py`; the title keeps the plugin's 13 bold so names stay on one visual level:
 
 ```
-rounded=0;whiteSpace=wrap;html=1;fillColor=#F7F8FA;strokeColor=#C9D1D9;strokeWidth=1;fontColor=#232F3E;fontFamily=Amazon Ember;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
+rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;strokeWidth=1;fontFamily=Amazon Ember;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
 ```
 
-**Badge groups** (AWS Cloud, Region, VPC, …). Always `fillColor=none;container=1;dropTarget=1;`. Names and
-colors come from [`aws-icons-groups.md`](aws-icons-groups.md) (generated). The common ones:
+Nothing inside the cloud is filled: node and edge labels sit on the white canvas (`labelBackgroundColor=#FFFFFF`).
+Colour belongs to the icons and to the service boundaries below. (Tinted per-role cards, 1.7.x, and the filled
+Generic group, 1.8.1, were tried and dropped in favour of this look, 2026-09-24.)
 
-| Boundary | style fragment |
-|---|---|
-| AWS Cloud | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fontColor=#232F3E;fillColor=none;container=1;dropTarget=1;` |
-| Region | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_region;strokeColor=#00A4A6;fontColor=#147EBA;dashed=1;fillColor=none;container=1;dropTarget=1;` |
-| VPC | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_vpc2;strokeColor=#8C4FFF;fontColor=#8C4FFF;fillColor=none;container=1;dropTarget=1;` |
-| Availability Zone | `fillColor=none;strokeColor=#147EBA;dashed=1;verticalAlign=top;fontStyle=0;fontColor=#147EBA;container=1;dropTarget=1;` (no badge) |
-| Private subnet | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;strokeColor=#00A4A6;fontColor=#147EBA;fillColor=none;container=1;dropTarget=1;` |
-| Public subnet | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_security_group;strokeColor=#7AA116;fontColor=#248814;fillColor=none;container=1;dropTarget=1;` |
-| Security group | `fillColor=none;strokeColor=#DD3522;verticalAlign=top;fontStyle=0;fontColor=#DD3522;container=1;dropTarget=1;` (no badge) |
-| AWS Account | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_account;strokeColor=#CD2264;fontColor=#CD2264;fillColor=none;container=1;dropTarget=1;` |
-| On-premise / corporate DC | `shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_corporate_data_center;strokeColor=#7D8998;fontColor=#5A6C86;fillColor=none;container=1;dropTarget=1;` |
+**Service boundaries.** Several icons of one *platform* service — AgentCore Runtime + Memory + Gateway, a Glue
+crawler + Data Catalog, a Step Functions workflow + its tasks, an ECS cluster + its services, IoT Core, SageMaker AI —
+get a badge-titled box of their own *inside* the role group when they land next to each other. Not for N copies of
+one thing (three Lambdas, two buckets): those are one node with a count in its label (architecture-brief.md).
 
-Badge group prefix: `points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontFamily=Amazon Ember;fontSize=14;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;`
+**These are different services with different badges** — never one box for two of them:
+
+| Service | boundary stencil | box title | holds |
+|---|---|---|---|
+| Amazon Bedrock | `bedrock` | Amazon Bedrock | models, Knowledge Bases, Guardrails, Agents (classic) |
+| Amazon Bedrock AgentCore | `bedrock_agentcore` | Amazon Bedrock AgentCore | Runtime, Memory, Gateway, Identity, Observability, Browser / Code tools |
+| Amazon SageMaker AI | `sagemaker` | Amazon SageMaker AI | training jobs, endpoints, notebooks, pipelines |
+| Amazon SageMaker (next generation) | `sagemaker_2` | Amazon SageMaker Unified Studio | Unified Studio, Lakehouse, Catalog, projects |
+
+`bedrock_agentcore` and `sagemaker_2` exist in the catalog but render blank in draw.io ≤ 26.x; the builder draws their
+badge from the bundled official SVG (`BADGE_IMAGE`) so the box looks right everywhere. The scaffold warns when an
+AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagemaker`.
+
+- Brief: the Components table's `Boundary` column names the badge stencil (`bedrock`, `glue`, `step_functions`,
+  `ecs`), optionally `bedrock: Amazon Bedrock` for the title (default: the catalog label). Rows in the same group
+  with the same stencil are one boundary. A boundary never spans two role groups — if it should, the boundary *is*
+  the group (name the group after the service).
+- Spec: `"boundary": "bedrock"` on the node, optional `"boundaries": {"bedrock": "Amazon Bedrock"}`. The scaffold
+  writes both and shortens member labels that repeat the service (`Bedrock (Claude)` → `Claude`).
+- **Opportunistic, never forced.** `layout.py` pays a soft cost (`BOUNDARY_SPLIT_COST`) to keep members in a
+  clean rectangle; the builder draws the box only when ≥ 2 members fill a rectangle with no other node inside
+  and inside one group box, otherwise `hint: boundary … not drawn` and the icons stay plain children of the group.
+  Move a node in the `.layout.json` if the box matters.
+- Geometry: inset `BOUNDARY_INSET` = 12 px from the group's sides, top `BOUNDARY_ABOVE` = 30 px above the first
+  icon (so its 12 pt title row sits under the group's 28 px title band), bottom `BOUNDARY_BELOW` = 10 px under a
+  one-line node label. **Labels inside a boundary are one line** (≤ 22 characters) — the box title already says
+  the service; a two-line label is a builder error. A boundary border cuts edge-text room like a group border.
+- **Look: the official AWS group.** Exactly how the AWS Architecture Icons deck draws a group — a filled square
+  badge in the top-left corner, a 1 px border and a bold 12 pt title, all in the **service's own category colour**
+  (the icon's `fillColor` in the catalog: Bedrock `#01A88D`, Glue `#8C4FFF`, ECS `#ED7100`). `fillColor=none`. Two
+  renderings, same look (a third, `shape=image` with the bundled SVG, for the `BADGE_IMAGE` stencils above):
+  - an **official group badge** (`group_*` stencil — `group_aws_step_functions_workflow`, `group_auto_scaling_group`,
+    `group_ec2_instance_contents`, `group_elastic_beanstalk`, `group_spot_fleet`, `group_iot_greengrass`, …): the aws4
+    group shape draws the badge itself, colour from [`aws-icons-groups.md`](aws-icons-groups.md):
+
+    ```
+    <badge prefix>;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_step_functions_workflow;strokeColor=#CD2264;fontColor=#CD2264;fontSize=12;fontStyle=1;fillColor=none;awsBoundary=1;container=1;dropTarget=1;
+    ```
+
+  - **any other service** (`bedrock`, `glue`, `ecs`, `sagemaker`, `iot_core`, …): a plain rectangle plus a 24 px
+    `resourceIcon` of the service as a child at (0, 0) — the filled square the aws4 group shape cannot draw for a
+    service stencil (it would render the glyph as an outline):
+
+    ```
+    rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#01A88D;strokeWidth=1;fontColor=#01A88D;fontFamily=Amazon Ember;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;spacingTop=0;awsBoundary=1;container=1;dropTarget=1;
+    sketch=0;outlineConnect=0;html=1;fillColor=#01A88D;strokeColor=#ffffff;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.bedrock;awsBadge=1;     (24 × 24 at x=0 y=0, parent = the boundary)
+    ```
+
+  `awsBoundary=1` / `awsBadge=1` are markers draw.io ignores: the validator uses them to tell a boundary from a role
+  group (`W6`) and a badge from a component (`W9`). Cell ids `<group id>__<stencil>` and `…_badge`; parent = the role
+  group; members re-parented to the boundary. `W6` accepts icon → boundary → role group, not a boundary parented
+  straight to the cloud.
 
 ## 3. Typography
 
@@ -214,10 +261,10 @@ by situation (`chars_that_fit` in `build_diagram.py`):
 
 ## 6. Node labels — always below the icon
 
-Every node label sits under its icon, centred, 13 bold, with a background the colour of its container:
+Every node label sits under its icon, centred, 13 bold, with a white background (groups have no fill):
 
 ```
-verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F7F8FA;   (inside a role group)
+verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (inside a role group — groups have no fill, §2)
 verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (outside the cloud)
 ```
 

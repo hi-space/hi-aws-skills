@@ -32,11 +32,39 @@ from build_diagram import (_table_rows, EXTRA_ICONS, LABEL_MAX_LINE_CHARS, LABEL
 NO_LABEL = ("", "—", "-", "–")
 
 
-def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
+def _header(brief_text: str, heading: str) -> list[str]:
+    m = re.search(rf"^##\s+{heading}\b.*?$", brief_text, re.M)
+    if not m:
+        return []
+    for line in brief_text[m.end():].splitlines():
+        if line.lstrip().startswith("|"):
+            return [c.strip().lower() for c in line.strip().strip("|").split("|")]
+    return []
+
+
+def shorten_in_boundary(label: str, titles: list[str]) -> str:
+    """Inside a boundary box the title already names the service: `Bedrock (Claude)` → `Claude`, `Glue crawler` →
+    `crawler`. Labels that do not start with the service name (`AgentCore Memory`) are left alone."""
+    for t in sorted({t for t in titles if t}, key=len, reverse=True):
+        m = re.fullmatch(rf"{re.escape(t)}\s*\((.+)\)", label)
+        if m:
+            return m.group(1).strip()
+        if label.startswith(t + " ") and len(label) > len(t) + 1:
+            return label[len(t) + 1:].strip()
+    return label
+
+
+def scaffold(brief_text: str, index: set[str] | dict) -> tuple[dict, list[str]]:
+    """`index` is the stencil catalog (dict name → entry, gives boundary titles and label shortening) or just its
+    names (set; boundaries then keep the catalog-free labels)."""
     warnings: list[str] = []
+    names = set(index)
+    labels_of = index if isinstance(index, dict) else {}
     title = next((l[2:].strip() for l in brief_text.splitlines() if l.startswith("# ")), "Architecture")
     comp_rows = _table_rows(brief_text, "Components")
     rel_rows = _table_rows(brief_text, "Relationships")
+    b_i = next((i for i, c in enumerate(_header(brief_text, "Components")) if c.startswith("boundary")), None)
+    boundary_titles: dict[str, str] = {}
     nodes, groups, order = [], {}, []
     for row in comp_rows:
         if len(row) < 4 or re.search(r"not drawn", " ".join(row), re.I):
@@ -52,7 +80,7 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
                 warnings.append(f"{cid}: image '{m_img.group(1)}' not in assets/extra-icons/")
         elif m_icon:
             node["icon"] = m_icon.group(1)
-            if m_icon.group(1) not in index:
+            if m_icon.group(1) not in names:
                 warnings.append(f"{cid}: unknown stencil '{m_icon.group(1)}' — look it up in references/aws-icons-*.md")
         else:
             warnings.append(f"{cid}: no stencil in the Service cell — write `name` or image `file.svg`")
@@ -70,14 +98,42 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
             if gid not in groups:
                 groups[gid] = {"id": gid, "label": group}
                 order.append(gid)
+        bcell = row[b_i].strip() if b_i is not None and b_i < len(row) else ""
+        if bcell:
+            mb = re.fullmatch(r"`?([a-z0-9_]+)`?\s*(?::\s*(.+))?", bcell)
+            if not mb:
+                warnings.append(f"{cid}: Boundary '{bcell}' is not `stencil` or `stencil: Title` — ignored")
+            elif mb.group(1) not in names:
+                warnings.append(f"{cid}: boundary stencil '{mb.group(1)}' unknown — look it up in references/aws-icons-*.md")
+            elif node.get("outside"):
+                warnings.append(f"{cid}: an outside component cannot be in a boundary — ignored")
+            else:
+                node["boundary"] = mb.group(1)
+                if mb.group(2):
+                    boundary_titles[mb.group(1)] = mb.group(2).strip()
         nodes.append(node)
-    seen_labels = defaultdict(list)
+    # inside a boundary the box title names the service; strip it from member labels
     for n in nodes:
-        seen_labels[n["label"]].append(n)
-    for label, same in seen_labels.items():
-        if len(same) > 1:                               # two "ECS Fargate service" nodes: tell them apart by id
-            for n in same:
-                n["label"] = f"{label} ({n['id'].replace('_', ' ')})" if len(label) + len(n["id"]) <= 28 else n["id"]
+        b = n.get("boundary")
+        if b and labels_of:
+            n["label"] = shorten_in_boundary(n["label"], [boundary_titles.get(b, ""), (labels_of.get(b) or {}).get("label", "")])
+    by_boundary: dict[tuple[str, str], list[dict]] = defaultdict(list)
+    for n in nodes:
+        if n.get("boundary"):
+            by_boundary[(n["group"], n["boundary"])].append(n)
+    for (gid, b), members in by_boundary.items():
+        stencils = {m.get("icon") or m.get("image") for m in members}
+        if b == "bedrock" and any("agentcore" in (m.get("image") or m.get("icon") or "").lower() for m in members):
+            warnings.append(f"boundary 'bedrock' in group '{groups[gid]['label']}' holds AgentCore resources — Amazon Bedrock "
+                            "AgentCore is its own service: use `bedrock_agentcore` for them and `bedrock` for models / Knowledge "
+                            "Bases / Guardrails")
+        if b == "sagemaker" and any("unified" in (m.get("image") or m.get("icon") or "").lower() for m in members):
+            warnings.append(f"boundary 'sagemaker' in group '{groups[gid]['label']}' holds Unified Studio resources — SageMaker "
+                            "Unified Studio is `sagemaker_2`, SageMaker AI is `sagemaker`")
+        if len(members) > 1 and len(stencils) == 1:
+            warnings.append(f"boundary '{b}' in group '{groups[gid]['label']}' holds {len(members)} copies of the same stencil "
+                            f"({', '.join(m['id'] for m in members)}) — a boundary is for a platform service's different resources "
+                            "(AgentCore Runtime + Memory, Glue crawler + catalog); N copies are one node with a count in its label")
     ids = {n["id"] for n in nodes}
     header = None
     m = re.search(r"^##\s+Relationships\b.*?$", brief_text, re.M)
@@ -125,6 +181,8 @@ def scaffold(brief_text: str, index: set[str]) -> tuple[dict, list[str]]:
         edges.append(edge)
     warnings += check_evidence(brief_text, comp_rows)
     spec = {"title": title, "layout": "auto", "groups": [groups[g] for g in order], "nodes": nodes, "edges": edges}
+    if boundary_titles:
+        spec["boundaries"] = boundary_titles
     return spec, warnings
 
 
@@ -163,7 +221,7 @@ def main(argv: list[str] | None = None) -> int:
     if len(args) != 2:
         print(__doc__)
         return 2
-    index = set(json.loads((HERE / "stencil-index.json").read_text())["stencils"])
+    index = json.loads((HERE / "stencil-index.json").read_text())["stencils"]
     brief_path = Path(args[0])
     brief_text = brief_path.read_text(encoding="utf-8")
     # the first run freezes ids and From → To pairs; a later run with changed ones stops here
@@ -178,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
     Path(args[1]).write_text(json.dumps(spec, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {args[1]}: {len(spec['nodes'])} nodes, {len(spec['edges'])} edges, {len(spec['groups'])} groups")
     for w in warnings:
-        print(f"  warn: {w}")
+        print(f"  {w}" if w.startswith("hint:") else f"  warn: {w}")
     return 1 if any(k in w for w in warnings for k in ("unknown stencil", "no stencil", "does not exist", "Repo:", "can never fit")) else 0
 
 

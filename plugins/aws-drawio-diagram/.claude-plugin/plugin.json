@@ -1,7 +1,7 @@
 {
   "name": "aws-drawio-diagram",
   "description": "Editable draw.io (.drawio) files you open and modify in diagrams.net — an editable file, not a finished image (for a ready-to-embed picture, use aws-diagram-design). AWS architecture diagrams built from draw.io's built-in official AWS icon stencils. Catalog of 1,000+ verified stencil names regenerated from draw.io sources, service/resource two-pattern rule, layout conventions, 5 reference templates, and a validator. SVG image fallback for icons draw.io lacks (Bedrock AgentCore resources). Korean triggers: draw.io로 그려줘, 드로우아이오, 편집 가능한 구성도, 수정할 수 있는 아키텍처.",
-  "version": "1.6.0",
+  "version": "1.8.2",
   "author": { "name": "hi-space" },
   "license": "MIT",
   "keywords": ["aws", "drawio", "draw.io", "architecture", "diagram", "aws-icons", "editable", "stencil"],

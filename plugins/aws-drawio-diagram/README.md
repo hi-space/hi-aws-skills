@@ -23,11 +23,11 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 ## 샘플
 
-이 스킬로 만든 다이어그램입니다. 스킬은 네 단계로 일합니다. ① 아키텍처 브리프(구성요소·관계표·흐름·그룹·완결성 체크)를 먼저 쓰고, ② 브리프를 AWS가 공개한 가이드와 대조하는 아키텍처 리뷰를 합니다. Well-Architected 렌즈, 서비스 문서, AWS 공식 agent skills를 AWS Knowledge MCP 서버로 읽고, 모든 finding에 읽은 출처를 붙입니다. MCP 서버가 없으면 임의로 판단하지 않고 건너뛴다고 기록합니다. ③ 브리프만 보고 그리드 스펙(JSON)을 작성해 `scripts/build_diagram.py`로 `.drawio`를 생성·검증하고, ④ 렌더한 PNG를 브리프와 대조해 겹침·가독성·구성을 리뷰합니다. 240×170 그리드, 역할별 그룹 카드, Amazon Ember 글꼴, 직선 또는 한 번 꺾인 엣지가 규칙입니다(`references/layout-and-style.md`). `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다(리뷰용 `.preview.png`는 같은 그림이며 완료 시 삭제됩니다). 모든 엣지에는 브리프 관계표의 **What flows** 문구가 그대로 글자로 올라갑니다 — 최대 3줄로 줄바꿈해서 직선이든 꺾인 선이든 자리가 있는 다리 위에 놓고, 경계·아이콘·다른 글자·다른 선과 겹치지 않는 곳만 고릅니다(그룹 상자 사이를 건너는 홉만 6자 이하 단어로 줄여야 합니다). 주요 엣지의 문구가 자리를 못 찾으면 빌드가 멈춥니다(`ERROR label`). `<name>.guide.md`는 관계 하나에 한 단계씩, 요청한 언어(한국어 요청이면 한국어 본문 + 영문 서비스명)로 풀어 쓰고 각 단계에 화살표의 글자를 (라벨 `…`)로 인용하며, `scripts/check_guide.py`가 언어·단계 누락·인용 누락을 기계적으로 검사합니다(`references/architecture-guide.md`). 소스코드 저장소를 입력으로 주면 IaC·SDK 호출·설정에서 구성요소를 근거(파일:행)와 함께 뽑아내고, 배포 단위마다 한 장씩 상세 다이어그램을 만듭니다(`references/from-source-code.md`). 추상 노드("플랫폼", "에이전트들")는 금지입니다. 노드 배치는 손으로 하지 않습니다. `scaffold_spec.py`가 brief를 스펙으로 옮기고 `build_diagram.py`가 자동 배치(`layout.py`)와 brief 대조 검사를 수행합니다.
+이 스킬로 만든 다이어그램입니다. 스킬은 네 단계로 일합니다. ① 아키텍처 브리프(구성요소·관계표·흐름·그룹·완결성 체크)를 먼저 쓰고, ② 브리프를 AWS가 공개한 가이드와 대조하는 아키텍처 리뷰를 합니다. Well-Architected 렌즈, 서비스 문서, AWS 공식 agent skills를 AWS Knowledge MCP 서버로 읽고, 모든 finding에 읽은 출처를 붙입니다. MCP 서버가 없으면 임의로 판단하지 않고 건너뛴다고 기록합니다. ③ 브리프만 보고 그리드 스펙(JSON)을 작성해 `scripts/build_diagram.py`로 `.drawio`를 생성·검증하고, ④ 렌더한 PNG를 브리프와 대조해 겹침·가독성·구성을 리뷰합니다. 240×170 그리드, 역할별 그룹 카드, Amazon Ember 글꼴, 직선 또는 한 번 꺾인 엣지가 규칙입니다(`references/layout-and-style.md`). 역할 그룹은 공식 AWS 아이콘 덱의 Generic group(회색 점선, 채움 없음)으로 그리고, 한 플랫폼 서비스의 리소스 여러 개(AgentCore Runtime + Memory, Glue 크롤러 + 카탈로그)가 나란히 놓이면 공식 그룹 모양(채워진 배지·서비스 색 테두리·제목)의 경계 상자로 묶입니다 — 나란히 놓이지 않으면 힌트만 내고 묶지 않습니다. `.drawio.png`는 XML이 내장되어 draw.io에서 바로 열어 편집할 수 있습니다(리뷰용 `.preview.png`는 같은 그림이며 완료 시 삭제됩니다). 모든 엣지에는 브리프 관계표의 **What flows** 문구가 그대로 글자로 올라갑니다 — 최대 3줄로 줄바꿈해서 직선이든 꺾인 선이든 자리가 있는 다리 위에 놓고, 경계·아이콘·다른 글자·다른 선과 겹치지 않는 곳만 고릅니다(그룹 상자 사이를 건너는 홉만 6자 이하 단어로 줄여야 합니다). 주요 엣지의 문구가 자리를 못 찾으면 빌드가 멈춥니다(`ERROR label`). `<name>.guide.md`는 관계 하나에 한 단계씩, 요청한 언어(한국어 요청이면 한국어 본문 + 영문 서비스명)로 풀어 쓰고 각 단계에 화살표의 글자를 (라벨 `…`)로 인용하며, `scripts/check_guide.py`가 언어·단계 누락·인용 누락을 기계적으로 검사합니다(`references/architecture-guide.md`). 소스코드 저장소를 입력으로 주면 IaC·SDK 호출·설정에서 구성요소를 근거(파일:행)와 함께 뽑아내고, 배포 단위마다 한 장씩 상세 다이어그램을 만듭니다(`references/from-source-code.md`). 추상 노드("플랫폼", "에이전트들")는 금지입니다. 노드 배치는 손으로 하지 않습니다. `scaffold_spec.py`가 brief를 스펙으로 옮기고 `build_diagram.py`가 자동 배치(`layout.py`)와 brief 대조 검사를 수행합니다.
 
 ![Agentic RAG Chat](docs/samples/agentic-rag-chat.drawio.png)
 
-[brief](docs/samples/agentic-rag-chat.brief.md) · [spec](docs/samples/agentic-rag-chat.json) · [agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio)
+[brief](docs/samples/agentic-rag-chat.brief.md) · [spec](docs/samples/agentic-rag-chat.json) · [agentic-rag-chat.drawio](docs/samples/agentic-rag-chat.drawio) — Agent runtime 안의 `Amazon Bedrock AgentCore` 경계 상자(Runtime + Memory)와 별도 서비스인 Bedrock 모델 예시
 
 ![Order pipeline](docs/samples/order-pipeline.drawio.png)
 
@@ -35,7 +35,7 @@ draw.io AWS 아이콘에는 `strokeColor` 규칙이 반대인 두 패턴이 있�
 
 ![IoT telemetry](docs/samples/iot-telemetry.drawio.png)
 
-[brief](docs/samples/iot-telemetry.brief.md) · [spec](docs/samples/iot-telemetry.json) · [iot-telemetry.drawio](docs/samples/iot-telemetry.drawio) — 한 노드에서 위·아래로 두 번 갈라지는 허브(Lambda)와 클라우드 밖 수신자 예시
+[brief](docs/samples/iot-telemetry.brief.md) · [spec](docs/samples/iot-telemetry.json) · [iot-telemetry.drawio](docs/samples/iot-telemetry.drawio) — 한 노드에서 위·아래로 두 번 갈라지는 허브(Lambda), 클라우드 밖 수신자, Analytics 안의 `AWS Glue` 경계 상자 예시
 
 ## 설치 (Claude Code)
 

@@ -2,7 +2,7 @@
   "id": "agentic-rag",
   "page": "Agentic RAG Chat",
   "title": "Agentic RAG Chat — Serverless on AWS",
-  "subtitle": "hi-aws-skills sample · 2026-09-12 · v2",
+  "subtitle": "hi-aws-skills sample · 2026-09-24 · v3",
   "groups": [
     {
       "id": "g_front",
@@ -30,20 +30,11 @@
       "id": "g_agent",
       "label": "Agent runtime",
       "cols": [
-        3
-      ],
-      "lanes": [
-        0,
-        1
-      ]
-    },
-    {
-      "id": "g_model",
-      "label": "Foundation model",
-      "cols": [
+        3,
         4
       ],
       "lanes": [
+        0,
         1
       ]
     },
@@ -129,15 +120,17 @@
       "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
       "col": 3,
       "lane": 0,
-      "group": "g_agent"
+      "group": "g_agent",
+      "boundary": "bedrock_agentcore"
     },
     {
-      "id": "lambda",
-      "label": "Chat agent",
-      "icon": "lambda",
+      "id": "runtime",
+      "label": "AgentCore Runtime",
       "col": 3,
       "lane": 1,
-      "group": "g_agent"
+      "group": "g_agent",
+      "image": "Res_Amazon-Bedrock-AgentCore_Runtime_48.svg",
+      "boundary": "bedrock_agentcore"
     },
     {
       "id": "bedrock",
@@ -145,7 +138,7 @@
       "icon": "bedrock",
       "col": 4,
       "lane": 1,
-      "group": "g_model"
+      "group": "g_agent"
     },
     {
       "id": "sns",
@@ -224,24 +217,24 @@
     },
     {
       "from": "apigw",
-      "to": "lambda",
+      "to": "runtime",
       "num": 5,
       "label": "invoke"
     },
     {
-      "from": "lambda",
+      "from": "runtime",
       "to": "memory",
       "num": 6,
       "label": "read/write memory"
     },
     {
-      "from": "lambda",
+      "from": "runtime",
       "to": "bedrock",
       "num": 7,
       "label": "LLM prompt"
     },
     {
-      "from": "lambda",
+      "from": "runtime",
       "to": "oss",
       "num": 8,
       "label": "vector query"
@@ -277,5 +270,8 @@
       "num": 13,
       "label": "upsert vectors"
     }
-  ]
+  ],
+  "boundaries": {
+    "bedrock_agentcore": "Amazon Bedrock AgentCore"
+  }
 }

@@ -448,3 +448,76 @@ def test_check_guide_cli_on_the_shipped_sample():
     r = subprocess.run([sys.executable, str(SCRIPTS / "check_guide.py"), str(SAMPLES / "order-pipeline.guide.md"),
                         str(SAMPLES / "order-pipeline.brief.md")], capture_output=True, text=True)
     assert r.returncode == 0 and "guide check" in r.stdout and "✓" in r.stdout, r.stdout
+
+
+# ---- 1.7.0: boundaries and kinds through the planner -------------------------------------------------
+def test_planner_keeps_boundary_members_adjacent():
+    # the constructive start stacks a hub's neighbours alphabetically, alternating above/below: a_tools below,
+    # m_memory above, z_model two below — the two Bedrock members end up with a_tools between them. The soft
+    # boundary cost must make the search bring them together into a clean rectangle.
+    s = {"title": "T", "layout": "auto",
+         "groups": [{"id": "g_api", "label": "API"}, {"id": "g_agent", "label": "Agent runtime"}],
+         "nodes": [{"id": "users", "label": "Users", "icon": "users", "outside": True},
+                   {"id": "api", "label": "API Gateway", "icon": "api_gateway", "group": "g_api"},
+                   {"id": "agent", "label": "Chat agent", "icon": "lambda", "group": "g_agent"},
+                   {"id": "a_tools", "label": "Tools", "icon": "lambda", "group": "g_agent"},
+                   {"id": "m_memory", "label": "AgentCore Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
+                    "group": "g_agent", "boundary": "bedrock"},
+                   {"id": "z_model", "label": "Claude", "icon": "bedrock", "group": "g_agent", "boundary": "bedrock"}],
+         "edges": [{"from": "users", "to": "api"}, {"from": "api", "to": "agent"}, {"from": "agent", "to": "a_tools"},
+                   {"from": "agent", "to": "m_memory"}, {"from": "agent", "to": "z_model"}]}
+    placed, notes = layout.plan(s)
+    assert notes == []
+    at = {n["id"]: (n["col"], n["lane"]) for n in placed["nodes"]}
+    (c1, l1), (c2, l2) = at["m_memory"], at["z_model"]
+    others = {cell for nid, cell in at.items() if nid not in ("m_memory", "z_model")}
+    bbox = {(c, l) for c in range(min(c1, c2), max(c1, c2) + 1) for l in range(min(l1, l2), max(l1, l2) + 1)}
+    assert not (bbox & others), f"a non-member sits between the Bedrock members: {at}"
+    assert all("boundary" not in n or n["boundary"] == "bedrock" for n in placed["nodes"])
+
+
+BRIEF_17 = """# Agent platform
+Language: ko
+
+## Components
+| id | Service (stencil) | Role in this system | Group | Boundary |
+|---|---|---|---|---|
+| users | Users (`users`, resource) | People | outside | |
+| apigw | API Gateway (`api_gateway`) | Entry | API & Auth | |
+| agent | Lambda (`lambda`) — Chat agent | Orchestrates | Agent runtime | |
+| memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Memory | Agent runtime | bedrock: Amazon Bedrock |
+| model | Bedrock (`bedrock`) — Claude | Model | Agent runtime | bedrock |
+| f1 | Lambda (`lambda`) — Payment | Task | Workflow | lambda |
+| f2 | Lambda (`lambda`) — Inventory | Task | Workflow | lambda |
+
+## Relationships
+| # | From → To | What flows | Kind |
+|---|---|---|---|
+| 1 | users → apigw | HTTPS | sync |
+| 2 | apigw → agent | invoke | sync |
+| 3 | agent → memory | read/write memory | sync |
+| 4 | agent → model | LLM prompt | sync |
+| 5 | agent → f1 | task | sync |
+| 6 | agent → f2 | task | sync |
+
+## Groups
+API & Auth · Agent runtime · Workflow
+"""
+
+
+def test_scaffold_reads_boundaries():
+    index = json.loads((SCRIPTS / "stencil-index.json").read_text())["stencils"]
+    spec, warnings = sc.scaffold(BRIEF_17, index)
+    assert [g["label"] for g in spec["groups"]] == ["API & Auth", "Agent runtime", "Workflow"]
+    nodes = {n["id"]: n for n in spec["nodes"]}
+    assert nodes["memory"]["boundary"] == "bedrock" and nodes["model"]["boundary"] == "bedrock"
+    assert "boundary" not in nodes["apigw"]
+    assert spec["boundaries"] == {"bedrock": "Amazon Bedrock"}
+    assert nodes["model"]["label"] == "Claude" and nodes["memory"]["label"] == "AgentCore Memory"   # service name stripped
+    assert nodes["agent"]["label"] == "Lambda (Chat agent)"                                # untouched outside a boundary
+    assert any("lambda" in w and "same stencil" in w for w in warnings), warnings          # N copies are not a boundary
+    # AgentCore Memory filed under `bedrock`: a different service — the scaffold says which stencil to use instead
+    assert any("bedrock_agentcore" in w and "AgentCore" in w for w in warnings), warnings
+    # a set of names still works (older callers); labels are then left alone
+    spec2, _ = sc.scaffold(BRIEF_17, set(index))
+    assert {n["id"]: n["label"] for n in spec2["nodes"]}["model"] == "Bedrock (Claude)"

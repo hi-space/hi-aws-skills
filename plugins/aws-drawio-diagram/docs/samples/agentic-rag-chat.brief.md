@@ -5,22 +5,22 @@ serverless end to end. Audience: technical.
 Language: ko
 
 ## Components
-| id | Service (stencil) | Role in this system | Group |
-|---|---|---|---|
-| users | Users (`users`, resource) | People on the web chat | outside |
-| s3web | S3 (`s3`) | Static site assets | Frontend |
-| cf | CloudFront (`cloudfront`) | CDN, TLS, routes `/api` | Frontend |
-| cognito | Cognito (`cognito`) | User pool, JWT authorizer | API & Auth |
-| apigw | API Gateway (`api_gateway`) | Chat API | API & Auth |
-| memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Long-term memory across sessions | Agent runtime |
-| lambda | Lambda (`lambda`) | Chat agent: plans, retrieves, prompts | Agent runtime |
-| bedrock | Bedrock (`bedrock`) | Claude foundation model | Foundation model |
-| sns | SNS (`sns`) | Alarm notifications | Observability |
-| cw | CloudWatch (`cloudwatch_2`) | Logs, metrics, alarms | Observability |
-| oss | OpenSearch Serverless (`elasticsearch_service`) | Vector index | Knowledge |
-| s3docs | S3 (`s3`) | Source documents | Document ingestion |
-| eb | EventBridge (`eventbridge`) | Object-created events | Document ingestion |
-| ingest | Lambda (`lambda`) | Chunk, embed, index | Document ingestion |
+| id | Service (stencil) | Role in this system | Group | Boundary |
+|---|---|---|---|---|
+| users | Users (`users`, resource) | People on the web chat | outside |  |
+| s3web | S3 (`s3`) | Static site assets | Frontend |  |
+| cf | CloudFront (`cloudfront`) | CDN, TLS, routes `/api` | Frontend |  |
+| cognito | Cognito (`cognito`) | User pool, JWT authorizer | API & Auth |  |
+| apigw | API Gateway (`api_gateway`) | Chat API | API & Auth |  |
+| memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Long-term memory across sessions | Agent runtime | bedrock_agentcore |
+| runtime | Bedrock AgentCore Runtime (image `Res_Amazon-Bedrock-AgentCore_Runtime_48.svg`) | Hosts the chat agent: plans, retrieves, prompts | Agent runtime | bedrock_agentcore: Amazon Bedrock AgentCore |
+| bedrock | Bedrock (`bedrock`) — Claude | Claude foundation model | Agent runtime |  |
+| sns | SNS (`sns`) | Alarm notifications | Observability |  |
+| cw | CloudWatch (`cloudwatch_2`) | Logs, metrics, alarms | Observability |  |
+| oss | OpenSearch Serverless (`elasticsearch_service`) | Vector index | Knowledge |  |
+| s3docs | S3 (`s3`) | Source documents | Document ingestion |  |
+| eb | EventBridge (`eventbridge`) | Object-created events | Document ingestion |  |
+| ingest | Lambda (`lambda`) | Chunk, embed, index | Document ingestion |  |
 
 ## Relationships
 | # | From → To | What flows | Kind |
@@ -29,10 +29,10 @@ Language: ko
 | 2 | cf → s3web | static assets | sync |
 | 3 | cf → apigw | /api calls | sync |
 | 4 | apigw → cognito | token validation | aux (dashed) |
-| 5 | apigw → lambda | invoke | sync |
-| 6 | lambda → memory | read/write memory | sync |
-| 7 | lambda → bedrock | LLM prompt | sync |
-| 8 | lambda → oss | vector query | sync |
+| 5 | apigw → runtime | invoke | sync |
+| 6 | runtime → memory | read/write memory | sync |
+| 7 | runtime → bedrock | LLM prompt | sync |
+| 8 | runtime → oss | vector query | sync |
 | 9 | apigw → cw | execution logs | aux (dashed) |
 | 10 | cw → sns | alarm | sync |
 | 11 | s3docs → eb | object created | sync |
@@ -41,13 +41,17 @@ Language: ko
 
 ## Flow
 1. Users reach CloudFront over HTTPS; static assets come from S3, API calls go to API Gateway.
-2. API Gateway validates the Cognito token and invokes the chat agent Lambda.
+2. API Gateway validates the Cognito token and invokes the chat agent on AgentCore Runtime.
 3. The agent loads memory from AgentCore Memory, retrieves context from OpenSearch Serverless and prompts Bedrock (Claude).
 4. Ingestion: an object created in the documents bucket raises an EventBridge event; the ingest Lambda embeds it and writes vectors to OpenSearch.
 5. API Gateway logs to CloudWatch, which alarms to SNS.
 
 ## Groups
-Frontend · API & Auth · Agent runtime · Foundation model · Observability · Knowledge · Document ingestion
+Frontend · API & Auth · Agent runtime · Observability · Knowledge · Document ingestion
+
+Boundary: AgentCore Runtime and AgentCore Memory are two resources of **Amazon Bedrock AgentCore** (`bedrock_agentcore`),
+so they share that box inside Agent runtime. The Claude model is **Amazon Bedrock** (`bedrock`) — a different service — and
+is one node, so it gets no box.
 
 ## Checks
 - [x] Entry: CloudFront. Auth: Cognito.
@@ -56,7 +60,7 @@ Frontend · API & Auth · Agent runtime · Foundation model · Observability · 
 - [x] Observability: CloudWatch + SNS alarms.
 
 ## Layout notes (Drawer)
-- Grid: main lane 1 (users → cf → apigw → lambda → bedrock); lane 0 for S3 site, Cognito, Memory; row 2 for Observability and Knowledge; row 3 for ingestion.
+- Grid: main lane (users → cf → apigw → runtime → bedrock); the AgentCore boundary (Runtime, Memory) stacked in column 3; row 2 for Observability and Knowledge; row 3 for ingestion.
 - Hub nodes (API Gateway, chat agent) get two-line bottom-left labels; OpenSearch (edges top and bottom) gets its label on the right inside the two-column Knowledge group.
 - Four edge labels only: `HTTPS`, `retrieve`, `embed`, `alarm`.
 
@@ -72,7 +76,7 @@ references/orchestration.md). Tool: AWS Knowledge MCP (`mcp__aws-mcp__aws___*`).
 | R1 | Security | API Gateway (`apigw`) has no WAF; the reference architecture puts authentication *and rate limiting* at this layer, | https://docs.aws.amazon.com/wellarchitected/latest/generative-ai-lens/smbdb-knowledge-worker-co-pilot.html (Reference architecture: "Amazon API Gateway provides RESTful APIs with authentication and rate limiting") | should | + WAF in front of `apigw` (or a dashed WAF badge on the API & Auth group) |
 | R2 | Reliability | EventBridge rule `eb → ingest` (rule target = ingest Lambda) has no dead-letter queue; the orchestration reference's EventBridge best-practice list states "DLQs on all targets" | aws-serverless skill, references/orchestration.md § "EventBridge rules, pipes, and patterns → Best practices" | should | + DLQ node off `ingest`'s EventBridge target, in Document ingestion group |
 | R3 | Security | OpenSearch Serverless (`oss`) collection's network policy (public vs. VPC/private endpoint) is not stated in the brief; official docs describe both options and note a collection's network access is a first-class security setting alongside encryption and data-access policy | https://docs.aws.amazon.com/opensearch-service/latest/developerguide/serverless-security.html ("a collection must have an assigned encryption key, network access settings, and a matching data access policy") | should | no new node (policy setting, not drawable); record chosen access mode under Decisions |
-| R4 | Security | Chat path (`lambda → bedrock`) has no Bedrock Guardrails; the lens explicitly calls out mitigating "risks of harmful outputs and excessive agency" and Guardrails' own documentation lists prompt-injection/jailbreak and harmful-content filtering as its purpose for chatbot applications | https://docs.aws.amazon.com/wellarchitected/latest/generative-ai-lens/generative-ai-lens.html (pillar summary: "Security: ... mitigate risks of harmful outputs and excessive agency"); https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html | should | none drawable today — brief's own Decisions already note Guardrails have no stencil/SVG; accept as a known deviation |
+| R4 | Security | Chat path (`runtime → bedrock`) has no Bedrock Guardrails; the lens explicitly calls out mitigating "risks of harmful outputs and excessive agency" and Guardrails' own documentation lists prompt-injection/jailbreak and harmful-content filtering as its purpose for chatbot applications | https://docs.aws.amazon.com/wellarchitected/latest/generative-ai-lens/generative-ai-lens.html (pillar summary: "Security: ... mitigate risks of harmful outputs and excessive agency"); https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html | should | none drawable today — brief's own Decisions already note Guardrails have no stencil/SVG; accept as a known deviation |
 
 Decisions: no *must* findings, so nothing was applied. R1–R4 **accepted for v1** and recorded under Decisions with their sources: WAF and the ingest DLQ are the first two additions for a production build; the OpenSearch Serverless network policy and Bedrock Guardrails are settings the picture cannot show.
 
@@ -87,7 +91,9 @@ Sources consulted (incl. no-finding):
 
 ## Decisions
 - OpenSearch uses the legacy stencil name `elasticsearch_service`; CloudWatch uses `cloudwatch_2`.
-- AgentCore Memory has no draw.io stencil: bundled SVG via `"image"`.
+- AgentCore Runtime and Memory have no draw.io stencil: bundled SVGs via `"image"`. The `bedrock_agentcore` badge stencil
+  renders blank in draw.io ≤ 26.x, so the builder draws that badge from the bundled official SVG (BADGE_IMAGE).
+- 2026-09-24 (v3): the chat agent moved from Lambda to AgentCore Runtime; ids `lambda` → `runtime`, contract regenerated.
 - Bedrock Guardrails / Knowledge Bases have no stencil and no bundled SVG, so they are not drawn.
 - Review R1 accepted for v1: no WAF in front of API Gateway (source: Generative AI Lens, SMB/DB knowledge worker co-pilot reference architecture).
 - Review R2 accepted for v1: EventBridge → ingest Lambda has no DLQ (source: aws-serverless skill, references/orchestration.md — "DLQs on all targets").

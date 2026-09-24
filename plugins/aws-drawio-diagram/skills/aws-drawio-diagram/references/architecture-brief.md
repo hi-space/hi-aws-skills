@@ -20,12 +20,13 @@ Phase 1, not a stylistic choice.
 Language: ko   <!-- the language the USER wrote the request in — the guide is written in it; service names stay English -->
 
 ## Components
-| id | Service (stencil) | Role in this system | Group |
-|---|---|---|---|
-| users | Users (`users`, resource) | People on the web app | outside |
-| cf | CloudFront (`cloudfront`) | CDN + TLS termination | Frontend |
-| lambda | Lambda (`lambda`) | Chat agent handler | Agent runtime |
-| memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Long-term memory | Agent runtime |
+| id | Service (stencil) | Role in this system | Group | Boundary |
+|---|---|---|---|---|
+| users | Users (`users`, resource) | People on the web app | outside | |
+| cf | CloudFront (`cloudfront`) | CDN + TLS termination | Frontend | |
+| lambda | Lambda (`lambda`) | Chat agent handler | Agent runtime | |
+| memory | Bedrock AgentCore Memory (image `Res_Amazon-Bedrock-AgentCore_Memory_48.svg`) | Long-term memory | Agent runtime | bedrock: Amazon Bedrock |
+| model | Bedrock (`bedrock`) — Claude | Foundation model | Agent runtime | bedrock |
 
 ## Relationships
 | # | From → To | What flows | Kind |
@@ -41,7 +42,7 @@ Language: ko   <!-- the language the USER wrote the request in — the guide is 
 2. …
 
 ## Groups (2–7, role-based)
-Frontend · API & Auth · Agent runtime · Foundation model · Observability · Knowledge · Document ingestion
+Frontend · API & Auth · Agent runtime · Observability · Knowledge · Document ingestion
 
 ## Checks
 - [ ] Every service in the request has a row in Components; every stencil name was looked up (SKILL.md § Icon lookup).
@@ -101,6 +102,18 @@ to respect the following, or the Drawer will run out of cells:
   them (see review-checklist.md § A) — they still belong in Flow. **Primary edges are never optional**, and
   neither is a component: a Drawer that cannot place one comes back to the Architect for a layout decision
   (more lanes, split by request path — from-source-code.md § 1), not a smaller architecture.
+- **Boundaries.** The optional `Boundary` column marks resources of one *platform* service that should share a
+  badge-titled box inside their group: Bedrock AgentCore (Runtime + Memory + Gateway), Glue (crawler + catalog), Step
+  Functions + its tasks, ECS/EKS cluster + services, IoT Core, SageMaker AI. **Amazon Bedrock (`bedrock`), Amazon Bedrock
+  AgentCore (`bedrock_agentcore`), Amazon SageMaker AI (`sagemaker`) and Amazon SageMaker Unified Studio (`sagemaker_2`)
+  are four different services — a model never shares a box with AgentCore Memory; the scaffold warns. Value = the badge stencil —
+  an official AWS group badge when one exists (`group_aws_step_functions_workflow`, `group_auto_scaling_group`,
+  `group_ec2_instance_contents`, `group_elastic_beanstalk`; see aws-icons-groups.md), else the service icon (`bedrock`,
+  `glue`, `ecs`) — optionally `bedrock: Amazon Bedrock` for the title. The box is drawn the way the official icon deck
+  draws groups: filled badge, border and title in the service's colour. Members must share a group; the box is drawn only when the
+  layout puts them side by side (the Drawer sees `hint: boundary … not drawn` otherwise). **Not for copies of the
+  same stencil** — three Lambdas are three roles or one node "Lambda (3 functions)", never a "Lambda" box; the
+  scaffold warns when a boundary's rows all use the same stencil.
 - **No abstract nodes.** A node is one AWS service/resource or one user/external system, drawn with its own
   icon. "Backend", "Agents", "Platform X" are groups or separate diagrams. Identical resources with identical
   neighbours may share one node with a count in the label ("DynamoDB (3 tables)").

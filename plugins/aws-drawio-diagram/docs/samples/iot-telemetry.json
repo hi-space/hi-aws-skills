@@ -121,19 +121,21 @@
     },
     {
       "id": "crawler",
-      "label": "Glue crawler",
+      "label": "crawler",
       "icon": "glue_crawlers",
       "col": 5,
       "lane": 0,
-      "group": "g_analytics"
+      "group": "g_analytics",
+      "boundary": "glue"
     },
     {
       "id": "catalog",
-      "label": "Glue Data Catalog",
+      "label": "Data Catalog",
       "icon": "glue_data_catalog",
       "col": 6,
       "lane": 0,
-      "group": "g_analytics"
+      "group": "g_analytics",
+      "boundary": "glue"
     },
     {
       "id": "athena",
@@ -251,5 +253,8 @@
       "num": 12,
       "label": "email / SMS"
     }
-  ]
+  ],
+  "boundaries": {
+    "glue": "AWS Glue"
+  }
 }

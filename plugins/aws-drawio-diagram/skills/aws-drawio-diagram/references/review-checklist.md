@@ -63,7 +63,10 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 - [ ] **Read order**: main request path runs left → right on one lane; auxiliary paths hang below (or above);
       the eye finds the entry point in the first second.
 - [ ] **Grouping**: 2–7 role groups, each titled, each with 1–4 icons; no group with more empty cells than
-      icons; no lonely icon floating in the cloud.
+      icons; no lonely icon floating in the cloud. Role groups are the official AWS Generic group (dashed grey,
+      no fill); a service boundary box appears only around ≥ 2 adjacent resources of one platform service, badge visible,
+      titled with the service name, its members' labels one line each — never around N copies of one stencil, and
+      never one box for two services (Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ SageMaker Unified Studio).
 - [ ] **Balance**: the cloud box has no empty quadrant larger than a group; the canvas hugs the content
       (roughly equal margins); no half-empty page.
 - [ ] **Edges**: every edge is straight or has one bend; fan-out bends are all on the same side of the source;
@@ -76,7 +79,8 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       `note: label dropped` on a dashed edge is allowed. A phrase the Drawer condensed still means what the
       Architect wrote (`StartExecution` → `start saga` yes; `token validation` → `—` no). Node labels ≤ 3 words.
 - [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
-      group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend.
+      group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend, the
+      a boundary's service colour (badge, border and title in the official AWS group look).
 - [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
 
 ## D. Correct as architecture (sanity re-check)
