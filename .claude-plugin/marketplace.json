@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders, plus the aws-blog-review pre-submission review skill), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills), plus demo-video-recorder (demo/LinkedIn videos of a web UI with Playwright and ffmpeg: in-page camera, story-scripted captions, highlight reels)."
   },
   "owner": {
     "name": "hi-space"
@@ -25,12 +25,17 @@
     {
       "name": "aws-tech-blog-writer",
       "source": "./plugins/aws-tech-blog-writer",
-      "description": "AWS Tech Blog (Korean) post writer: six stages with two parallel groups (research with diagrams, fact-check with lint), the draft written by a fresh subagent from a minimal packet, a literal-voice style pass (no metaphors, no agentless passives, noun-phrase headings), AWS-docs fact-check, and a Word (.docx) deliverable with colour-coded placeholders for what only the author knows."
+      "description": "AWS Tech Blog (Korean) post writer and reviewer. aws-tech-blog-writer: brief and fact base from the project sources, plan (approval gate), research with diagrams in parallel, the draft written by a fresh subagent from a minimal packet, then a hand-off to aws-blog-review. aws-blog-review: lint, AWS-docs fact-check with currency, and a first-reader story review in parallel, a findings report, one revision pass in the literal house voice (no metaphors, no agentless passives, noun-phrase headings, official names linked at first mention), and a Word (.docx) file named after the post with colour-coded placeholders for what only the author knows. Also reviews a finished draft sent as Markdown or Word."
     },
     {
       "name": "aws-workshop-studio",
       "source": "./plugins/aws-workshop-studio",
       "description": "Fork of workshop-scaffold 0.2.6, insight-first: generate a complete hands-on AWS workshop (quick-* VitePress site, scenario labs, datasets, persona review, participant walkthrough loop) from a topic, scenarios and target customer, with the architecture rationale (why this architecture, per-service value, before/after) rendered on the overview page and architecture diagrams drawn with aws-diagram-design. Standalone skills aws-fact-check and persona-review; commands /new-workshop, /workshop-check, /workshop-walkthrough."
+    },
+    {
+      "name": "demo-video-recorder",
+      "source": "./plugins/demo-video-recorder",
+      "description": "Demo / LinkedIn videos of a web UI on a headless Linux box: story script first, Playwright wall-clock recording with an in-page CSS camera (crisp zoom-ins), title card and captions burned from beats anchored to UI events, sped-up waits, highlight reel from several clips. Also captions user-made screen recordings (.mov). Not AWS-specific."
     }
   ]
 }
