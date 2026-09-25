@@ -2,21 +2,41 @@
 
 Two halves: what a caption says (the script) and how it is drawn (`edit_demo.py`). The look is fixed in the script constants so every clip of a post matches; change it there, not per clip. What the captions argue, and in which order, is decided in [story.md](story.md) first; this file is about the sentence.
 
+## Two kinds of video
+
+Decide which one you are cutting before the first beat; the beat shape differs.
+
+- **Argument video** (a post's thesis, an experiment, a before/after): a beat is one step of the argument. Say what happened, who decided, and what followed, with the number from this take that makes it checkable.
+- **Feature tour** (the user asks for "전체 기능 데모", every tab, a product walkthrough): a beat says **what the feature does for the user**. Measured values from the take ("12턴인데 $17.63", "84초, 툴 6번") are not the point and read as noise; drop them. A number stays only when it is the feature itself ("모델별 100만 토큰당 가격을 설정합니다"). Admin and settings screens (rates, menu visibility, connectors) are features too and get their own beat, not a pan past them.
+
+## Voice (user feedback 2026-09-25, overrides any example below)
+
+Every beat, title, subtitle and card row follows these rules. A reel that broke them was rejected whole and re-captioned.
+
+- **합니다체, plain description.** "모델 요율 탭에서 모델별 100만 토큰당 가격을 설정합니다". Not 한다체 headlines, not noun-phrase fragments.
+- **No em dash, no middle dot, no arrow** (U+2014, U+00B7, U+2192) in any caption, title or card. Join facts with a comma or 와/과/하고: "입력, 출력, 캐시 가격을 직접 넣거나 Price List에서 가져옵니다".
+- **Nothing that sounds generated.** No metaphors, no figurative headings, no rhetorical questions, no aphorisms of the form "A는 B가 아니라 C다", no translationese ("~에 의해", "~하는 것이 가능합니다", "~를 가지고 있습니다"). Adjectives the frame already shows are cut.
+- **No speed labels.** A sped-up piece carries an ordinary beat; never prefix ✗ "(4배속)". The viewer does not need the edit explained.
+- **No notes about the recording.** Never caption what was not done on camera (✗ "이 녹화에선 누르지 않았습니다"). Caption what the control does ("Create agent를 누르면 AgentCore에 harness가 배포됩니다") and tell the user in the chat report what was skipped and why.
+
 ## Writing a beat
 
-A beat is one step of the chapter's argument, not a description of the frame. The frame is where the viewer checks the sentence; the sentence says what the event means for the video's message.
+A beat is not a description of the frame. The frame is where the viewer checks the sentence; the sentence says what the event means (argument video) or what the feature is for (feature tour).
 
-- **Shape: event → decision → consequence, with the number.** "파지 직후 물체 낙하 → Laya가 retry_grasp 99.0% 선택", "사람 0.08 m · 기준 0.25 m 미만 → 모델과 무관하게 코드가 정지". Use `→` for the causal step and `·` to join two facts; both read at a glance.
-- **Name the actor that decided** (Laya, Bedrock, the agent, the code rule, the human), because the message is about who decides when. "로봇이 다시 잡습니다" says nothing; "Laya가 retry_grasp 99.0% 선택" does.
+| ✗ Reads the screen | ✓ Says what it is for |
+|---|---|
+| ✗ 설정 페이지가 열립니다 | ✓ 관리자는 Settings에서 사이드바 메뉴 노출 여부를 정합니다 |
+| ✗ 표가 보입니다 | ✓ 에이전트별로 턴, 사용자, 토큰, 모델 비용을 나눠 봅니다 |
+| ✗ 로봇이 물체를 다시 잡습니다 | ✓ 물체가 떨어지자 Laya가 retry_grasp를 99.0%로 선택합니다 |
+
+- **Name the actor** when the video is about who decides (Laya, Bedrock, the agent, the code rule, the human, the admin).
 - One sentence, ≤ 45 characters (Korean or English). Longer wraps to two lines and covers the evidence; split into two beats instead.
-- Plain statements. No metaphors, no figurative headings, no rhetorical questions, no adjectives that the number already says.
-- **Evidence in the frame, meaning in the sentence.** The anchor `at` is the second the event is visible (a tap, a status text, a panel, a number). If nothing in the frame changes at that second, there is no beat there; if the sentence cannot be checked against the frame or the log, drop the sentence.
-- Numbers come from **this take's** logs or UI, not from the post or an earlier run. A batch statistic or a caveat with no event of its own goes on a late summary shot (results table, wide shot) or on the summary card, never mid-action.
-- 4–15 beats per clip; a short piece at 4× speed may carry a single beat (`"(4배속) Agent가 턴마다 Gateway 도구로 상태 조회·스킬 실행"`). Fewer than 4 in a 1× clip of 30 s means silence; more than 15 means captions over the action.
-- The chapter's last beat is the **insight** (`"style": "insight"`): the chapter's answer to the message, in one sentence a viewer would repeat ("Laya 판단만으로 복구·완료 · Bedrock 호출 0회"). 1–2 per chapter; it is the sentence that later becomes a row on the summary card.
+- **Evidence in the frame.** The anchor `at` is the second the event is visible (a tap, a status text, a panel, a number). If nothing in the frame changes at that second, there is no beat there. If the take did something else than planned (a row that did not expand, a tool the agent did not call), rewrite the beat to what the frame shows.
+- Numbers, when used, come from **this take's** logs or UI, not from the post or an earlier run.
+- 4–15 beats per clip; a short sped-up piece may carry a single beat. Fewer than 4 in a 1× clip of 30 s means silence; more than 15 means captions over the action.
+- The chapter's last beat is the **insight** (`"style": "insight"`): the chapter's point in one 합니다체 sentence ("코드 배포 없이 에이전트를 만들고 수정합니다"). 1–2 per chapter; it later becomes a row on the summary card.
 - `"pos": "top"` when the lower third would sit on the evidence (a bottom table, a status bar).
-- **Title = the chapter's answer**, subtitle = the setting: `"title": "코드로 처리할 판단 · 사람 접근"`, `"subtitle": "Live · 작업 중 사람 손이 로봇에 다가옵니다"`. Not the scene name, not the page name. When a chapter is cut into several pieces, only the first piece has a title.
-- Speed pieces announce themselves: prefix `(4배속)` so the viewer does not read the speed as the system's.
+- **Title = the chapter's point**, subtitle = the setting, both under the voice rules: `"title": "04 코드 없이 에이전트를 만듭니다"`, `"subtitle": "Agent Harness, 모델, MCP, 스킬, Knowledge Base, 내장 툴"`. Not the scene name, not the page name. When a chapter is cut into several pieces, only the first piece has a title.
 
 ## How it is drawn (constants in `edit_demo.py`)
 

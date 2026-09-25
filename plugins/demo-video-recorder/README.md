@@ -6,7 +6,7 @@
 
 | 단계 | 도구 | 산출물 |
 |---|---|---|
-| 스토리 | `references/story.md` 순서로 직접 작성 | 메시지 한 문장 → 챕터(제목 = 그 챕터가 주는 답, 부제 = 상황) → `cards.json` → 챕터별 4–15개 비트(`scripts/<stem>.json`). 비트는 "사건 → 판단 주체 → 결과 + 숫자"이고 화면 묘사가 아님 |
+| 스토리 | `references/story.md` 순서로 직접 작성 | 메시지 한 문장 → 챕터(제목 = 그 챕터가 주는 답, 부제 = 상황) → `cards.json` → 챕터별 4–15개 비트(`scripts/<stem>.json`). 비트는 화면 묘사가 아니라 논지의 한 단계(사건, 판단 주체, 결과와 숫자)이거나, 기능 투어라면 그 기능이 하는 일. 자막은 합니다체이고 em dash, 가운뎃점, 화살표, 배속 표기, 촬영 사정 설명을 쓰지 않음 |
 | 녹화 | `node scripts/record_demo.mjs --url … --storyboard storyboard.mjs` | `raw/<stem>.webm` + `raw/<stem>.camlog.json` (모든 카메라 이동과 이벤트의 시각) |
 | 클립 | `python3 scripts/edit_demo.py clip raw/<stem>.webm --script scripts/<stem>.json` | `clips/<stem>.mp4` 1080p30, 타이틀 카드 + 자막, 대기 구간은 `speed` |
 | 표지 | `python3 scripts/make_cards.py cards.json --out clips` | `clips/card-intro.mp4`(메시지·맥락), `clips/card-summary.mp4`(챕터별 답과 숫자), 선택적 챕터 카드. PNG 미리보기 포함 |
@@ -43,7 +43,7 @@ ln -s "$PWD/hi-aws-skills/plugins/demo-video-recorder/skills/recording-demo-vide
 
 - [SKILL.md](skills/recording-demo-videos/SKILL.md) — 9단계 파이프라인, 빠른 참조, 흔한 실수
 - [references/story.md](skills/recording-demo-videos/references/story.md) — 메시지 → 챕터 → 비트 → 카드. 챕터 순서·중복 제거·길이 예산 규칙, `cards.json` 형식
-- [references/caption-style.md](skills/recording-demo-videos/references/caption-style.md) — 자막 한 문장의 규칙(사건 → 판단 주체 → 결과, 45자, 비유 없음)과 글꼴·위치·색·타이밍 상수
+- [references/caption-style.md](skills/recording-demo-videos/references/caption-style.md) — 자막 한 문장의 규칙(논지 영상과 기능 투어의 차이, 합니다체, 금지 기호와 배속 표기, 45자, 비유와 번역체 없음)과 글꼴·위치·색·타이밍 상수
 - [references/reel-manifest.md](skills/recording-demo-videos/references/reel-manifest.md) — 릴 매니페스트 형식, 구간별 `fade_in`/`fade_out`
 - `scripts/storyboard.example.mjs` — 스토리보드 예시(고정 대기 + 이벤트 감지 루프)
 

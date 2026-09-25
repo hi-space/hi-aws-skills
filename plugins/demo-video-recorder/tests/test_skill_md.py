@@ -87,3 +87,23 @@ def test_node_scripts_parse():
 def test_recorder_warns_when_a_selector_matches_nothing():
     src = (SKILL / "scripts" / "record_demo.mjs").read_text()
     assert "missing" in src and "console.warn" in src, "a silent no-op focus cost a whole take; warn and mark the camlog"
+
+
+def test_caption_voice_rules_and_examples_obey_them():
+    """User feedback 2026-09-25: a feature-tour reel was rejected for machine-sounding captions.
+
+    The references must state the rules, and every Korean example they give (outside lines
+    marked as a bad example with ✗) must itself follow them, or the next reel copies the example.
+    """
+    refs = SKILL / "references"
+    style = (refs / "caption-style.md").read_text()
+    for must in ("합니다체", "U+2014", "U+00B7", "U+2192", "배속", "누르지 않았습니다", "Feature tour"):
+        assert must in style, f"caption-style.md must state the voice rule keyed by {must!r}"
+    hangul = re.compile(r"[가-힣]")
+    for name in ("caption-style.md", "story.md"):
+        for n, line in enumerate((refs / name).read_text().splitlines(), 1):
+            if not hangul.search(line) or "✗" in line:
+                continue
+            for ch in ("—", "·", "→"):
+                assert ch not in line, f"{name}:{n} Korean example uses {ch!r}: {line.strip()}"
+            assert "배속)" not in line, f"{name}:{n} example carries a speed label: {line.strip()}"

@@ -16,7 +16,7 @@ The raw input can also be a screen recording (.mov/.mp4) with no camlog: then ev
 of that file. Crop black bars first with ffmpeg (-vf crop=...) so the frame is the UI only.
 
 Script JSON:
-  {"title": "03 · 판단의 전환", "subtitle": "…", "start": null, "end": null,   # optional "tag": persistent corner label, off by default
+  {"title": "03 판단을 넘깁니다", "subtitle": "…", "start": null, "end": null,   # optional "tag": persistent corner label, off by default
    "speed": 1,                                # >1 plays the whole window faster (waits, agent turns); "at" stays raw seconds
    "beats": [
      {"at": "shot:stage", "text": "Laya가 다음 스킬을 판단합니다", "dur": 5},
