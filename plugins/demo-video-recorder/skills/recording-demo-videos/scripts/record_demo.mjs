@@ -2,7 +2,7 @@
 /**
  * Record a web UI with Playwright while an in-page "virtual camera" pans and zooms.
  *
- *   node record_demo.mjs --url https://site --storyboard ./storyboard.mjs --name intro [--out raw] [--max-seconds 150]
+ *   node record_demo.mjs --url https://site --storyboard ./storyboard.mjs --name intro [--out raw] [--max-seconds 150] [--layout 1280x720]
  *
  * Output: <out>/<name>.webm (1920x1080, wall-clock video) + <out>/<name>.camlog.json (every shot with
  * its time and label, used by edit_demo.py to place captions).
@@ -10,6 +10,10 @@
  * The camera is a CSS transform on <body> (scale + translate, 1.4 s eased transition) applied while
  * Playwright records the full 1920x1080 viewport. Cropping the recording afterwards is blurry; the
  * in-page transform re-rasterizes text at the new scale so zoomed shots stay crisp.
+ *
+ * --layout WxH (16:9, e.g. 1280x720): the page is laid out at that CSS size and zoomed to fill 1080p, for a UI
+ * that fits one screen and should read large. Done with `html { zoom }`, not a smaller viewport: recordVideo
+ * pads a small viewport top-left with grey. The camera math runs in layout px; selectors and pads are unchanged.
  *
  * Playwright is resolved from --playwright-root / $PLAYWRIGHT_ROOT / cwd (a dir with node_modules).
  */
@@ -23,10 +27,13 @@ const option = (name, fallback) => { const i = argv.indexOf(name); return i < 0 
 
 const siteUrl = option('--url', process.env.DEMO_URL);
 const storyboardPath = option('--storyboard');
-if (!siteUrl || !storyboardPath) { console.error('usage: record_demo.mjs --url <site> --storyboard <file.mjs> [--name n] [--out dir] [--max-seconds n]'); process.exit(2); }
+if (!siteUrl || !storyboardPath) { console.error('usage: record_demo.mjs --url <site> --storyboard <file.mjs> [--name n] [--out dir] [--max-seconds n] [--layout 1280x720]'); process.exit(2); }
 const name = option('--name', path.basename(storyboardPath, path.extname(storyboardPath)));
 const outDir = path.resolve(option('--out', 'raw'));
 const maxSeconds = Number(option('--max-seconds', 150));
+const layout = option('--layout', '1920x1080');
+const [LW, LH] = layout.split('x').map(Number);
+if (!(LW > 0 && LH > 0) || Math.abs(LW / LH - 16 / 9) > 0.01) { console.error(`--layout must be 16:9 (1920x1080 or 1280x720), got ${layout}`); process.exit(2); }
 await fs.mkdir(outDir, { recursive: true });
 
 const pwRoot = path.resolve(option('--playwright-root', process.env.PLAYWRIGHT_ROOT || process.cwd()));
@@ -35,6 +42,7 @@ const { chromium } = createRequire(path.join(pwRoot, 'package.json'))('playwrigh
 // Output is always 1920x1080 and the viewport must be exactly that: Playwright's recordVideo captures CSS
 // pixels, so a smaller viewport with deviceScaleFactor > 1 lands top-left in the frame with blank margins.
 const W = 1920, H = 1080;
+const Z = W / LW;  // html zoom; 1 for the default layout
 
 // ---------------------------------------------------------------- camera (runs inside the page)
 const CAMERA_JS = `
@@ -43,15 +51,19 @@ const CAMERA_JS = `
   const style = document.createElement('style');
   style.textContent = 'html{overflow:hidden!important;background:#0b0f14}body{overflow:visible!important;transform-origin:0 0;transition:transform var(--cam-dur,1.4s) cubic-bezier(.5,0,.15,1);will-change:transform}::-webkit-scrollbar{display:none}';
   document.head.appendChild(style);
-  const W = ${W}, H = ${H};
+  // Layout px: the frame is W x H visual px, but with html zoom Z the page is laid out at W/Z x H/Z and every
+  // camera number (rects, translate, pad) lives in that space. getBoundingClientRect returns visual px (already
+  // multiplied by Z), so divide before inverting the body transform.
+  const Z = ${Z}, W = ${W} / Z, H = ${H} / Z;
+  if (Z !== 1) document.documentElement.style.zoom = String(Z);
   const state = { x: 0, y: 0, k: 1 };
   const pageSize = () => ({ w: Math.max(document.body.offsetWidth, W), h: Math.max(document.body.offsetTop + document.body.offsetHeight, H) });
   // Element rect in untransformed page coordinates: invert the current body transform and fold in scroll,
   // otherwise the second shot measures a rect that is already scaled by the first.
   const untransformed = el => {
-    const r = el.getBoundingClientRect(), sx = window.scrollX, sy = window.scrollY;
+    const r = el.getBoundingClientRect(), sx = window.scrollX / Z, sy = window.scrollY / Z;
     const m = new DOMMatrix(getComputedStyle(document.body).transform).inverse();
-    const a = m.transformPoint(new DOMPoint(r.left + sx, r.top + sy)), b = m.transformPoint(new DOMPoint(r.right + sx, r.bottom + sy));
+    const a = m.transformPoint(new DOMPoint(r.left / Z + sx, r.top / Z + sy)), b = m.transformPoint(new DOMPoint(r.right / Z + sx, r.bottom / Z + sy));
     return { x: a.x, y: a.y, w: b.x - a.x, h: b.y - a.y };
   };
   const apply = (x, y, k, dur) => {
@@ -139,7 +151,7 @@ try {
   const target = path.join(outDir, `${name}.webm`);
   await fs.copyFile(recorded, target);
   await fs.unlink(recorded).catch(() => {});
-  await fs.writeFile(path.join(outDir, `${name}.camlog.json`), JSON.stringify({ name, url: siteUrl, ok, errors, duration_s: rec.now(), log: rec.log }, null, 2));
+  await fs.writeFile(path.join(outDir, `${name}.camlog.json`), JSON.stringify({ name, url: siteUrl, layout, ok, errors, duration_s: rec.now(), log: rec.log }, null, 2));
   await browser.close();
   console.log(JSON.stringify({ video: target, ok, seconds: rec.now(), errors: errors.length }));
 }

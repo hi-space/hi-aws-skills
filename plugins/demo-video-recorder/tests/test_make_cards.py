@@ -14,19 +14,28 @@ needs_ffmpeg = pytest.mark.skipif(shutil.which("ffmpeg") is None, reason="ffmpeg
 
 SPEC = {
     "card-intro": {"seconds": 3, "lines": [
-        ["kicker", "Physical AI · 실험", "accent"],
-        ["title", "System One 모델을 로봇 제어의"],
-        ["title", "어디에, 어떻게 쓸 것인가"],
+        ["kicker", "Agent Platform 데모", "accent"],
+        ["title", "코드 없이 에이전트를 만들고"],
+        ["title", "한 화면에서 운영합니다"],
         ["gap"],
-        ["row", "Jev: typed 질문 → 보정된 확률, 한 번의 forward pass"],
-        ["row", "Laya: 오픈 가중치 → 로봇 state로 fine-tune, 15% → 96%", "accent"],
+        ["row", "Registry에서 에이전트와 스킬을 찾아 바로 실행해 봅니다"],
+        ["row", "비용과 사용량, 가드레일을 한 화면에서 확인합니다", "accent"],
     ]},
     "card-summary": {"seconds": 2, "lines": [
         ["kicker", "정리", "accent"],
-        ["row", "코드로 처리할 판단 — 안전 정지", "warn"],
-        ["row", "LLM Agent에 넘길 판단 — 복구 전략", "#b39cff"],
+        ["row", "에이전트는 코드 배포 없이 만들고 수정합니다", "warn"],
+        ["row", "모델과 프롬프트는 대화마다 바꿉니다", "#b39cff"],
     ]},
 }
+
+
+def test_fixture_obeys_the_caption_voice_rules():
+    """The fixture is the example the next reel copies; it must follow references/script.md itself."""
+    for card in SPEC.values():
+        for line in card["lines"]:
+            text = line[1] if len(line) > 1 else ""
+            for ch in ("—", "·", "→"):
+                assert ch not in text, f"fixture line uses {ch!r}: {text}"
 
 
 def probe(path: Path, entries: str) -> str:

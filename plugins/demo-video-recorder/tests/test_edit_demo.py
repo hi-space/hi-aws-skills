@@ -58,8 +58,8 @@ def make_video(path: Path, seconds: float, size: str = "1920x1080") -> Path:
 
 @pytest.fixture
 def raw(tmp_path):
-    """A 6 s webm with a camlog beside it, like record_demo.mjs writes."""
-    video = make_video(tmp_path / "take.webm", 6)
+    """A 10 s webm with a camlog beside it, like record_demo.mjs writes (long enough for beats after the 4.2 s title)."""
+    video = make_video(tmp_path / "take.webm", 10)
     (tmp_path / "take.camlog.json").write_text(json.dumps({"log": [
         {"t": 0.5, "kind": "shot", "key": "hero", "label": "wide"},
         {"t": 2.0, "kind": "run_clicked"},
@@ -99,12 +99,23 @@ def test_clip_removes_its_temp_dir_and_reports_caption_count(raw, tmp_path, priv
 
 
 @needs_ffmpeg
+def test_clip_default_tempo_is_1_25x(raw, tmp_path, private_tmp):
+    """1.2.0: every clip plays at 1.25x unless the script says otherwise; 10 s of raw footage becomes 8 s."""
+    script = tmp_path / "story.json"
+    script.write_text(json.dumps({"start": 0, "beats": [{"at": 4.0, "text": "late"}]}))
+    out = tmp_path / "default.mp4"
+    edit_demo.build_clip(raw, out, None, None, None, None, True, None, script)
+    assert abs(edit_demo.probe_duration(out) - 8.0) < 0.3
+    assert edit_demo.DEFAULT_SPEED == 1.25
+
+
+@needs_ffmpeg
 def test_clip_speed_shortens_the_output_and_keeps_raw_second_anchors(raw, tmp_path, private_tmp):
     script = tmp_path / "story.json"
     script.write_text(json.dumps({"speed": 2, "start": 0, "beats": [{"at": 4.0, "text": "late"}]}))
     out = tmp_path / "fast.mp4"
     edit_demo.build_clip(raw, out, None, None, None, None, True, None, script)
-    assert abs(edit_demo.probe_duration(out) - 3.0) < 0.3
+    assert abs(edit_demo.probe_duration(out) - 5.0) < 0.3
 
 
 @needs_ffmpeg

@@ -5,19 +5,27 @@
   python3 edit_demo.py clip raw/intro.webm --title "…" --subtitle "…"      # no story: shot labels as captions
   python3 edit_demo.py reel reel.json --out reel.mp4
 
-`clip` trims the page-load lead-in, burns a title card and lower-third captions, and encodes H.264
-1080p30 + silent AAC. With `--script` the captions are the story beats of a script JSON, each anchored to
-a camlog event (see script_time). Without a script the captions fall back to the camera shot labels,
+`clip` trims the page-load lead-in, burns a title card and lower-third captions, plays the take at 1.25x
+(DEFAULT_SPEED; set "speed" in the script to change it, e.g. 4 for a waiting stretch, 1 for real time) and
+encodes H.264 1080p30 + silent AAC. With `--script` the captions are the beats of a script JSON, each anchored
+to a camlog event (see script_time). Without a script the captions fall back to the camera shot labels,
 which describe where the camera looks, not what the viewer should understand.
 `reel` concatenates trimmed windows from several finished clips into one highlight video.
 Nothing about the recorded UI is altered; only overlays are added. Temp files are removed when each command ends.
+
+Look (fixed here so every clip of a set matches; change the constants, re-run every clip):
+  title      bold 58 px at x 96, y h-260, 0.2-4.2 s     subtitle  regular 30 px at y h-170, 0.5-4.2 s
+  beat       regular 32 px at x 96, y h-150 (y 120 with "pos": "top"), dark box 0x0b0f14@0.72, border 18
+  insight    bold 34 px, same place, blue box 0x1f6feb@0.82        tag  mono 22 px top-right (off unless --tag)
+  every caption fades 0.35 s in and out; one caption at a time; a beat never starts under the title card
+  fonts: DEMO_FONT_BOLD / DEMO_FONT_REGULAR / DEMO_FONT_MONO env, else Nanum, else fc-match (Korean needs a CJK font)
 
 The raw input can also be a screen recording (.mov/.mp4) with no camlog: then every beat "at" is raw seconds
 of that file. Crop black bars first with ffmpeg (-vf crop=...) so the frame is the UI only.
 
 Script JSON:
   {"title": "03 판단을 넘깁니다", "subtitle": "…", "start": null, "end": null,   # optional "tag": persistent corner label, off by default
-   "speed": 1,                                # >1 plays the whole window faster (waits, agent turns); "at" stays raw seconds
+   "speed": 1.25,                             # default 1.25; 4 for waits (agent turns, cloud calls); "at" stays raw seconds
    "beats": [
      {"at": "shot:stage", "text": "Laya가 다음 스킬을 판단합니다", "dur": 5},
      {"at": "caption:System 2에 복구", "offset": 0.5, "text": "확률 0.95인데도 규칙이 이관합니다"},
@@ -56,6 +64,7 @@ FONT_BOLD = _font("DEMO_FONT_BOLD", "/usr/share/fonts/truetype/nanum/NanumSquare
 FONT_REG = _font("DEMO_FONT_REGULAR", "/usr/share/fonts/truetype/nanum/NanumSquareR.ttf", "sans")
 FONT_MONO = _font("DEMO_FONT_MONO", "/usr/share/fonts/truetype/nanum/NanumGothicCoding.ttf", "monospace")
 W, H, FPS = 1920, 1080, 30
+DEFAULT_SPEED = 1.25  # a demo at real time drags; 1.25x reads as a confident pace without looking sped up
 
 
 def run(cmd: list[str]) -> None:
@@ -126,7 +135,7 @@ def build_clip(raw: Path, out: Path, title: str | None, subtitle: str | None, st
     duration = probe_duration(raw)
     if end is None:
         end = duration
-    speed = float(story.get("speed", 1)) if story else 1.0  # >1 plays the window faster; beat "at" stays raw seconds
+    speed = float(story.get("speed", DEFAULT_SPEED)) if story else DEFAULT_SPEED  # beat "at" stays raw seconds
     with tempfile.TemporaryDirectory(prefix="edit-") as tmp_name:  # drawtext files; removed when the encode is done
         tmp = Path(tmp_name)
         _encode_clip(raw, out, title, subtitle, tag, start, end, captions, story, log, shots, speed, tmp)

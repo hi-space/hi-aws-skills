@@ -6,8 +6,8 @@
 cards.json: {"card-intro": {"seconds": 8, "lines": [[kind, text, colour?], ...]}, "card-summary": {...}}
   kind    kicker (small bold label above the title) | title (one line each) | row (bullet line) | gap (spacer)
   colour  role name or "#rrggbb"; roles: fg (default) dim accent alt warn
-Cards are silent, fade in/out 0.5 s, and drop into a reel manifest like any other clip. Every sentence on a card
-comes from the post or the story's message (references/story.md); a card is not a place for new claims.
+Cards are silent, fade in/out 0.5 s, and drop into a reel manifest like any other clip. Intro card = the message and
+what the demo shows, chapter card = one chapter title, summary card = take home messages (references/script.md).
 Fonts: DEMO_FONT_BOLD / DEMO_FONT_REGULAR env, else Nanum, else fc-match (same rule as edit_demo.py).
 """
 from __future__ import annotations
