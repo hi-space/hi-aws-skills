@@ -324,7 +324,8 @@ def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
     def container_hit(box):
         for k in containers:
             gx, gy, gw, gh = geo[k]
-            kind = _hits_container(box, gx, gy, gw, gh, bool((cells[k].get("value") or "").strip()))
+            titled = bool((cells[k].get("value") or "").strip()) or f"{k}__title" in cells   # title on the cell or drawn over a line
+            kind = _hits_container(box, gx, gy, gw, gh, titled)
             if kind:
                 return kind, k
         return None, None

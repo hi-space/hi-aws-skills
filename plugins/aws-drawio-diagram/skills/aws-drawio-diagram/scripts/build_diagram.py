@@ -81,14 +81,15 @@ LANE0, LANE_PITCH = 236, 142
 GROUP_HALF_W, GROUP_GAP = 80, 64
 GROUP_ABOVE_PAD = 14                                     # px between the title band and the first icon (no boundary in the group)
 GROUP_BELOW_PAD = 8                                      # px between the tallest last-lane label and the card's bottom border
-ROW_CLEAR = 24                                           # px between two cards in adjacent group rows — the lane pitch stretches to keep it
+ROW_CLEAR = 36                                           # px between two cards in adjacent group rows (a one-line edge label + 4 px each side fits) — the lane pitch stretches to keep it
 CLOUD_PAD = 28
 OUTSIDE_GAP = 44                                         # px: users / on-prem sit this much further from the cloud than the grid says,
                                                          # so the edge into the cloud has a 121 px pocket for its text (14 characters)
 # Edge text (the brief's *What flows* phrase): 13 pt, 7.2 px per character + 2 × 6 px padding, EDGE_LINE_H px per
 # line, at most LABEL_MAX_LINES lines of LABEL_MAX_LINE_CHARS characters; the builder slides it along the edge in
-# 1/20 steps and keeps LABEL_SLACK_PX from anything it must not touch. Keep in step with validate_drawio.
+# 1/20 steps and keeps LABEL_SLACK_PX / 2 from icons, other labels and lines, LABEL_BORDER_SLACK_PX / 2 from borders. Keep in step with validate_drawio.
 LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_SLACK_PX = 7.2, 6, 4
+LABEL_BORDER_SLACK_PX = 8                                # px: an edge label keeps 4 px (half of this) from every card / cloud border and title band
 EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 16, 3, 20
 LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
 TITLE_BAND = 32                                          # px: a container's title row (15 pt bold + spacingTop) — no edge label sits on it (validate_drawio)
@@ -168,9 +169,14 @@ def attr(value: str) -> str:
 
 
 # ---- edge text ---------------------------------------------------------------------------------
+def text_px(text: str, size: int) -> float:
+    """Rough width of bold text: 0.55 × size per Latin character, a full em per CJK character."""
+    return sum((1.0 if ord(ch) > 0x2E7F else 0.55) * size for ch in text)
+
+
 def chars_that_fit(px: float) -> int:
     """Characters of 11 pt text that fit in `px` pixels with the label's padding and the slide slack."""
-    return max(0, int((px - 2 * LABEL_PAD_PX - LABEL_SLACK_PX) // LABEL_CHAR_PX))
+    return max(0, int((px - 2 * LABEL_PAD_PX - LABEL_BORDER_SLACK_PX) // LABEL_CHAR_PX))
 
 
 def wrap_lines(text: str, width: int) -> list[str] | None:
@@ -252,7 +258,11 @@ class Builder:
         self.nodes = {n["id"]: n for n in spec.get("nodes", [])}
         self.groups = {g["id"]: g for g in spec.get("groups", [])}
         self._check()
-        self._boundary_gids = {b["gid"] for b in boundary_plan(spec, index)[0].values()}
+        drawn_boundaries = boundary_plan(spec, index)[0]
+        self._boundary_gids = {b["gid"] for b in drawn_boundaries.values()}
+        self._boundary_last_lane = {}                          # gid -> lowest lane a drawn boundary in it reaches
+        for b in drawn_boundaries.values():
+            self._boundary_last_lane[b["gid"]] = max(self._boundary_last_lane.get(b["gid"], -1), b["l1"])
         self.row_breaks = self._row_breaks()
         self.row_extra = self._row_extra()
 
@@ -293,7 +303,10 @@ class Builder:
         so a label background never touches the card's bottom border. One line when no node sits on that lane."""
         last = max(self.groups[gid]["lanes"])
         heights = [self.label_h(n) for n in self.nodes.values() if n.get("group") == gid and n["lane"] == last]
-        return (max(heights) if heights else LABEL_TOP_PAD + LABEL_LINE_H) + GROUP_BELOW_PAD
+        below = (max(heights) if heights else LABEL_TOP_PAD + LABEL_LINE_H) + GROUP_BELOW_PAD
+        if self._boundary_last_lane.get(gid) == last:          # a boundary box ends here: keep it BOUNDARY_INSET off the card border
+            below = max(below, LABEL_TOP_PAD + LABEL_LINE_H + BOUNDARY_BELOW + BOUNDARY_INSET)
+        return below
 
     def _row_extra(self) -> dict[int, int]:
         """Extra pixels added to the lane pitch at every group-row break so the cards above and below the break are
@@ -538,16 +551,19 @@ class Builder:
         return [(a[0], a[1], b[0], b[1]) for a, b in zip(path, path[1:])]
 
     @staticmethod
-    def box_is_clear(box, borders, obstacles, segments, slack=LABEL_SLACK_PX) -> bool:
-        """No container border or title row under the box, none of the `obstacles` boxes (icons with their labels,
-        other edge labels) overlapping it, none of the `segments` (edge legs) running through it — with `slack`
-        pixels to spare in each direction (slack / 2 per side), so the validator's exact check agrees after rounding."""
+    def box_is_clear(box, borders, obstacles, segments, slack=LABEL_SLACK_PX, border_slack=LABEL_BORDER_SLACK_PX) -> bool:
+        """No container border or title row under the box (with `border_slack` / 2 px to spare on each side), none of
+        the `obstacles` boxes (icons with their labels, other edge labels) overlapping it, none of the `segments`
+        (edge legs) running through it — with `slack` / 2 px to spare per side, so the validator's exact check agrees
+        after rounding."""
         s = slack / 2
         bx = (box[0] - s, box[1] - s, box[2] + s, box[3] + s)
+        b = border_slack / 2
+        bb = (box[0] - b, box[1] - b, box[2] + b, box[3] + b)
         for gx, gy, gw, gh in borders:
-            hit_v = any(bx[0] <= x <= bx[2] for x in (gx, gx + gw)) and bx[1] < gy + gh and bx[3] > gy
-            hit_h = any(bx[1] <= y <= bx[3] for y in (gy, gy + gh)) and bx[0] < gx + gw and bx[2] > gx
-            on_title = bx[0] < gx + gw and bx[2] > gx and bx[1] < gy + TITLE_BAND and bx[3] > gy
+            hit_v = any(bb[0] < x < bb[2] for x in (gx, gx + gw)) and bb[1] < gy + gh and bb[3] > gy
+            hit_h = any(bb[1] < y < bb[3] for y in (gy, gy + gh)) and bb[0] < gx + gw and bb[2] > gx
+            on_title = bb[0] < gx + gw and bb[2] > gx and bb[1] < gy + TITLE_BAND and bb[3] > gy
             if hit_v or hit_h or on_title:
                 return False
         for o in obstacles:
@@ -690,10 +706,43 @@ class Builder:
                         "verticalAlign=top;align=left;spacingLeft=30;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;"
                         "strokeColor=#232F3E;fontColor=#232F3E;fillColor=none;container=1;dropTarget=1;", *cloud)
         ox, oy = (cloud[0], cloud[1]) if cloud else (0, 0)
-        gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=15;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;"
-                  "spacingTop=4;container=1;dropTarget=1;")
+
+        # geometry of every edge first: group titles keep off the lines, and the text of one edge must not sit on the
+        # line of another
+        offs = self.side_offsets()                              # raises on an overcrowded or mixed side
+        geom = []
+        for i, e in enumerate(edges, 1):
+            eid = e.get("id", f"e{i}")
+            d, exit_p, entry_p, kind = self.edge_geometry(e, offs[eid])
+            geom.append((eid, e, d, exit_p, entry_p, kind, self.edge_path(e, d, kind, node_xy, label_h, offs[eid])))
+        all_segments = [seg for g in geom for seg in self.segments(g[6])]
+
+        # A group's title never sits under a line. A vertical line through the title band (an edge into or out of the
+        # first lane's icon) pushes the title to the right of it when the title still fits inside the card; when it
+        # does not (a one-column card with a long title), the title is drawn last, over the line, on a patch of the
+        # card's colour — legible, and noted so the author can rename the group or move the node.
+        title_left: dict[str, int] = {}
+        overlay_titles: list[tuple[str, str, int, int, float]] = []   # (gid, title, x, y, width)
+        for gid, (gx, gy, gw, gh) in rects.items():
+            title = self.groups[gid]["label"]
+            tw = text_px(title, 15)
+            xs = [x1 for x1, y1, x2, y2 in all_segments
+                  if x1 == x2 and gx < x1 < gx + gw and min(y1, y2) < gy + TITLE_BAND and max(y1, y2) > gy]
+            title_left[gid] = 12
+            if xs and 12 + tw + LABEL_SLACK_PX > min(xs) - gx:
+                shifted = int(max(xs) - gx) + 8
+                if shifted + tw + 12 <= gw:
+                    title_left[gid] = shifted
+                else:
+                    overlay_titles.append((gid, title, gx + 8, gy + 2, tw + 8))
+                    self.notes.append(f"group '{gid}': title '{title}' is crossed by a line at its first column and does not fit "
+                                      f"beside it — drawn over the line; rename the group (≤ {chars_that_fit(min(xs) - gx - 8)} "
+                                      "characters fit left of the line) or move the node so the line enters from the side")
         for gid, (x, y, w, h) in rects.items():
-            self.vertex(gid, self.groups[gid]["label"], gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
+            gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=15;fontStyle=1;verticalAlign=top;align=left;"
+                      f"spacingLeft={title_left[gid]};spacingTop=4;container=1;dropTarget=1;")
+            value = "" if any(o[0] == gid for o in overlay_titles) else self.groups[gid]["label"]
+            self.vertex(gid, value, gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
 
         # service boundaries: a badge-titled box inside the role group around members that landed adjacent
         boundaries, _ = boundary_plan(spec, self.index)
@@ -744,7 +793,6 @@ class Builder:
                              f"shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.{b['name']};awsBadge=1;")
                 self.vertex(f"{bid}_badge", "", badge, 0, 0, BADGE_PX, BADGE_PX, bid)
 
-        offs = self.side_offsets()                              # raises on an overcrowded or mixed side
         for nid, n in self.nodes.items():
             x, y = node_xy[nid]
             parent = parent_of.get(nid) or n.get("group") or "1"
@@ -761,12 +809,6 @@ class Builder:
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
                      f"fontFamily={font};fontSize=13;fontColor=#232F3E;endArrow=block;endFill=1;")
-        # geometry of every edge first: the text of one edge must not sit on the line of another
-        geom = []
-        for i, e in enumerate(edges, 1):
-            eid = e.get("id", f"e{i}")
-            d, exit_p, entry_p, kind = self.edge_geometry(e, offs[eid])
-            geom.append((eid, e, d, exit_p, entry_p, kind, self.edge_path(e, d, kind, node_xy, label_h, offs[eid])))
         icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()]
         # then the text — the brief's *What flows* phrase — solid (primary) edges first so they get the room
         placed: dict[str, tuple] = {}
@@ -827,6 +869,12 @@ class Builder:
             self.cells.append(
                 f'<mxCell id="{eid}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
                 f'{geo}</mxCell>')
+
+        for gid, title, tx, ty, tw in overlay_titles:           # after the edges, so the patch covers the line
+            self.vertex(f"{gid}__title", title,
+                        f"text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;spacingLeft=4;fontFamily={font};fontSize=15;"
+                        f"fontStyle=1;fontColor=#232F3E;labelBackgroundColor={GROUP_FILL};",
+                        tx, ty, int(tw), 24)
 
         name = spec.get("page", spec.get("title", "Page-1"))
         return ('<mxfile host="app.diagrams.net">'

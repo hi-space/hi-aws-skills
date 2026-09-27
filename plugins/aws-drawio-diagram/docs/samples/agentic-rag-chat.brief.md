@@ -28,7 +28,7 @@ Language: ko
 | 1 | users → cf | HTTPS | sync |
 | 2 | cf → s3web | static assets | sync |
 | 3 | cf → apigw | /api calls | sync |
-| 4 | apigw → cognito | token validation | aux (dashed) |
+| 4 | apigw → cognito | validate token | aux (dashed) |
 | 5 | apigw → runtime | invoke | sync |
 | 6 | runtime → memory | read/write memory | sync |
 | 7 | runtime → bedrock | LLM prompt | sync |

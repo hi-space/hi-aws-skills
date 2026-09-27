@@ -37,7 +37,7 @@ Language: ko
 | 10 | sns → customer | email / push | async (dashed) |
 | 11 | apigw → cw | metrics, logs | aux (dashed) |
 | 12 | ddb → s3 | PITR export | aux (dashed) |
-| 13 | sqs → dlq | messages that exceed `maxReceiveCount` | aux (dashed) |
+| 13 | sqs → dlq | redrive | aux (dashed) |
 
 ## Flow
 1. The mobile app calls API Gateway over HTTPS; Cognito validates the token.

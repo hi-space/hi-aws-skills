@@ -38,7 +38,7 @@ Step Functions — 흐르고, 데이터는 DynamoDB(주문), S3(보관), 고객�
 12. **DynamoDB → S3** — 주기적인 point-in-time export로 orders 테이블을 S3에 보관한다. 이 export는 테이블에
     point-in-time recovery가 켜져 있어야 한다(그림이 보여줄 수 없는 테이블 설정). 점선·보조. (라벨 `PITR export`)
 13. **SQS → SQS (DLQ)** — `maxReceiveCount`를 넘겨 계속 실패하는 메시지는 무한 재시도 대신 dead-letter 큐로 옮긴다.
-    Architecture review R1로 추가되었다. 점선·보조. (라벨 `messages that exceed maxReceiveCount`)
+    Architecture review R1로 추가되었다. 점선·보조. (라벨 `redrive`)
 
 ## 서비스
 | 서비스 | 이 시스템에서의 역할 | 비고 |

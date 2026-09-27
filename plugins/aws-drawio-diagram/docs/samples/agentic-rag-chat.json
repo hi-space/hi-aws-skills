@@ -213,7 +213,7 @@
       "to": "cognito",
       "dashed": true,
       "num": 4,
-      "label": "token validation"
+      "label": "validate token"
     },
     {
       "from": "apigw",

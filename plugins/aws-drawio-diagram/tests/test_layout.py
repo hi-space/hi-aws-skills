@@ -127,7 +127,7 @@ def test_scaffold_reads_a_brief_into_a_logical_spec():
     # the edge text is the What flows phrase, passed through verbatim (backticks stripped); the builder wraps it
     assert labels[("mobile", "apigw")] == "order requests" and labels[("sfn", "sns")] == "post status"
     assert labels[("sfn", "payment")] == "task invoke"
-    assert labels[("sqs", "dlq")] == "messages that exceed maxReceiveCount"
+    assert labels[("sqs", "dlq")] == "redrive"
     # a brief still carrying the 1.4 "Label" column: the column is ignored and named in a warning
     old = brief.replace("| # | From → To | What flows | Kind |", "| # | From → To | What flows | Kind | Label |").replace(
         "| 1 | mobile → apigw | order requests | sync |", "| 1 | mobile → apigw | order requests | sync | HTTPS |")
@@ -193,7 +193,7 @@ def test_label_wrapping_helpers():
     assert bd.label_lines("put item", 6) == ["put", "item"]
     assert bd.label_lines("StartExecution", 6) is None                       # a word wider than the line
     assert bd.label_lines("one two three four five six seven eight", 6) is None   # more than 3 lines
-    assert bd.chars_that_fit(146) == 18 and bd.chars_that_fit(64) == 6 and bd.chars_that_fit(121) == 14 and bd.chars_that_fit(76) == 8
+    assert bd.chars_that_fit(146) == 17 and bd.chars_that_fit(64) == 6 and bd.chars_that_fit(121) == 14 and bd.chars_that_fit(76) == 7
 
 
 def test_layout_prefers_a_straight_edge_for_a_labeled_relationship():

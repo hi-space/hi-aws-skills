@@ -266,7 +266,7 @@
       "to": "dlq",
       "dashed": true,
       "num": 13,
-      "label": "messages that exceed maxReceiveCount"
+      "label": "redrive"
     }
   ]
 }

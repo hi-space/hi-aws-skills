@@ -62,8 +62,8 @@ def test_row_break_inserted_between_stacked_groups():
     s["nodes"].append({"id": "d", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 1, "lane": 2, "group": "h"})
     b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
     assert b.row_breaks == [2]
-    # cards 24 px apart: 32 below + 24 + 46 above − (142 − 78) = 38 extra
-    assert b.ly(2) == 236 + 284 + 38
+    # cards 36 px apart: 32 below + 36 + 46 above − (142 − 78) = 50 extra
+    assert b.ly(2) == 236 + 284 + 50
 
 
 def test_node_labels_are_bold_15():
@@ -631,9 +631,9 @@ def test_node_label_background_never_reaches_the_card_bottom():
     assert y + h - label_bottom == 8
 
 
-def test_adjacent_group_rows_are_always_24_px_apart():
+def test_adjacent_group_rows_are_always_36_px_apart():
     # upper card g (lanes 0–1) has a two-line label on its last lane, lower card h (lane 2) draws a boundary:
-    # still exactly 24 px between the cards
+    # still exactly 36 px between the cards
     s = {
         "title": "T",
         "groups": [{"id": "g", "label": "G", "cols": [1, 2], "lanes": [0, 1]},
@@ -650,6 +650,72 @@ def test_adjacent_group_rows_are_always_24_px_apart():
     gx, gy, gw, gh = b.group_rect(b.groups["g"])
     hx, hy, hw, hh = b.group_rect(b.groups["h"])
     assert b.group_below("g") == 52 and b.group_above("h") == 66
-    assert hy - (gy + gh) == 24
-    assert b.row_extra == {2: 52 + 24 + 66 - (142 - 78)}
-    assert b.ly(2) == 236 + 2 * 142 + 78
+    assert hy - (gy + gh) == 36
+    assert b.row_extra == {2: 52 + 36 + 66 - (142 - 78)}
+    assert b.ly(2) == 236 + 2 * 142 + 90
+
+
+def test_boundary_on_the_last_lane_keeps_clear_of_the_card_bottom():
+    # members on lane 1 (the card's last lane): the boundary's bottom border must not sit on the card's bottom border
+    s = bspec(cells=((1, 1), (2, 1), (1, 0)))
+    b = _builder(s)
+    assert b.group_below("g") == bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW + bd.BOUNDARY_INSET   # 42
+    geo = geometry(bd.build(s))
+    _, gx, gy, gw, gh = geo["g"]
+    _, bx, by, bw, bh = geo["g__bedrock"]                            # relative to the group
+    assert gh - (by + bh) == bd.BOUNDARY_INSET
+
+
+# ---- 1.9.0: a group title never sits under a line -----------------------------------------------------
+def _stacked(title_g, g_cols):
+    """card h (lane 0, col 1) above card g (lane 1); edge c → a runs straight down through g's title band at col 1."""
+    nodes = [{"id": "c", "label": "Cognito", "icon": "cognito", "col": 1, "lane": 0, "group": "h"},
+             {"id": "a", "label": "API Gateway", "icon": "api_gateway", "col": 1, "lane": 1, "group": "g"}]
+    if 2 in g_cols:
+        nodes.append({"id": "b", "label": "Lambda", "icon": "lambda", "col": 2, "lane": 1, "group": "g"})
+    return {"title": "T",
+            "groups": [{"id": "h", "label": "Auth", "cols": [1], "lanes": [0]},
+                       {"id": "g", "label": title_g, "cols": g_cols, "lanes": [1]}],
+            "nodes": nodes,
+            "edges": [{"from": "c", "to": "a", "label": "token"}] + ([{"from": "a", "to": "b"}] if 2 in g_cols else [])}
+
+
+def test_group_title_stays_left_when_no_line_crosses_it():
+    st = styles(bd.build(spec()))
+    assert st["g"]["spacingLeft"] == "12" and "g__title" not in st
+
+
+def test_group_title_moves_right_of_a_line_through_its_band():
+    xml = bd.build(_stacked("Order processing", [1, 2]))
+    st = styles(xml)
+    assert st["g"]["spacingLeft"] == str(bd.GROUP_HALF_W + 8)          # right of the line at the first column's centre
+    assert "g__title" not in st
+    assert vd.validate_text(xml, INDEX) == ([], [])
+
+
+def test_long_title_on_a_one_column_card_is_drawn_over_the_line():
+    s = _stacked("Observability", [1])
+    b = _builder(s)
+    xml = b.build()
+    st = styles(xml)
+    assert st["g"]["spacingLeft"] == "12"
+    import xml.etree.ElementTree as ET
+    cells = {c.get("id"): c for c in ET.fromstring(xml).iter("mxCell")}
+    assert cells["g"].get("value") == ""                              # the title moves to an overlay …
+    t = cells["g__title"]
+    assert t.get("value") == "Observability" and t.get("parent") == "1"
+    assert st["g__title"]["labelBackgroundColor"] == "#F1F3F6" and st["g__title"]["fontSize"] == "15"
+    assert xml.index('id="g__title"') > xml.index('source="c"')         # … drawn after the edge, so it covers the line
+    assert any("title" in n and "Observability" in n for n in b.notes)
+    assert vd.validate_text(xml, INDEX) == ([], [])
+
+
+def test_edge_label_keeps_four_px_from_every_border():
+    # a card at (100, 100) 160 × 200: a label box ending 3 px above the card's top border is too close, 4 px is fine
+    border = [(100, 100, 160, 200)]
+    assert not bd.Builder.box_is_clear((110, 80, 150, 97), border, [], [])
+    assert bd.Builder.box_is_clear((110, 80, 150, 96), border, [], [])
+    assert bd.LABEL_BORDER_SLACK_PX == 8                               # 4 px per side
+    # icons, other labels and lines keep the 2 px they always had
+    assert bd.Builder.box_is_clear((110, 80, 150, 96), [], [(100, 98, 200, 120)], [])
+    assert not bd.Builder.box_is_clear((110, 80, 150, 97), [], [(100, 98, 200, 120)], [])
