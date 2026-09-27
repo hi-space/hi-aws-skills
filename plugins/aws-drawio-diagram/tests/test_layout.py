@@ -521,3 +521,45 @@ def test_scaffold_reads_boundaries():
     # a set of names still works (older callers); labels are then left alone
     spec2, _ = sc.scaffold(BRIEF_17, set(index))
     assert {n["id"]: n["label"] for n in spec2["nodes"]}["model"] == "Bedrock (Claude)"
+
+
+# ---- 1.9.0: the planner's vertical-leg room estimate follows the builder ---------------------------------------
+def _stacked_boundary(bedrock_cell):
+    s = {"title": "T",
+         "groups": [{"id": "g", "label": "Agent runtime", "cols": [3, 4, 5], "lanes": [0, 1]}],
+         "nodes": [{"id": "runtime", "label": "Runtime", "image": "Res_Amazon-Bedrock-AgentCore_Runtime_48.svg", "group": "g",
+                    "boundary": "bedrock_agentcore"},
+                   {"id": "memory", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg", "group": "g",
+                    "boundary": "bedrock_agentcore"},
+                   {"id": "bedrock", "label": "Claude", "icon": "bedrock", "group": "g"}],
+         "edges": [{"from": "runtime", "to": "memory", "label": "memory"}, {"from": "runtime", "to": "bedrock", "label": "LLM prompt"}]}
+    p = layout.Placement(s, seed=1)
+    p.col = {"runtime": 3, "memory": 4, "bedrock": bedrock_cell[0]}
+    p.lane = {"runtime": 1, "memory": 1, "bedrock": bedrock_cell[1]}
+    return p
+
+
+def test_planner_charges_a_labelled_vertical_leg_that_a_boundary_title_row_eats():
+    # bedrock straight above runtime: the 40 px leg is all boundary title band — the builder has no room for 'LLM prompt'
+    stacked = _stacked_boundary((3, 0))
+    with_label, _ = stacked.cost()
+    stacked.edges[1].pop("label")
+    without_label, _ = stacked.cost()
+    assert with_label - without_label == pytest.approx(layout.LABEL_ROOM_COST)
+    # bedrock beside runtime on the lane: a horizontal leg with plenty of room, no charge
+    beside = _stacked_boundary((5, 1))
+    with_label, _ = beside.cost()
+    beside.edges[1].pop("label")
+    without_label, _ = beside.cost()
+    assert with_label - without_label == pytest.approx(0.0)
+
+
+def test_default_auto_layout_of_the_agentic_sample_builds_clean():
+    # the CLI's default plan() (9000 steps, seed 7) — not only the 3000-step variant above — must land on a
+    # placement whose every primary label the builder can place
+    logical = strip(json.loads((SAMPLES / "agentic-rag-chat.json").read_text()))
+    placed, notes = layout.plan(logical)
+    assert notes == [], notes
+    xml = bd.build(placed)
+    errors, warnings = vd.validate_text(xml, INDEX)
+    assert errors == [] and [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS] == [], warnings

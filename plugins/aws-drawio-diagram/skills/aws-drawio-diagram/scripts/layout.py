@@ -25,8 +25,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
-from build_diagram import (BOUNDARY_INSET, CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, MAX_PER_SIDE,  # noqa: E402
-                           OUTSIDE_GAP, chars_that_fit, label_lines)
+from build_diagram import (BOUNDARY_INSET, CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, LABEL_MAX_LINES,  # noqa: E402
+                           LABEL_MAX_LINE_CHARS, MAX_PER_SIDE, OUTSIDE_GAP, chars_that_fit, label_lines)
 
 HARD = 1000.0
 # A service boundary (nodes sharing `boundary` inside one group — AgentCore Runtime + Memory, Glue crawler + catalog) is
@@ -49,7 +49,7 @@ BOUNDARY_SPLIT_COST = 14.0
 # spine break, more than a bend, so the planner trades a little shape for a label but never sprawls for one); the
 # builder measures exactly and refuses a primary edge whose text has no room (`ERROR label`). Keep in step with
 # layout-and-style.md §5.
-LABEL_VERTICAL_CHARS = 12
+LABEL_VERTICAL_CHARS = 7                                 # beside a vertical line, 76 px to the card border (build_diagram chars_that_fit)
 LABEL_ROOM_COST = 20.0
 
 
@@ -246,6 +246,7 @@ class Placement:
         inside_cols = [col[n] for n, d in self.nodes.items() if not d.get("outside")]
         # service boundaries: members together in a clean rectangle inside one group box (see module comment)
         bcuts: list[tuple[int, int, float, float]] = []                 # (l0, l1, x_left, x_right) of drawn boundaries
+        drawn_members: list[set[str]] = []                              # members of every boundary the builder will draw
         for (gid, _), members in self.boundaries.items():
             if len(members) < 2:
                 continue
@@ -260,6 +261,22 @@ class Placement:
                 soft += 1.0 * ((c1 - c0 + 1) * (l1 - l0 + 1) - len(members))
                 bcuts.append((l0, l1, COL0 + COL_PITCH * c0 - GROUP_HALF_W + BOUNDARY_INSET,
                               COL0 + COL_PITCH * c1 + GROUP_HALF_W - BOUNDARY_INSET))
+                drawn_members.append(set(members))
+
+        def box_of(nid: str):
+            return next((i for i, b in enumerate(boxes) if b[1] <= col[nid] <= b[2] and b[3] <= lane[nid] <= b[4]), None)
+
+        def v_room(s: str, t: str) -> tuple[int, int]:
+            """(characters per line, lines) for the text beside a straight vertical edge, as the builder will find it:
+            one line in the gap between two cards; nothing on the 40 px leg between adjacent lanes when a boundary's
+            title row sits on it (one end inside a drawn boundary, the other outside); two lines at most beside a
+            40 px leg; otherwise LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
+            span = abs(lane[s] - lane[t])
+            if box_of(s) != box_of(t):
+                return (LABEL_MAX_LINE_CHARS, 1)
+            if span == 1 and any((s in m) != (t in m) for m in drawn_members):
+                return (0, 0)
+            return (LABEL_VERTICAL_CHARS, 2 if span == 1 else LABEL_MAX_LINES)
 
         def x_of(nid: str) -> float:                                # icon centre x as the builder draws it
             x = COL0 + COL_PITCH * col[nid]
@@ -302,7 +319,7 @@ class Placement:
             rooms: list[int] = []                                   # characters per line, per leg of the drawn edge
             if sc == tc:                                            # vertical straight
                 soft += 1.0 if solid else 0.0
-                rooms = [LABEL_VERTICAL_CHARS]
+                rooms = [v_room(s, t)]
                 segs.append(("v", sc, min(sl, tl), max(sl, tl), "only", s, t))
                 step = 1 if tl > sl else -1
                 for l in range(sl + step, tl, step):
@@ -364,9 +381,14 @@ class Placement:
             label_checks.append((self.edges[ei], opt["rooms"]))
         if self_eval:
             self.routes = routes                                    # apply() writes the horizontal-first choices into the spec
+        def fits(label: str, room) -> bool:
+            chars, cap = room if isinstance(room, tuple) else (room, LABEL_MAX_LINES)
+            lines = label_lines(label, chars) if chars else None
+            return bool(lines) and len(lines) <= cap
+
         for e, rooms in label_checks:
             label = e.get("label")
-            if label and not any(label_lines(label, r) for r in rooms):
+            if label and not any(fits(label, r) for r in rooms):
                 # the text has no room on this edge as placed: a strong nudge, not a hard rule — a compact picture
                 # beats a spare column, and the builder refuses a primary edge whose text still has no room
                 # (`ERROR label`), so the Drawer condenses the phrase; a dashed edge just loses its text (note)
