@@ -63,8 +63,8 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 - [ ] **Read order**: main request path runs left → right on one lane; auxiliary paths hang below (or above);
       the eye finds the entry point in the first second.
 - [ ] **Grouping**: 2–7 role groups, each titled, each with 1–4 icons; no group with more empty cells than
-      icons; no lonely icon floating in the cloud. Role groups are the official AWS Generic group (dashed grey,
-      no fill); a service boundary box appears only around ≥ 2 adjacent resources of one platform service, badge visible,
+      icons; no lonely icon floating in the cloud. Role groups are light-grey cards (#F1F3F6 fill, solid border, 15 px
+      title that never sits under a line — on a one-column card the builder may draw it over the line on a patch); a service boundary box appears only around ≥ 2 adjacent resources of one platform service, badge visible,
       titled with the service name, its members' labels one line each — never around N copies of one stencil, and
       never one box for two services (Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ SageMaker Unified Studio).
 - [ ] **Balance**: the cloud box has no empty quadrant larger than a group; the canvas hugs the content

@@ -16,18 +16,18 @@ grouping and typography rules below replace its sparse 280 px layout.
 | Constant | Value | Notes |
 |---|---|---|
 | Icon | **78 × 78** | draw.io AWS4 palette default. Never scale icons; scale the canvas instead. |
-| Column pitch | **240 px** | Distance between icon centers on the same lane (162 px clear between icons). |
-| Lane pitch | **170 px** inside a group | 92 px clear between an icon's label and the icon below it. |
-| Group-row gap | **+50 px** | Lanes in *different* group rows are 220 px apart (170 + 50) so group borders and labels fit. |
-| Group width | **200 px per column**, 40 px gap | Group x = first column center − 100; width = 200 × columns + 40 × (columns − 1). |
-| Group height | **60 px above** first icon, **46 px below** last icon | 60 = group title row + room for a top-placed node label. |
-| Cloud padding | 40 px around the outermost groups | AWS Cloud x = first group x − 40; title row inside it. |
-| Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1320 × 1040. **Never** a fixed 2400 × 1400 page. |
+| Column pitch | **224 px** | Distance between icon centers on the same lane (146 px clear between icons). |
+| Lane pitch | **142 px** inside a group | 40 px clear between a one-line label and the icon below it. |
+| Group-row gap | **derived** so cards in adjacent rows are `ROW_CLEAR` = **36 px** apart | The builder adds `below(upper) + 36 + above(lower) − 64` px at every row break (`Builder._row_extra`); 36 px holds a one-line edge label with 4 px to each card. |
+| Group width | **160 px per column**, 64 px gap | Group x = first column center − 80; width = 160 × columns + 64 × (columns − 1). The 64 px seam is where a cross-group edge's text goes (6 characters per line). |
+| Group height | **46 px above** the first icon (**66** when the group draws a service boundary), **tallest last-lane label + 8 px below** | 46 = 32 px title band (`TITLE_BAND`) + `GROUP_ABOVE_PAD` 14; the boundary variant adds its own 32 px title row; below = 32 for one-line labels, 52 for two, 42 when a boundary ends on that lane (`GROUP_BELOW_PAD`, `Builder.group_above` / `group_below`). A node label background therefore never touches the card's bottom border. |
+| Cloud padding | 28 px around the outermost groups | AWS Cloud x = first group x − 28; title row inside it. |
+| Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1240 × 960. **Never** a fixed 2400 × 1400 page. |
 
-Column *i* center `x = 140 + 240·i` (column 0 is the outside column for users/clients: `140, 380, 620, 860, …`).
-Lane *j* center `y = 260 + 170·j`, plus 50 px for every group-row boundary above lane *j*. A group-row boundary
-is a lane where one group ends and another begins (the builder derives it; by hand, add the 50 px yourself).
-Icon top-left = center − 39.
+Column *i* center `x = 130 + 224·i` (column 0 is the outside column for users/clients: `130, 354, 578, 802, …`).
+Lane *j* center `y = 236 + 142·j`, plus the derived row extra for every group-row break above lane *j*. A group-row
+break is a lane where one group ends and another begins (the builder derives it; by hand, compute
+`below + 36 + above − 64` yourself — 50 px for one-line labels and no boundary). Icon top-left = center − 39.
 
 Children of a group use coordinates **relative to the group**: `child.x = center.x − 39 − group.x`.
 
@@ -54,17 +54,28 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
   more empty cells than icons, or an empty band across the top of the cloud, means the lane plan is wrong: move
   upper-lane items there (auth, static assets, memory) or fan out downward instead.
 
-**Role group style — the official AWS "Generic group"** (dashed grey border, no fill, no badge; the icon deck's own
-group for "things that belong together" without a service or network meaning). The builder emits it as
-`GENERIC_GROUP` in `build_diagram.py`; the title keeps the plugin's 13 bold so names stay on one visual level:
+**Role group style — one light-grey card.** Every role group is the same neutral card: `#F1F3F6` fill, 1 px solid
+`#AEB6C2` border, title 15 bold in the text colour. The builder emits it as `GENERIC_GROUP` in `build_diagram.py`:
 
 ```
-rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;strokeWidth=1;fontFamily=Amazon Ember;fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
+rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F3F6;strokeColor=#AEB6C2;dashed=0;fontColor=#232F3E;strokeWidth=1;fontFamily=Amazon Ember;fontSize=15;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
 ```
 
-Nothing inside the cloud is filled: node and edge labels sit on the white canvas (`labelBackgroundColor=#FFFFFF`).
-Colour belongs to the icons and to the service boundaries below. (Tinted per-role cards, 1.7.x, and the filled
-Generic group, 1.8.1, were tried and dropped in favour of this look, 2026-09-24.)
+Labels inside a card sit on the card's colour (`labelBackgroundColor=#F1F3F6`, `GROUP_FILL`); labels on the cloud
+or the canvas sit on white. Because no label may cross a border (§5), a label is always on one surface. Colour
+otherwise belongs to the icons and to the service boundaries below. (History: dashed unfilled Generic groups, 1.8.x,
+and per-role tints, 1.7.x, were tried and dropped — groups must read as groups at a glance, 2026-09-27.)
+
+**The title never sits under a line.** A vertical edge into or out of the first lane's icon crosses the title band
+at that column's centre. The builder measures the title (`text_px`: 0.55 em per Latin character, 1 em per CJK
+character) and, when it would reach the line, moves it to the right of the line (`spacingLeft` = line x + 8) if it
+still fits inside the card — a two-column card almost always has the room. When it does not (a one-column card
+with a title longer than ~8 Latin characters), the title is drawn **last, over the line, on a patch of the card's
+colour**: a separate `text` cell `<group id>__title` with `labelBackgroundColor=#F1F3F6`, and the group cell's own
+`value` is empty (the validator still treats the band as titled). The builder prints
+`note: group '…': title '…' is crossed by a line …` so the author can rename the group or move the node; the
+picture stays legible either way. By hand: keep titles short on one-column cards, or place the card so its first
+column has no vertical edge.
 
 **Service boundaries.** Several icons of one *platform* service — AgentCore Runtime + Memory + Gateway, a Glue
 crawler + Data Catalog, a Step Functions workflow + its tasks, an ECS cluster + its services, IoT Core, SageMaker AI —
@@ -94,12 +105,14 @@ AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagem
   clean rectangle; the builder draws the box only when ≥ 2 members fill a rectangle with no other node inside
   and inside one group box, otherwise `hint: boundary … not drawn` and the icons stay plain children of the group.
   Move a node in the `.layout.json` if the box matters.
-- Geometry: inset `BOUNDARY_INSET` = 12 px from the group's sides, top `BOUNDARY_ABOVE` = 30 px above the first
-  icon (so its 12 pt title row sits under the group's 28 px title band), bottom `BOUNDARY_BELOW` = 10 px under a
-  one-line node label. **Labels inside a boundary are one line** (≤ 22 characters) — the box title already says
+- Geometry: inset `BOUNDARY_INSET` = 10 px from the group's sides, top `BOUNDARY_ABOVE` = 32 px above the first
+  icon (so its 14 pt title row sits under the group's 32 px title band — the group grows to 66 px above its first
+  icon to make room), bottom `BOUNDARY_BELOW` = 8 px under a one-line node label; when the boundary ends on the
+  card's last lane the card keeps another 10 px below it. **Labels inside a boundary are one line** (≤ 17
+  characters) — the box title already says
   the service; a two-line label is a builder error. A boundary border cuts edge-text room like a group border.
 - **Look: the official AWS group.** Exactly how the AWS Architecture Icons deck draws a group — a filled square
-  badge in the top-left corner, a 1 px border and a bold 12 pt title, all in the **service's own category colour**
+  badge in the top-left corner, a 1 px border and a bold 14 pt title, all in the **service's own category colour**
   (the icon's `fillColor` in the catalog: Bedrock `#01A88D`, Glue `#8C4FFF`, ECS `#ED7100`). `fillColor=none`. Two
   renderings, same look (a third, `shape=image` with the bundled SVG, for the `BADGE_IMAGE` stencils above):
   - an **official group badge** (`group_*` stencil — `group_aws_step_functions_workflow`, `group_auto_scaling_group`,
@@ -107,7 +120,7 @@ AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagem
     group shape draws the badge itself, colour from [`aws-icons-groups.md`](aws-icons-groups.md):
 
     ```
-    <badge prefix>;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_step_functions_workflow;strokeColor=#CD2264;fontColor=#CD2264;fontSize=12;fontStyle=1;fillColor=none;awsBoundary=1;container=1;dropTarget=1;
+    <badge prefix>;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_step_functions_workflow;strokeColor=#CD2264;fontColor=#CD2264;fontSize=14;fontStyle=1;fillColor=none;awsBoundary=1;container=1;dropTarget=1;
     ```
 
   - **any other service** (`bedrock`, `glue`, `ecs`, `sagemaker`, `iot_core`, …): a plain rectangle plus a 24 px
@@ -115,7 +128,7 @@ AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagem
     service stencil (it would render the glyph as an outline):
 
     ```
-    rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#01A88D;strokeWidth=1;fontColor=#01A88D;fontFamily=Amazon Ember;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;spacingTop=0;awsBoundary=1;container=1;dropTarget=1;
+    rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#01A88D;strokeWidth=1;fontColor=#01A88D;fontFamily=Amazon Ember;fontSize=14;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;spacingTop=0;awsBoundary=1;container=1;dropTarget=1;
     sketch=0;outlineConnect=0;html=1;fillColor=#01A88D;strokeColor=#ffffff;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.bedrock;awsBadge=1;     (24 × 24 at x=0 y=0, parent = the boundary)
     ```
 
@@ -135,21 +148,23 @@ where Ember is not allowed — then write `fontFamily=Noto Sans;` instead.
 
 | Element | Size | Weight | Color |
 |---|---|---|---|
-| Diagram title | 20 | bold | `#232F3E` |
-| Subtitle (author · date · version) | 12 | regular | `#5A6C86` |
-| AWS Cloud / badge group label | 14 | bold | group color |
-| Role group label | 13 | bold | `#232F3E` |
-| Node label | 13 | bold | `#232F3E` |
-| Edge label, legend | 11 | regular | `#232F3E` / `#5A6C86` |
+| Diagram title | 24 | bold | `#232F3E` |
+| Subtitle (author · date · version) | 13 | regular | `#5A6C86` |
+| AWS Cloud / badge group label | 16 | bold | group color |
+| Role group label | 15 | bold | `#232F3E` |
+| Node label | 15 | bold | `#232F3E` |
+| Service boundary title | 14 | bold | service colour |
+| Edge label | 13 | regular | `#232F3E` |
+| Legend | 12 | regular | `#5A6C86` |
 
 Node labels: 1–3 words, sentence case, qualifier in parentheses (`S3 (static site)`, `Bedrock (Claude)`).
-Node labels are bold (`fontSize=13;fontStyle=1`) so the service name reads as fast as the icon; group
+Node labels are bold (`fontSize=15;fontStyle=1`) so the service name reads as fast as the icon; group
 titles share the size and weight, which keeps one visual level for "names" and one for the grey subtitle/legend.
 
 ## 4. Canvas, title, legend
 
 ```xml
-<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1320" pageHeight="1040" math="0" shadow="0">
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="960" math="0" shadow="0">
 ```
 
 First cells after the root: a **white** full-canvas background (prevents black PNGs), then the title, then a
@@ -157,15 +172,15 @@ legend when the diagram has more than one edge type.
 
 ```xml
 <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
-  <mxGeometry x="0" y="0" width="1320" height="1040" as="geometry" />
+  <mxGeometry x="0" y="0" width="1240" height="960" as="geometry" />
 </mxCell>
-<mxCell id="title" value="&lt;font style=&quot;font-size:20px&quot;&gt;&lt;b&gt;Diagram Title&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#5A6C86&quot;&gt;Author · Date · Version&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Amazon Ember;fontSize=12;fontColor=#232F3E;spacing=0;" vertex="1" parent="1">
+<mxCell id="title" value="&lt;font style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Diagram Title&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#5A6C86&quot;&gt;Author · Date · Version&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Amazon Ember;fontSize=13;fontColor=#232F3E;spacing=0;" vertex="1" parent="1">
   <mxGeometry x="40" y="32" width="700" height="60" as="geometry" />
 </mxCell>
 <mxCell id="lg1" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="44" width="40" height="10" as="geometry" /></mxCell>
-<mxCell id="lg1t" value="request / data flow" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=11;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="38" width="160" height="22" as="geometry" /></mxCell>
+<mxCell id="lg1t" value="request / data flow" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=12;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="38" width="160" height="22" as="geometry" /></mxCell>
 <mxCell id="lg2" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;dashed=1;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="68" width="40" height="10" as="geometry" /></mxCell>
-<mxCell id="lg2t" value="async / auxiliary" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=11;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="62" width="160" height="22" as="geometry" /></mxCell>
+<mxCell id="lg2t" value="async / auxiliary" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=12;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="62" width="160" height="22" as="geometry" /></mxCell>
 ```
 
 Legend lines are `shape=line` **vertices**, not edges (edges without source/target fail `E3`).
@@ -175,7 +190,7 @@ Legend lines are `shape=line` **vertices**, not edges (edges without source/targ
 Base style for every edge:
 
 ```
-edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;fontFamily=Amazon Ember;fontSize=11;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;
+edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;fontFamily=Amazon Ember;fontSize=13;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;
 ```
 
 then the ports for the direction, then `dashed=1;` for async/auxiliary, `dashed=1;strokeColor=#DD344C;` for
@@ -188,7 +203,7 @@ error paths.
 | ↑ up | `exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=B;entryDx=0;entryDy=0;entryPerimeter=0;` |
 | ↓ down | `exitX=0.5;exitY=B;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
 
-`B` is the **under-the-label** port: `(78 + 4 + 18 × lines) / 78` → `1.282` for a one-line label, `1.513` for two
+`B` is the **under-the-label** port: `(78 + 4 + 20 × lines) / 78` → `1.308` for a one-line label, `1.564` for two
 lines. A vertical edge therefore starts or ends below the node's label instead of running through it; the
 arrowhead of an edge arriving from below sits just under the text. `exitPerimeter=0` / `entryPerimeter=0` are
 required, otherwise draw.io snaps the point back onto the icon.
@@ -230,24 +245,25 @@ required, otherwise draw.io snaps the point back onto the icon.
 
 **Edge text.** Every edge shows the brief's *What flows* phrase — what travels on that hop — so a reader follows
 the picture without the guide, and the guide's steps quote the same words. The builder draws the phrase as an
-html label (11 pt, 6.2 px per character + 16 px padding, 14 px per line), wrapped into at most **3 lines of
-≤ 24 characters** and re-wrapped so the lines come out even (`Fetch dynamic` / `credentials (optional)`), and
+html label (13 pt, 7.2 px per character + 12 px padding, 16 px per line), wrapped into at most **3 lines of
+≤ 20 characters** and re-wrapped so the lines come out even (`Fetch dynamic` / `credentials (optional)`), and
 places it on the **longest leg** of the edge that has a clear spot — a bent edge carries its text on one of its
 legs, positioned along the polyline with the relative `mxGeometry x` (−1 source … 1 target, by length). On a
 horizontal leg the text sits above the line (`align=center;verticalAlign=bottom;`) or, if that is taken, below it
 (`verticalAlign=top;`); on a vertical leg left of it (`align=right;spacingRight=4;verticalAlign=middle;`) or
 right of it (`align=left;spacingLeft=4;`). The builder slides it from the middle of the leg outwards in 1/20
-steps until the box covers **no group or cloud border, no title row (top 28 px of a titled container), no icon or
-node label, no other edge's text and no other edge's line**, and tries narrower wraps (24 → 18 → 14 → 10 → 8 → 6
-characters per line) when the wide one has no room. The validator's `W7` checks exactly that on the file. Room
+steps until the box covers **no group or cloud border, no title row (top 32 px of a titled container), no icon or
+node label, no other edge's text and no other edge's line** — keeping **4 px from every border and title band**
+(`LABEL_BORDER_SLACK_PX` = 8, half per side) and 2 px from icons, labels and lines (`LABEL_SLACK_PX` = 4) — and
+tries narrower wraps (20 → 18 → 14 → 10 → 8 → 6 characters per line) when the wide one has no room. The validator's `W7` checks exactly that on the file. Room
 by situation (`chars_that_fit` in `build_diagram.py`):
 
 | Leg | Characters per line | Room |
 |---|---|---|
-| Horizontal, inside one group box (or on an empty column) | **22–24** | 162 px clear between two icons on a lane; 201 px on the horizontal leg of a bend |
-| Horizontal, the first hop into the cloud (users → first service) | **16** | users sit `OUTSIDE_GAP` = 60 px further from the cloud than the grid column, so the pocket outside the cloud border is 121 px |
-| Horizontal, between two neighbouring group boxes | **6 characters** (per line, up to 3 lines) | two 61 px pockets either side of the 40 px gap — `HTTPS`, `invoke`, `put` / `order`, `start` / `saga`. The one tight spot: condense the phrase to short words here |
-| Vertical (straight, or the trunk of a bend) | **12 characters** | hangs beside the line inside the 100 px to the box border; must stay below the target box's title row — a vertical hop between two group rows is a roomy place for text. Between two neighbouring trunks (20 px) there is no room, so the middle line of a fan-out carries its text on its horizontal leg |
+| Horizontal, inside one group box (or on an empty column) | **17–20** | 146 px clear between two icons on a lane; the horizontal leg of a bend is longer |
+| Horizontal, the first hop into the cloud (users → first service) | **14** | users sit `OUTSIDE_GAP` = 44 px further from the cloud than the grid column, so the pocket outside the cloud border is 121 px |
+| Horizontal, between two neighbouring group boxes | **6 characters** (per line, up to 3 lines) | the 64 px seam between the cards — `HTTPS`, `invoke`, `put` / `order`, `start` / `saga`. The 41 px pockets inside the cards hold nothing. The one tight spot: condense the phrase to short words here |
+| Vertical (straight, or the trunk of a bend) | **7 characters** per line beside the line in a one-column card (more when the neighbouring cell is empty); **one line** in the 36 px gap between two group rows; **two lines at most** beside the 40 px leg between adjacent lanes | hangs beside the line inside the 80 px to the card border; must stay below the target box's title row. Between two neighbouring trunks (20 px) there is no room, so the middle line of a fan-out carries its text on its horizontal leg. `token validation` → `validate token`, `messages that exceed maxReceiveCount` → `redrive` |
 
 - **Nothing is dropped silently.** A phrase with no clear spot on a **primary (solid) edge** stops the build
   (`ERROR label`, naming the characters per line the edge offers): condense it in the brief (`StartExecution` →
@@ -261,10 +277,10 @@ by situation (`chars_that_fit` in `build_diagram.py`):
 
 ## 6. Node labels — always below the icon
 
-Every node label sits under its icon, centred, 13 bold, with a white background (groups have no fill):
+Every node label sits under its icon, centred, 15 bold, on the card's colour inside a group and on white outside:
 
 ```
-verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (inside a role group — groups have no fill, §2)
+verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F1F3F6;   (inside a role group — the card's fill, §2)
 verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (outside the cloud)
 ```
 
@@ -273,11 +289,12 @@ Edges keep out of the text by construction — anything that leaves or enters th
 (§5), which is under the label, so the line is continuous from the text down. The background colour is a
 safety net, not a routing tool: if a line still disappears behind a label, the layout is wrong (fix the spec).
 
-- **Length.** ≤ 22 characters on one line (~7 px per bold character; the column pitch is 240 px). Longer labels
-  break into two lines at the space nearest the middle (`OpenSearch Serverless<br>(vector index)`); the builder
-  does this. Never three lines — shorten instead.
-- **Room below.** One line needs 22 px under the icon, two lines 40 px; the group keeps 46 px below the last
-  icon and lanes are 170 px apart, so labels never touch the next lane or the group border.
+- **Length.** ≤ 17 characters on one line (~7.7 px per bold character; a card column is 160 px wide). A label
+  that would fill the column breaks into two lines at the space nearest the middle (`OpenSearch Serverless<br>(vector
+  index)`, `S3 (order<br>archive)`); the builder does this. Never three lines — shorten instead.
+- **Room below.** One line needs 24 px under the icon, two lines 44 px; the card keeps the tallest last-lane label
+  + 8 px below the last icon (32 / 52) and lanes are 142 px apart, so labels never touch the next lane or the card
+  border.
 - **Delete the base style's later `align=center;`** when writing XML by hand — a later key wins in draw.io and
   the text lands on the icon.
 
@@ -323,7 +340,7 @@ the guide is where every relationship — labeled on the picture or not — is e
 
 ## 11. Self-check (Drawer, before handing to the Reviewer)
 
-For every node: which group? which column, which lane? label ≤ 22 characters or split in two? For
+For every node: which group? which column, which lane? label ≤ 17 characters or split in two? For
 every edge: same column or lane, or a proper fan-out? corridor empty? label only in a free gap? For the canvas:
 white background, title, legend if two edge types, no half-empty page, no empty band. Then run the validator
 and **look at the PNG** — the Reviewer's checklist (`review-checklist.md`) is what you will be measured against.

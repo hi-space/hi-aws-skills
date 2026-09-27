@@ -3,7 +3,7 @@
 Five upstream diagrams (vidanov/aws-architecture-diagram-skill, MIT). Use them to see **which services connect to
 which** for a common pattern. They predate this skill's grid, grouping and typography rules (`references/layout-and-style.md`):
 280 px spacing, no role groups, grey page, no `fontFamily`. The validator reports `W4`–`W6` on them for that
-reason. Do not copy their coordinates or canvas — rebuild the topology on the 240 × 170 grid. For the intended
+reason. Do not copy their coordinates or canvas — rebuild the topology on the 224 × 142 grid. For the intended
 look, see `docs/samples/agentic-rag-chat.drawio` in the plugin root.
 
 ## Available Templates

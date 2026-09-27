@@ -53,7 +53,7 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
 2. Fill the brief template: components (id, stencil name, role, group), relationship table (from → to, **What
    flows** — the phrase that is drawn on the arrow, a short noun phrase such as `order message` or `token
    validation`, `—` only when the pair says it all; architecture-brief.md § Edge text — sync/async), numbered
-   flow, 2–7 role groups (drawn as the official AWS Generic group), an optional `Boundary` column for resources of
+   flow, 2–7 role groups (drawn as light-grey cards), an optional `Boundary` column for resources of
    one platform service that should share a badge box (AgentCore Runtime + Memory, Glue crawler + catalog — never N
    copies of one stencil, never two services in one box: Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ Unified Studio), the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
@@ -180,7 +180,7 @@ hand, swap the strokeColor rules and the glyph disappears. Standard vertex (chil
 relative to it, `fontFamily` on every cell):
 
 ```xml
-<mxCell id="lambda1" value="Order handler" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F7F8FA;html=1;fontSize=13;fontStyle=1;fontFamily=Amazon Ember;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="g_order">
+<mxCell id="lambda1" value="Order handler" style="sketch=0;points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];outlineConnect=0;fontColor=#232F3E;fillColor=#ED7100;strokeColor=#ffffff;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F7F8FA;html=1;fontSize=15;fontStyle=1;fontFamily=Amazon Ember;aspect=fixed;shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;" vertex="1" parent="g_order">
   <mxGeometry x="61" y="60" width="78" height="78" as="geometry" />
 </mxCell>
 ```

@@ -41,10 +41,10 @@ BOUNDARY_SPLIT_COST = 14.0
 # of the edge that has a clear spot (build_diagram.py § edge text). The planner estimates that room the same way,
 # so a labelled edge is placed where its text will fit:
 #   horizontal leg  the pixels between the two icons (or a corner and an icon), cut by every group / cloud border
-#                   it crosses — the widest stretch sets the characters per line: 162 px on one lane → 22, the
-#                   61 px pocket beside a border → 6, the 121 px pocket outside the cloud → 16, the 201 px leg
-#                   of a bend → 24 (the cap)
-#   vertical leg    the text hangs beside the line, 96 px to the box border → 12 characters per line
+#                   it crosses — the widest stretch sets the characters per line: 146 px on one lane → 17, the
+#                   64 px seam between two cards → 6, the 121 px pocket outside the cloud → 14, the leg of a
+#                   bend → 20 (the cap)
+#   vertical leg    the text hangs beside the line, 76 px to the card border → 7 characters per line
 # The estimate only steers the search (LABEL_ROOM_COST per primary edge whose text would not fit — less than a
 # spine break, more than a bend, so the planner trades a little shape for a label but never sprawls for one); the
 # builder measures exactly and refuses a primary edge whose text has no room (`ERROR label`). Keep in step with
@@ -455,7 +455,7 @@ class Placement:
     def boxes(self, col, lane) -> list[tuple[str, int, int, int, int]]:
         """(group, c0, c1, l0, l1) rectangles per group. First choice: the members' bounding box as ONE rectangle,
         empty cells included, when no other node sits inside it and no other group's box would overlap it (an
-        L-shaped group of three is one card with an empty corner, not two cards with a 40 px gap between them —
+        L-shaped group of three is one card with an empty corner, not two cards with a 64 px gap between them —
         the gap costs every edge that crosses it its text room). Otherwise: per column, maximal runs of lanes
         whose cells are members or empty; runs in neighbouring columns with identical lane ranges merge."""
         owner = {(col[n], lane[n]): d.get("group") for n, d in self.nodes.items() if d.get("group")}
@@ -598,7 +598,7 @@ class Placement:
 
     def compact_columns(self) -> None:
         """Close columns nobody uses: the constructive pass parks stragglers at `max_col + 1`, which can leave an
-        empty 240 px band in the middle of the picture. Removing an empty column only shortens edges — corridors
+        empty 224 px band in the middle of the picture. Removing an empty column only shortens edges — corridors
         stay empty, sides keep their edges and their order — so it cannot add a hard violation."""
         used = sorted(set(self.col.values()))
         remap = {c: i for i, c in enumerate(used)}

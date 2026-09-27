@@ -61,7 +61,7 @@ def test_output_set_has_a_guide_and_a_single_final_png():
 def test_edge_text_is_the_what_flows_phrase():
     style = (SKILL / "references" / "layout-and-style.md").read_text()
     section = style.split("## 5.")[1].split("## 6.")[0]
-    for needle in ("What flows", "3 lines", "24 characters", "6 characters", "12 characters", "longest leg", "OUTSIDE_GAP"):
+    for needle in ("What flows", "3 lines", "20 characters", "6 characters", "7 characters", "longest leg", "OUTSIDE_GAP"):
         assert needle in section, needle
     assert "badge" not in section and "cannot carry a label" not in section
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
@@ -130,15 +130,26 @@ def test_codebase_input_rules_are_present():
     assert "Spot-check" in assess and "call count" in assess
 
 
-def test_generic_groups_and_service_boundaries_are_documented():
-    # 1.8.0: role groups are the official AWS Generic group; same-service icons that land adjacent get a badge box
+def test_filled_cards_and_service_boundaries_are_documented():
+    # 1.9.0: role groups are light-grey cards on the 224 × 142 grid; same-service icons that land adjacent get a badge box
     skill = SKILL_MD.read_text()
     style = (SKILL / "references" / "layout-and-style.md").read_text()
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
     review = (SKILL / "references" / "review-checklist.md").read_text()
-    assert "Generic group" in style and "strokeColor=#5A6C86" in style and "dashed=1" in style
+    assert "fillColor=#F1F3F6" in style and "strokeColor=#AEB6C2" in style and "dashed=0" in style
+    assert "224" in style and "142" in style and "GROUP_BELOW_PAD" in style and "ROW_CLEAR" in style
+    assert "17 characters" in style and "fontSize=15" in style and "fontSize=13" in style   # node/group titles; edge text
+    assert "__title" in style and "LABEL_BORDER_SLACK_PX" in style
     assert "bedrock_agentcore" in style and "sagemaker_2" in style and "bedrock_agentcore" in brief   # four distinct services
     assert "Service boundaries" in style and "BOUNDARY_ABOVE" in style and "awsBadge" in style
     assert "Boundary" in brief and "copies" in brief and "[edge]" not in brief
     assert "Boundary" in skill and "[kind]" not in skill and "[edge]" not in skill
-    assert "oundar" in review and "Generic group" in review
+    assert "oundar" in review and "#F1F3F6" in review
+
+
+def test_no_stale_grid_numbers_in_docs():
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    tpl = (SKILL / "templates" / "README.md").read_text()
+    for stale in ("240 px", "170 px", "240 × 170", "fontSize=11;", "13 bold", "22 characters", "1.282", "1.513", "dashed=1;fontColor"):
+        assert stale not in style, stale
+    assert "240 × 170" not in tpl and "224 × 142" in tpl
