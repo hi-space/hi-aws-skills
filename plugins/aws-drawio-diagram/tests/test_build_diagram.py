@@ -719,3 +719,38 @@ def test_edge_label_keeps_four_px_from_every_border():
     # icons, other labels and lines keep the 2 px they always had
     assert bd.Builder.box_is_clear((110, 80, 150, 96), [], [(100, 98, 200, 120)], [])
     assert not bd.Builder.box_is_clear((110, 80, 150, 97), [], [(100, 98, 200, 120)], [])
+
+
+# ---- final review fixes: a group title always fits its card ---------------------------------------------------
+def test_overlay_title_never_reaches_past_its_card():
+    # one-column card, long title, a line through the band: the overlay wraps inside the card instead of spilling
+    s = _stacked("Payment & inventory workflow", [1])
+    s["groups"].append({"id": "n", "label": "Neighbour", "cols": [2], "lanes": [1]})
+    s["nodes"].append({"id": "z", "label": "Lambda", "icon": "lambda", "col": 2, "lane": 1, "group": "n"})
+    b = _builder(s)
+    xml = b.build()
+    geo, st = geometry(xml), styles(xml)
+    _, gx, gy, gw, gh = geo["g"]
+    _, tx, ty, tw, th = geo["g__title"]
+    assert tw <= gw - 16 and st["g__title"]["whiteSpace"] == "wrap"
+    assert b.title_lines("g") == ["Payment &", "inventory", "workflow"]
+    assert th >= 3 * bd.LABEL_LINE_H
+    assert b.group_above("g") == 46 + 2 * bd.LABEL_LINE_H                   # the band grows one line per extra title line
+    assert any("wraps to 3 lines" in n for n in b.notes)
+
+
+def test_long_title_without_a_crossing_line_grows_the_band_above_the_boundary():
+    s = bspec(cells=((1, 0), (2, 0), (1, 1)))
+    s["groups"][0]["cols"] = [1, 2]
+    s["groups"][0]["label"] = "Agent runtime and orchestration, Seoul region"      # wider than a 384 px card: two lines
+    b = _builder(s)
+    assert len(b.title_lines("g")) == 2
+    assert b.group_above("g") == 66 + bd.LABEL_LINE_H
+    geo = geometry(b.build())
+    assert geo["g__bedrock"][2] == b.group_above("g") - bd.BOUNDARY_ABOVE       # the badge row sits under both title lines
+    assert any("wraps to 2 lines" in n for n in b.notes)
+    # a single word wider than the card cannot wrap: say so instead of silently overflowing
+    s["groups"][0]["label"] = "Observability" * 4
+    b = _builder(s)
+    b.build()
+    assert any("wider than its card" in n for n in b.notes)

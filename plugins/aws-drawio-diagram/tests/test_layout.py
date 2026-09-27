@@ -563,3 +563,24 @@ def test_default_auto_layout_of_the_agentic_sample_builds_clean():
     xml = bd.build(placed)
     errors, warnings = vd.validate_text(xml, INDEX)
     assert errors == [] and [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS] == [], warnings
+
+
+def test_planner_does_not_charge_a_leg_leaving_a_boundary_downward():
+    # member above (lane 0, boundary on lane 0), other node below: the leg leaves the boundary's bottom, where the
+    # builder finds 32 px of room beside it — no LABEL_ROOM_COST
+    s = {"title": "T",
+         "groups": [{"id": "g", "label": "Agent runtime", "cols": [3, 4], "lanes": [0, 1]}],
+         "nodes": [{"id": "runtime", "label": "Runtime", "image": "Res_Amazon-Bedrock-AgentCore_Runtime_48.svg", "group": "g",
+                    "boundary": "bedrock_agentcore"},
+                   {"id": "memory", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg", "group": "g",
+                    "boundary": "bedrock_agentcore"},
+                   {"id": "bedrock", "label": "Claude", "icon": "bedrock", "group": "g"}],
+         "edges": [{"from": "runtime", "to": "memory", "label": "memory"}, {"from": "runtime", "to": "bedrock", "label": "prompt"}]}
+    p = layout.Placement(s, seed=1)
+    p.col = {"runtime": 3, "memory": 4, "bedrock": 3}
+    p.lane = {"runtime": 0, "memory": 0, "bedrock": 1}
+    with_label, _ = p.cost()
+    p.edges[1].pop("label")
+    without_label, _ = p.cost()
+    assert with_label - without_label == pytest.approx(0.0)
+    assert vd.validate_text(bd.build(p.apply()), INDEX)[0] == []

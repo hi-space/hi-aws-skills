@@ -268,14 +268,16 @@ class Placement:
 
         def v_room(s: str, t: str) -> tuple[int, int]:
             """(characters per line, lines) for the text beside a straight vertical edge, as the builder will find it:
-            one line in the gap between two cards; nothing on the 40 px leg between adjacent lanes when a boundary's
-            title row sits on it (one end inside a drawn boundary, the other outside); two lines at most beside a
-            40 px leg; otherwise LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
+            one line in the gap between two cards; nothing on the 40 px leg between adjacent lanes when it enters a
+            drawn boundary from above (the boundary's title row eats it — a leg leaving the boundary's bottom keeps
+            32 px); two lines at most beside a 40 px leg; otherwise LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
             span = abs(lane[s] - lane[t])
             if box_of(s) != box_of(t):
                 return (LABEL_MAX_LINE_CHARS, 1)
             if span == 1 and any((s in m) != (t in m) for m in drawn_members):
-                return (0, 0)
+                member, other = (s, t) if any(s in m for m in drawn_members) else (t, s)
+                if lane[other] < lane[member]:                      # the leg enters the boundary through its title row
+                    return (0, 0)
             return (LABEL_VERTICAL_CHARS, 2 if span == 1 else LABEL_MAX_LINES)
 
         def x_of(nid: str) -> float:                                # icon centre x as the builder draws it

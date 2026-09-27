@@ -292,11 +292,32 @@ class Builder:
         bottoms = {max(g["lanes"]) for g in self.groups.values()}
         return sorted(j for j in tops if j - 1 in bottoms)
 
+    def card_width(self, gid: str) -> int:
+        cols = self.groups[gid]["cols"]
+        return (max(cols) - min(cols)) * COL_PITCH + 2 * GROUP_HALF_W
+
+    def title_lines(self, gid: str) -> list[str]:
+        """The group title as draw.io will wrap it inside the card (12 px each side), greedy by words measured with
+        text_px. A single word wider than the card stays on its line (draw.io does not break words); the caller notes it."""
+        avail = self.card_width(gid) - 24
+        lines, cur = [], ""
+        for w in self.groups[gid]["label"].split(" "):
+            cand = w if not cur else cur + " " + w
+            if cur and text_px(cand, 15) > avail:
+                lines.append(cur)
+                cur = w
+            else:
+                cur = cand
+        lines.append(cur)
+        return lines
+
     def group_above(self, gid: str) -> int:
-        """Padding above the first icon: the title band, plus a boundary's own title row when the group draws one."""
+        """Padding above the first icon: the title band (one line per extra title line), plus a boundary's own title
+        row when the group draws one."""
+        extra = (len(self.title_lines(gid)) - 1) * LABEL_LINE_H
         if gid in self._boundary_gids:
-            return TITLE_BAND + 2 + BOUNDARY_ABOVE
-        return TITLE_BAND + GROUP_ABOVE_PAD
+            return TITLE_BAND + extra + 2 + BOUNDARY_ABOVE
+        return TITLE_BAND + extra + GROUP_ABOVE_PAD
 
     def group_below(self, gid: str) -> int:
         """Padding below the last icon: the tallest label of the group's nodes on its last lane, plus GROUP_BELOW_PAD —
@@ -722,22 +743,35 @@ class Builder:
         # does not (a one-column card with a long title), the title is drawn last, over the line, on a patch of the
         # card's colour — legible, and noted so the author can rename the group or move the node.
         title_left: dict[str, int] = {}
-        overlay_titles: list[tuple[str, str, int, int, float]] = []   # (gid, title, x, y, width)
+        overlay_titles: list[tuple[str, str, int, int, int, int]] = []   # (gid, title, x, y, width, lines)
+        title_extra: list[tuple] = []                                  # boxes of extra title lines: no edge text there
         for gid, (gx, gy, gw, gh) in rects.items():
             title = self.groups[gid]["label"]
             tw = text_px(title, 15)
+            lines = self.title_lines(gid)
+            widest = max(text_px(l, 15) for l in lines)
+            if widest > gw - 24:
+                self.notes.append(f"group '{gid}': title '{title}' is wider than its card by {int(widest - (gw - 24))} px and has "
+                                  "no space to break at — shorten it or give the group another column")
+            elif len(lines) > 1:
+                self.notes.append(f"group '{gid}': title '{title}' wraps to {len(lines)} lines inside its {gw} px card (the card "
+                                  "grows to hold them) — shorten it or give the group another column")
+            if len(lines) > 1:
+                title_extra.append((gx, gy + TITLE_BAND, gx + gw, gy + TITLE_BAND + (len(lines) - 1) * LABEL_LINE_H))
+            band = TITLE_BAND + (len(lines) - 1) * LABEL_LINE_H
             xs = [x1 for x1, y1, x2, y2 in all_segments
-                  if x1 == x2 and gx < x1 < gx + gw and min(y1, y2) < gy + TITLE_BAND and max(y1, y2) > gy]
+                  if x1 == x2 and gx < x1 < gx + gw and min(y1, y2) < gy + band and max(y1, y2) > gy]
             title_left[gid] = 12
-            if xs and 12 + tw + LABEL_SLACK_PX > min(xs) - gx:
+            if xs and 12 + widest + LABEL_SLACK_PX > min(xs) - gx:
                 shifted = int(max(xs) - gx) + 8
-                if shifted + tw + 12 <= gw:
+                if len(lines) == 1 and shifted + tw + 12 <= gw:
                     title_left[gid] = shifted
                 else:
-                    overlay_titles.append((gid, title, gx + 8, gy + 2, tw + 8))
+                    overlay_titles.append((gid, title, gx + 8, gy + 2, min(int(tw) + 8, gw - 16), len(lines)))
+                    room = int((min(xs) - gx - 12 - LABEL_SLACK_PX) / (0.55 * 15))
                     self.notes.append(f"group '{gid}': title '{title}' is crossed by a line at its first column and does not fit "
-                                      f"beside it — drawn over the line; rename the group (≤ {chars_that_fit(min(xs) - gx - 8)} "
-                                      "characters fit left of the line) or move the node so the line enters from the side")
+                                      f"beside it — drawn over the line; rename the group (about {room} Latin characters fit left "
+                                      "of the line) or move the node so the line enters from the side")
         for gid, (x, y, w, h) in rects.items():
             gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=15;fontStyle=1;verticalAlign=top;align=left;"
                       f"spacingLeft={title_left[gid]};spacingTop=4;container=1;dropTarget=1;")
@@ -809,7 +843,7 @@ class Builder:
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
                      f"fontFamily={font};fontSize=13;fontColor=#232F3E;endArrow=block;endFill=1;")
-        icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()]
+        icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()] + title_extra
         # then the text — the brief's *What flows* phrase — solid (primary) edges first so they get the room
         placed: dict[str, tuple] = {}
         label_boxes: list[tuple] = []
@@ -870,11 +904,12 @@ class Builder:
                 f'<mxCell id="{eid}"{val} style="{style}" edge="1" parent="1" source="{e["from"]}" target="{e["to"]}">'
                 f'{geo}</mxCell>')
 
-        for gid, title, tx, ty, tw in overlay_titles:           # after the edges, so the patch covers the line
+        for gid, title, tx, ty, tw, n_lines in overlay_titles:  # after the edges, so the patch covers the line
+            wrap = "wrap" if n_lines > 1 else "nowrap"
             self.vertex(f"{gid}__title", title,
-                        f"text;html=1;align=left;verticalAlign=middle;whiteSpace=nowrap;spacingLeft=4;fontFamily={font};fontSize=15;"
+                        f"text;html=1;align=left;verticalAlign=middle;whiteSpace={wrap};spacingLeft=4;fontFamily={font};fontSize=15;"
                         f"fontStyle=1;fontColor=#232F3E;labelBackgroundColor={GROUP_FILL};",
-                        tx, ty, int(tw), 24)
+                        tx, ty, tw, LABEL_LINE_H * n_lines + 4)
 
         name = spec.get("page", spec.get("title", "Page-1"))
         return ('<mxfile host="app.diagrams.net">'

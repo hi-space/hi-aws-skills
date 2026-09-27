@@ -74,7 +74,9 @@ with a title longer than ~8 Latin characters), the title is drawn **last, over t
 colour**: a separate `text` cell `<group id>__title` with `labelBackgroundColor=#F1F3F6`, and the group cell's own
 `value` is empty (the validator still treats the band as titled). The builder prints
 `note: group '…': title '…' is crossed by a line …` so the author can rename the group or move the node; the
-picture stays legible either way. By hand: keep titles short on one-column cards, or place the card so its first
+picture stays legible either way. A title wider than its card wraps inside it (`Builder.title_lines`, greedy by
+words) and the card grows one 20 px line per extra title line, with a `note:`; a single word wider than the card
+cannot break and is noted as such. By hand: keep titles short on one-column cards, or place the card so its first
 column has no vertical edge.
 
 **Service boundaries.** Several icons of one *platform* service — AgentCore Runtime + Memory + Gateway, a Glue
