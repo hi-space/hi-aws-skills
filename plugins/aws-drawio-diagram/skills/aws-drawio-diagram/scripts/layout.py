@@ -51,6 +51,7 @@ BOUNDARY_SPLIT_COST = 14.0
 # layout-and-style.md §5.
 LABEL_VERTICAL_CHARS = 7                                 # beside a vertical line, 76 px to the card border (build_diagram chars_that_fit)
 LABEL_ROOM_COST = 20.0
+WIDTH_COST = 4.0                                         # per inside column of width, like the 4.0 per lane of height
 
 
 def layering(nodes: dict, edges: list) -> dict[str, int]:
@@ -103,6 +104,10 @@ class Placement:
         self.max_col = max(self.layer.values()) + 1
         self.col, self.lane = self._construct()
         self.lanes_n = max(6, max(self.lane.values()) + 2, len(self.nodes) // 3 + 2)
+        # spine hops whose target carries the chain on: only those must stay on one lane — the last hop into a sink
+        # is an arbitrary pick among the hub's sinks, and the hand-placed samples drop it a lane without harm
+        has_out = {e["from"] for e in self.edges if not self.nodes[e["to"]].get("outside")}
+        self._spine_continues = {(a, b) for a, b in self.spine if b in has_out}
 
     # ---- constructive placement: spine + fan-outs stacked beside each hub ----------------------------
     def _construct(self) -> tuple[dict, dict]:
@@ -114,11 +119,16 @@ class Placement:
         # longest path to a sink: the spine follows the longest chain from the first outside source
         memo: dict[str, int] = {}
 
+        solid_out = defaultdict(list)                        # the request path follows solid edges; dashed ones are aux
+        for e in self.edges:
+            if not e.get("dashed"):
+                solid_out[e["from"]].append(e["to"])
+
         def depth(u, seen=()):
             if u in memo:
                 return memo[u]
             best = 0
-            for v in out[u]:
+            for v in solid_out[u]:
                 if v not in seen:
                     best = max(best, 1 + depth(v, seen + (u,)))
             memo[u] = best
@@ -136,86 +146,124 @@ class Placement:
         sources = [n for n in self.nodes if not inc[n]]
         start = max(sources or list(self.nodes), key=lambda n: (self.nodes[n].get("outside", False), depth(n)))
         inside = lambda v: not self.nodes[v].get("outside")
-        # spine: greedy longest chain from the start on lane 0. A spine node with other neighbours gets a spare
-        # column to its right for them, so the next spine node's own column stays clear for its trunks
+        # secondary chains: another inside source (a document bucket feeding the index, a sensor feed) and the chain
+        # it starts are laid later as their own row below the picture, left to right, ending under the node they
+        # join — the way a designer draws an ingestion pipeline — so they are kept out of the fan-outs
+        chains: list[list[str]] = []
+        reserved: set[str] = set()
+        for src in sorted((v for v in sources if v != start and inside(v)), key=depth, reverse=True):
+            chain = [src]
+            while True:
+                nxt = [v for v in out[chain[-1]] if v not in chain and v not in reserved and inside(v) and inc[v] == [chain[-1]]]
+                if not nxt:
+                    break
+                chain.append(max(nxt, key=depth))
+            if len(chain) >= 2:
+                chains.append(chain)
+                reserved.update(chain)
+        # spine: greedy longest chain from the start on lane 0. A spine node with three or more other neighbours gets
+        # a spare column to its right for them (they fan out as bends), so the next spine node's own column stays
+        # clear for its trunks; one or two neighbours sit straight above / below the node in its own column
         n, c = start, 0 if self.nodes[start].get("outside") else 1
         while True:
             put(n, c, 0)
-            nxt = [v for v in out[n] if v not in col and inside(v)]
+            nxt = [v for v in out[n] if v not in col and inside(v) and v not in reserved]
             if not nxt:
                 break
-            m = max(nxt, key=depth)
+            degree = lambda v: len(out[v]) + len(inc[v])
+            solid = lambda v: v in solid_out[n]
+            m = max(nxt, key=lambda v: (solid(v), depth(v), degree(v), self.nodes[v].get("group") == self.nodes[n].get("group"), v))
             self.spine.add((n, m))
-            stacked = [v for v in out[n] + inc[n] if v not in col and v != m and inside(v)]
-            n, c = m, c + (2 if stacked else 1)
+            stacked = [v for v in out[n] + inc[n] if v not in col and v != m and inside(v) and v not in reserved]
+            n, c = m, c + (2 if len(stacked) > 2 else 1)
         park_col, out_col = c + 1, c + 2                    # inside nodes with no cell beside their hub; outside sinks
         # fan-outs: for each placed node (BFS order), stack its unplaced inside neighbours in the next column,
         # same-group neighbours together, alternating above/below, keeping the node's own column clear; then its
         # outside sinks in the outside column, on the nearest lane the edge can actually reach
-        queue = [start] + [x for x in col if x != start]
-        seen = set(queue)
-        while queue:
-            u = queue.pop(0)
-            cu, lu = col[u], lane[u]
-            pend = [v for v in out[u] if v not in col] + [v for v in inc[u] if v not in col]
-            pend.sort(key=lambda v: (not inside(v), self.nodes[v].get("group") or "", self.nodes[v].get("boundary") or "", v))
-            side, k_up, k_dn = 1, 1, 1
-            prev_boundary = None
-            for v in pend:
-                if v in col:
-                    continue
-                # members of one service boundary stack on the same side, consecutively, so they start adjacent
-                # (the search only has to keep them there; see BOUNDARY_SPLIT_COST)
-                this_boundary = (self.nodes[v].get("group"), self.nodes[v].get("boundary")) if self.nodes[v].get("boundary") else None
-                if this_boundary is not None and this_boundary == prev_boundary:
-                    side = -side                                          # undo the flip the previous member caused
-                prev_boundary = this_boundary
-                if not inside(v):
-                    cv = 0 if v in inc[u] else out_col
-                    between = range(min(cu, cv) + 1, max(cu, cv))
+        def fan_out(queue: list[str]) -> None:
+            seen = set(queue)
+            while queue:
+                u = queue.pop(0)
+                cu, lu = col[u], lane[u]
+                pend = [v for v in out[u] if v not in col and v not in reserved] + [v for v in inc[u] if v not in col and v not in reserved]
+                pend.sort(key=lambda v: (not inside(v), self.nodes[v].get("group") or "", self.nodes[v].get("boundary") or "", v))
+                side, k_up, k_dn = 1, 1, 1
+                few = len([v for v in pend if inside(v)]) <= 2 and (cu, lu) != (0, lu)
+                straight_slots = [(cu, lu - 1), (cu, lu + 1)] if few else []
+                prev_boundary = None
+                for v in pend:
+                    if v in col:
+                        continue
+                    # members of one service boundary stack on the same side, consecutively, so they start adjacent
+                    # (the search only has to keep them there; see BOUNDARY_SPLIT_COST)
+                    this_boundary = (self.nodes[v].get("group"), self.nodes[v].get("boundary")) if self.nodes[v].get("boundary") else None
+                    if this_boundary is not None and this_boundary == prev_boundary:
+                        side = -side                                          # undo the flip the previous member caused
+                    prev_boundary = this_boundary
+                    if not inside(v):
+                        cv = 0 if v in inc[u] else out_col
+                        between = range(min(cu, cv) + 1, max(cu, cv))
 
-                    def reachable(l: int) -> bool:
-                        """Straight on the hub's lane, or one bend whose two legs cross no placed node."""
-                        if not free(cv, l):
-                            return False
-                        if l == lu:
-                            return all(free(x, lu) for x in between)
-                        rows = range(min(lu, l) + 1, max(lu, l))
-                        v_ok = all(free(x, l) for x in between) and all(free(cu, k) for k in rows)
-                        h_ok = all(free(x, lu) for x in list(between) + [cv]) and all(free(cv, k) for k in rows)
-                        return v_ok or h_ok
+                        def reachable(l: int) -> bool:
+                            """Straight on the hub's lane, or one bend whose two legs cross no placed node."""
+                            if not free(cv, l):
+                                return False
+                            if l == lu:
+                                return all(free(x, lu) for x in between)
+                            rows = range(min(lu, l) + 1, max(lu, l))
+                            v_ok = all(free(x, l) for x in between) and all(free(cu, k) for k in rows)
+                            h_ok = all(free(x, lu) for x in list(between) + [cv]) and all(free(cv, k) for k in rows)
+                            return v_ok or h_ok
 
-                    lv = next((l for l in [lu] + [lu + d * k for k in range(1, 12) for d in (1, -1)] if reachable(l)), None)
-                    if lv is None:
-                        lv = lu
-                        while not free(cv, lv):
-                            lv += 1
-                    put(v, cv, lv)
-                else:
-                    placed = False
-                    for _ in range(40):
-                        if side > 0:
-                            cv, lv, k_dn = cu + 1, lu + k_dn, k_dn + 1
-                        else:
-                            cv, lv, k_up = cu + 1, lu - k_up, k_up + 1
-                        side = -side
-                        trunk_clear = all(free(cu, l) for l in range(min(lu, lv), max(lu, lv) + 1) if l != lu)
-                        if cv >= 1 and free(cv, lv) and trunk_clear:
-                            put(v, cv, lv)
-                            placed = True
-                            break
-                    if not placed:                                       # park it right of everything inside
-                        cv, lv = park_col, 0
-                        while not free(cv, lv):
-                            lv += 1
+                        lv = next((l for l in [lu] + [lu + d * k for k in range(1, 12) for d in (1, -1)] if reachable(l)), None)
+                        if lv is None:
+                            lv = lu
+                            while not free(cv, lv):
+                                lv += 1
                         put(v, cv, lv)
-                if v not in seen:
-                    seen.add(v)
-                    queue.append(v)
-            for v in out[u] + inc[u]:
-                if v not in seen:
-                    seen.add(v)
-                    queue.append(v)
+                    elif straight_slots and free(*straight_slots[0]) and (self.nodes[v].get("boundary") is None
+                                                                           or self.nodes[v].get("boundary") == self.nodes[u].get("boundary")):
+                        put(v, *straight_slots.pop(0))                  # straight above / below the hub, no bend, no spare column
+                    else:
+                        placed = False
+                        for _ in range(40):
+                            if side > 0:
+                                cv, lv, k_dn = cu + 1, lu + k_dn, k_dn + 1
+                            else:
+                                cv, lv, k_up = cu + 1, lu - k_up, k_up + 1
+                            side = -side
+                            trunk_clear = all(free(cu, l) for l in range(min(lu, lv), max(lu, lv) + 1) if l != lu)
+                            if cv >= 1 and free(cv, lv) and trunk_clear:
+                                put(v, cv, lv)
+                                placed = True
+                                break
+                        if not placed:                                       # park it right of everything inside
+                            cv, lv = park_col, 0
+                            while not free(cv, lv):
+                                lv += 1
+                            put(v, cv, lv)
+                    if v not in seen and v not in reserved:
+                        seen.add(v)
+                        queue.append(v)
+                for v in out[u] + inc[u]:
+                    if v not in seen and v not in reserved:
+                        seen.add(v)
+                        queue.append(v)
+        fan_out([start] + [x for x in col if x != start])
+        for chain in chains:                                          # secondary chains: a row below, ending under the join
+            joins = [v for v in out[chain[-1]] if v in col]
+            row = max(lane.values()) + 1
+            end = col[joins[0]] if joins else len(chain)
+            c0 = max(1, end - len(chain) + 1)
+            while not all(free(c0 + i, row) for i in range(len(chain))):
+                row += 1
+            for i, v in enumerate(chain):
+                put(v, c0 + i, row)
+            for a, b in zip(chain, chain[1:]):
+                self.spine.add((a, b))
+        reserved.clear()
+        for chain in chains:
+            fan_out(list(chain))
         for v in self.nodes:                                          # isolated nodes
             if v not in col:
                 cv, lv = park_col, 0
@@ -270,7 +318,9 @@ class Placement:
             """(characters per line, lines) for the text beside a straight vertical edge, as the builder will find it:
             one line in the gap between two cards; nothing on the 40 px leg between adjacent lanes when it enters a
             drawn boundary from above (the boundary's title row eats it — a leg leaving the boundary's bottom keeps
-            32 px); two lines at most beside a 40 px leg; otherwise LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
+            32 px); beside a 40 px leg the text (two lines at most) may run to the card's border on the wider side —
+            the lane gap holds no icons, so a two-column card gives it 300 px; a longer leg passes icon rows and keeps
+            LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
             span = abs(lane[s] - lane[t])
             bs, bt = box_of(s), box_of(t)
             if bs is None and bt is None:                       # neither node sits in a card: open canvas beside the line
@@ -281,7 +331,11 @@ class Placement:
                 member, other = (s, t) if any(s in m for m in drawn_members) else (t, s)
                 if lane[other] < lane[member]:                      # the leg enters the boundary through its title row
                     return (0, 0)
-            return (LABEL_VERTICAL_CHARS, 2 if span == 1 else LABEL_MAX_LINES)
+            if span == 1:
+                _, c0, c1, _, _ = boxes[bs]
+                side_px = max(col[s] - c0, c1 - col[s]) * COL_PITCH + GROUP_HALF_W - 4
+                return (min(LABEL_MAX_LINE_CHARS, chars_that_fit(side_px)), 2)
+            return (LABEL_VERTICAL_CHARS, LABEL_MAX_LINES)
 
         def x_of(nid: str) -> float:                                # icon centre x as the builder draws it
             x = COL0 + COL_PITCH * col[nid]
@@ -318,7 +372,7 @@ class Placement:
             sc, sl, tc, tl = col[s], lane[s], col[t], lane[t]
             soft += abs(sc - tc) + abs(sl - tl)
             solid = not e.get("dashed")
-            if (s, t) in self.spine and sl != tl:
+            if (s, t) in self._spine_continues and sl != tl:
                 soft += 80.0                                        # the request path stays on one lane
             xs_, xt_ = x_of(s), x_of(t)
             rooms: list[int] = []                                   # characters per line, per leg of the drawn edge
@@ -442,6 +496,8 @@ class Placement:
                     hard += 1
                     notes.append(f"outside node '{nid}' would sit inside the cloud (col {col[nid]})")
         soft += 4.0 * (max(lane.values()) - min(lane.values()))
+        if inside_cols:                                             # width costs like height: the compact picture wins ties
+            soft += WIDTH_COST * (max(inside_cols) - min(inside_cols))
         per_col = defaultdict(int)
         for nid in self.nodes:
             per_col[col[nid]] += 1

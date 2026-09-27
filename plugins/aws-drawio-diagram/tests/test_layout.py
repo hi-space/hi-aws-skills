@@ -599,3 +599,95 @@ def test_v_room_treats_two_nodes_outside_any_card_as_open_space():
     p.edges[0].pop("label")
     without_label, _ = p.cost()
     assert with_label - without_label == pytest.approx(0.0)
+
+
+# ---- sprawl: the cost model must prefer the compact hand-placed layout ---------------------------------------
+def _placement_of(spec, placed_nodes):
+    p = layout.Placement(spec, seed=7)
+    p.col = {n["id"]: n["col"] for n in placed_nodes}
+    p.lane = {n["id"]: n["lane"] for n in placed_nodes}
+    return p
+
+
+def test_cost_model_prefers_the_hand_placed_agentic_layout_over_a_nine_column_one():
+    sample = json.loads((SAMPLES / "agentic-rag-chat.json").read_text())
+    logical = strip(sample)
+    hand = _placement_of(logical, sample["nodes"])
+    hand_cost, hand_notes = hand.cost()
+    assert hand_notes == []
+    # the 1.9.0 planner's own answer before the fix: 9 columns, everything on a long lane
+    sprawl = [("users", 0, 2), ("s3web", 1, 1), ("cf", 1, 2), ("cognito", 2, 3), ("apigw", 2, 2), ("memory", 5, 2), ("runtime", 4, 2),
+              ("bedrock", 4, 3), ("sns", 3, 0), ("cw", 2, 0), ("oss", 4, 0), ("s3docs", 8, 0), ("eb", 7, 0), ("ingest", 6, 0)]
+    wide = _placement_of(logical, [{"id": i, "col": c, "lane": l} for i, c, l in sprawl])
+    wide_cost, _ = wide.cost()
+    assert hand_cost < wide_cost, (hand_cost, wide_cost)
+
+
+def test_spine_lane_change_is_free_on_the_last_hop_into_a_sink():
+    # runtime → oss is the arbitrary end of the request chain (oss has no inside successor): dropping it one lane
+    # must not cost the 80-point spine penalty, while apigw → runtime (the chain continues) still does
+    sample = json.loads((SAMPLES / "agentic-rag-chat.json").read_text())
+    logical = strip(sample)
+    p = _placement_of(logical, sample["nodes"])
+    base, _ = p.cost()
+    p.lane["oss"] = p.lane["runtime"]                                 # oss beside runtime's lane → would be same lane, but
+    p.col["oss"] = 5                                                  # move it right instead so the layout stays legal
+    same_lane, _ = p.cost()
+    assert base - same_lane < 80                                      # no 80-point swing from the sink hop
+    q = _placement_of(logical, sample["nodes"])
+    q.lane["runtime"] = q.lane["apigw"] + 1                          # break the chain between apigw and runtime
+    q.lane["memory"] = q.lane["runtime"] - 1
+    q.lane["bedrock"] = q.lane["runtime"]
+    broken, _ = q.cost()
+    assert broken - base >= 80
+
+
+def test_v_room_uses_the_wider_side_of_the_card():
+    # runtime → memory: a vertical leg inside a two-column card; the empty column to the right gives the text
+    # 300 px, not the 76 px of a one-column card
+    sample = json.loads((SAMPLES / "agentic-rag-chat.json").read_text())
+    logical = strip(sample)
+    p = _placement_of(logical, sample["nodes"])
+    for e in p.edges:
+        if (e["from"], e["to"]) == ("runtime", "memory"):
+            assert e["label"] == "read/write memory"
+    with_label, _ = p.cost()
+    for e in p.edges:
+        if (e["from"], e["to"]) == ("runtime", "memory"):
+            e.pop("label")
+    without_label, _ = p.cost()
+    assert with_label - without_label == pytest.approx(0.0)
+
+
+def test_default_auto_layout_of_the_agentic_sample_is_not_wider_than_six_columns():
+    logical = strip(json.loads((SAMPLES / "agentic-rag-chat.json").read_text()))
+    placed, notes = layout.plan(logical)
+    assert notes == [], notes
+    cols = {n["col"] for n in placed["nodes"]}
+    assert max(cols) - min(cols) + 1 <= 6, sorted(cols)
+    xml = bd.build(placed)
+    assert vd.validate_text(xml, INDEX)[0] == []
+
+
+def test_constructive_start_follows_solid_edges_and_seats_two_neighbours_straight():
+    # agentic: apigw → cw is dashed (logs) so the spine goes apigw → runtime → bedrock; apigw's two extra neighbours
+    # (cognito, cw) sit straight above / below it in its own column, no spare column, no bend
+    logical = strip(json.loads((SAMPLES / "agentic-rag-chat.json").read_text()))
+    p = layout.Placement(logical, seed=7)
+    assert ("apigw", "runtime") in p.spine and ("apigw", "cw") not in p.spine
+    assert p.col["cognito"] == p.col["apigw"] == p.col["cw"] and p.lane["cognito"] < p.lane["apigw"] < p.lane["cw"]
+    assert p.col["runtime"] == p.col["apigw"] + 1                     # no spare column for two neighbours
+    # the second source's chain (s3docs → eb → ingest) is a row below the picture ending under its join (oss)
+    assert p.lane["s3docs"] == p.lane["eb"] == p.lane["ingest"] > max(p.lane[n] for n in ("cf", "apigw", "runtime", "oss"))
+    assert p.col["ingest"] == p.col["oss"] and p.col["eb"] == p.col["ingest"] - 1
+    assert max(p.col.values()) - min(p.col.values()) + 1 <= 5
+
+
+def test_default_auto_layout_of_every_sample_is_about_as_wide_as_the_hand_placed_one():
+    for name, hand_cols in (("agentic-rag-chat", 5), ("order-pipeline", 7), ("iot-telemetry", 9)):
+        logical = strip(json.loads((SAMPLES / f"{name}.json").read_text()))
+        placed, notes = layout.plan(logical)
+        assert notes == [], (name, notes)
+        cols = {n["col"] for n in placed["nodes"]}
+        assert max(cols) - min(cols) + 1 <= hand_cols + 1, (name, sorted(cols))
+        assert vd.validate_text(bd.build(placed), INDEX)[0] == [], name
