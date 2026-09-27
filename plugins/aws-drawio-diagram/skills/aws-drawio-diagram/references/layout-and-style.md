@@ -76,8 +76,10 @@ colour**: a separate `text` cell `<group id>__title` with `labelBackgroundColor=
 `note: group '…': title '…' is crossed by a line …` so the author can rename the group or move the node; the
 picture stays legible either way. A title wider than its card wraps inside it (`Builder.title_lines`, greedy by
 words) and the card grows one 20 px line per extra title line, with a `note:`; a single word wider than the card
-cannot break and is noted as such. By hand: keep titles short on one-column cards, or place the card so its first
-column has no vertical edge.
+cannot break and is noted as such. Editing caveat: the overlay is a root-level cell with absolute coordinates, so
+dragging the card in draw.io leaves the title behind and the container shows no name in the Format panel — move the
+title with the card, or rename the group so the overlay is not needed. By hand: keep titles short on one-column cards,
+or place the card so its first column has no vertical edge.
 
 **Service boundaries.** Several icons of one *platform* service — AgentCore Runtime + Memory + Gateway, a Glue
 crawler + Data Catalog, a Step Functions workflow + its tasks, an ECS cluster + its services, IoT Core, SageMaker AI —

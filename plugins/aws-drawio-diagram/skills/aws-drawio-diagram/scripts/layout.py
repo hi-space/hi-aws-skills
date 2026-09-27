@@ -272,7 +272,10 @@ class Placement:
             drawn boundary from above (the boundary's title row eats it — a leg leaving the boundary's bottom keeps
             32 px); two lines at most beside a 40 px leg; otherwise LABEL_VERTICAL_CHARS per line, up to LABEL_MAX_LINES."""
             span = abs(lane[s] - lane[t])
-            if box_of(s) != box_of(t):
+            bs, bt = box_of(s), box_of(t)
+            if bs is None and bt is None:                       # neither node sits in a card: open canvas beside the line
+                return (LABEL_MAX_LINE_CHARS, LABEL_MAX_LINES)
+            if bs != bt:
                 return (LABEL_MAX_LINE_CHARS, 1)
             if span == 1 and any((s in m) != (t in m) for m in drawn_members):
                 member, other = (s, t) if any(s in m for m in drawn_members) else (t, s)

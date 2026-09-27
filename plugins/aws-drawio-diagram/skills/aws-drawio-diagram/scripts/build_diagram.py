@@ -25,7 +25,7 @@ Spec (JSON):
 }
 
 Grid: column i center x = 130 + 224·i; lane j center y = 236 + 142·j, plus a derived gap for every group row
-boundary above lane j (a lane where one group ends and another begins) that keeps the cards 24 px apart.
+boundary above lane j (a lane where one group ends and another begins) that keeps the cards 36 px apart.
 Icons are 78 px. Groups are 160 px per column (64 px gaps), 46 px above the first icon (66 with a service
 boundary), one label height + 8 px below the last. Edges between cells in the same column/lane are straight (empty corridor). Any other pair is
 joined with ONE bend: first along the source's column to the target's lane, then across ("v", the fan-out
@@ -170,12 +170,33 @@ def attr(value: str) -> str:
 
 # ---- edge text ---------------------------------------------------------------------------------
 def text_px(text: str, size: int) -> float:
-    """Rough width of bold text: 0.55 × size per Latin character, a full em per CJK character."""
-    return sum((1.0 if ord(ch) > 0x2E7F else 0.55) * size for ch in text)
+    """Width of bold text, calibrated on Amazon Ember Bold / Noto Sans KR Bold (within ~6 %): 0.92 em per CJK character,
+    0.65 per capital, 0.59 per digit, 0.56 per other letter, 0.40 per punctuation mark, 0.26 per space, with a table of
+    the glyphs that stray far from their class (W, M, m, w, &, I, i, l, …)."""
+    wide = {"W": 0.95, "M": 0.86, "m": 0.92, "w": 0.80, "&": 0.74, "@": 0.97, "%": 0.94, "#": 0.59, "/": 0.52}
+    narrow = {"I": 0.32, "i": 0.29, "j": 0.29, "l": 0.33, "t": 0.39, "f": 0.39, "r": 0.41, "(": 0.35, ")": 0.35, ",": 0.28, ".": 0.28, ":": 0.28, "·": 0.28}
+
+    def em(ch: str) -> float:
+        if ord(ch) > 0x2E7F:
+            return 0.92
+        if ch in wide:
+            return wide[ch]
+        if ch in narrow:
+            return narrow[ch]
+        if ch == " ":
+            return 0.26
+        if ch.isupper():
+            return 0.65
+        if ch.isdigit():
+            return 0.59
+        if ch.isalpha():
+            return 0.56
+        return 0.40
+    return sum(em(ch) for ch in text) * size
 
 
 def chars_that_fit(px: float) -> int:
-    """Characters of 11 pt text that fit in `px` pixels with the label's padding and the slide slack."""
+    """Characters of 13 pt edge text that fit in `px` pixels with the label's padding and the border slack."""
     return max(0, int((px - 2 * LABEL_PAD_PX - LABEL_BORDER_SLACK_PX) // LABEL_CHAR_PX))
 
 
@@ -261,8 +282,10 @@ class Builder:
         drawn_boundaries = boundary_plan(spec, index)[0]
         self._boundary_gids = {b["gid"] for b in drawn_boundaries.values()}
         self._boundary_last_lane = {}                          # gid -> lowest lane a drawn boundary in it reaches
+        self._boundary_first_lane = {}                         # gid -> highest lane a drawn boundary in it starts on
         for b in drawn_boundaries.values():
             self._boundary_last_lane[b["gid"]] = max(self._boundary_last_lane.get(b["gid"], -1), b["l1"])
+            self._boundary_first_lane[b["gid"]] = min(self._boundary_first_lane.get(b["gid"], 10 ** 6), b["l0"])
         self.row_breaks = self._row_breaks()
         self.row_extra = self._row_extra()
 
@@ -315,7 +338,7 @@ class Builder:
         """Padding above the first icon: the title band (one line per extra title line), plus a boundary's own title
         row when the group draws one."""
         extra = (len(self.title_lines(gid)) - 1) * LABEL_LINE_H
-        if gid in self._boundary_gids:
+        if self._boundary_first_lane.get(gid) == min(self.groups[gid]["lanes"]):   # a boundary title row on the first lane
             return TITLE_BAND + extra + 2 + BOUNDARY_ABOVE
         return TITLE_BAND + extra + GROUP_ABOVE_PAD
 
@@ -521,7 +544,8 @@ class Builder:
     @staticmethod
     def wrap(label: str) -> str:
         """Labels longer than LABEL_WRAP characters break into two lines at the space nearest the middle,
-        so a label never reaches the neighbouring column (240 px pitch, ~7 px per bold character)."""
+        so a label never reaches the card's sides (160 px per column, ~8 px per bold character). A single word longer
+        than that cannot break: the builder notes it (and refuses it inside a boundary)."""
         if "<br>" in label or len(label) <= LABEL_WRAP or " " not in label:
             return label
         words = label.split(" ")
@@ -784,7 +808,7 @@ class Builder:
         parent_of: dict[str, str] = {}
         for bid, b in boundaries.items():
             for m in b["members"]:
-                if "<br>" in self.wrap(self.nodes[m]["label"]):
+                if "<br>" in self.wrap(self.nodes[m]["label"]) or len(self.nodes[m]["label"]) > LABEL_WRAP:
                     raise SpecError(f"node '{m}': label '{self.nodes[m]['label']}' inside boundary '{b['name']}' must fit one line "
                                     f"(≤ {LABEL_WRAP} characters) — the boundary title already names the service, drop it from the label")
                 parent_of[m] = bid
@@ -828,6 +852,9 @@ class Builder:
                 self.vertex(f"{bid}_badge", "", badge, 0, 0, BADGE_PX, BADGE_PX, bid)
 
         for nid, n in self.nodes.items():
+            if len(n["label"]) > LABEL_WRAP and "<br>" not in self.wrap(n["label"]):
+                self.notes.append(f"node '{nid}': label '{n['label']}' is longer than {LABEL_WRAP} characters and cannot break at a "
+                                  "space — it will run past its column; shorten it or add a space where it may wrap")
             x, y = node_xy[nid]
             parent = parent_of.get(nid) or n.get("group") or "1"
             if parent in brects:

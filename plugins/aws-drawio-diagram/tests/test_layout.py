@@ -584,3 +584,18 @@ def test_planner_does_not_charge_a_leg_leaving_a_boundary_downward():
     without_label, _ = p.cost()
     assert with_label - without_label == pytest.approx(0.0)
     assert vd.validate_text(bd.build(p.apply()), INDEX)[0] == []
+
+
+def test_v_room_treats_two_nodes_outside_any_card_as_open_space():
+    # a cloud-less spec: no cards at all, so a vertical edge has the whole canvas beside it
+    s = {"title": "T", "cloud": "", "groups": [],
+         "nodes": [{"id": "a", "label": "Producer", "icon": "lambda", "outside": True},
+                   {"id": "b", "label": "Consumer", "icon": "lambda", "outside": True}],
+         "edges": [{"from": "a", "to": "b", "label": "twenty characters!!"}]}
+    p = layout.Placement(s, seed=1)
+    p.col = {"a": 1, "b": 1}
+    p.lane = {"a": 0, "b": 1}
+    with_label, _ = p.cost()
+    p.edges[0].pop("label")
+    without_label, _ = p.cost()
+    assert with_label - without_label == pytest.approx(0.0)

@@ -742,7 +742,7 @@ def test_overlay_title_never_reaches_past_its_card():
 def test_long_title_without_a_crossing_line_grows_the_band_above_the_boundary():
     s = bspec(cells=((1, 0), (2, 0), (1, 1)))
     s["groups"][0]["cols"] = [1, 2]
-    s["groups"][0]["label"] = "Agent runtime and orchestration, Seoul region"      # wider than a 384 px card: two lines
+    s["groups"][0]["label"] = "Agent runtime, orchestration and evaluation for the Seoul region"   # ~460 px: two lines in a 384 px card
     b = _builder(s)
     assert len(b.title_lines("g")) == 2
     assert b.group_above("g") == 66 + bd.LABEL_LINE_H
@@ -754,3 +754,49 @@ def test_long_title_without_a_crossing_line_grows_the_band_above_the_boundary():
     b = _builder(s)
     b.build()
     assert any("wider than its card" in n for n in b.notes)
+
+
+# ---- deferred review minors ---------------------------------------------------------------------------------
+def test_text_px_tracks_ember_bold_within_six_percent():
+    # measured with the installed Amazon Ember Bold at 15 px (PIL getlength); Hangul from Noto Sans KR Bold
+    measured = {"AWS WAF": 68.2, "VPC ENDPOINTS": 117.5, "Observability": 96.1, "Payment & inventory workflow": 219.7,
+                "API & Auth": 77.1, "Knowledge": 79.0, "S3 (order archive)": 125.3, "AgentCore Runtime": 138.3,
+                "Order processing 2024": 159.6, "결제 및 재고 워크플로": 134.4}
+    for text, px in measured.items():
+        assert abs(bd.text_px(text, 15) - px) / px <= 0.06, (text, bd.text_px(text, 15), px)
+
+
+def test_unbreakable_node_labels_are_noted_outside_and_refused_inside_a_boundary():
+    s = spec()
+    s["nodes"][2]["label"] = "AmazonOpenSearchServerlessCollection"      # no space: cannot wrap
+    b = _builder(s)
+    b.build()
+    assert any("cannot break" in n and "AmazonOpenSearchServerlessCollection" in n for n in b.notes)
+    s = bspec()
+    s["nodes"][1]["label"] = "AgentCoreRuntimeXX"                      # 18 chars, no space, inside a boundary
+    with pytest.raises(bd.SpecError, match="must fit one line"):
+        bd.build(s)
+
+
+def test_group_above_adds_the_boundary_row_only_when_the_boundary_starts_on_the_first_lane():
+    b = _builder(bspec(cells=((1, 1), (2, 1), (1, 0))))                # members on lane 1, a plain node on lane 0
+    assert b.group_above("g") == 46
+    xml = b.build()
+    assert vd.validate_text(xml, INDEX) == ([], [])
+    geo = geometry(xml)
+    _, gx, gy, gw, gh = geo["g"]
+    _, bx, by, bw, bh = geo["g__bedrock"]
+    # the boundary's title row sits under lane 0's label (24 px) with the usual 8 px pad and never touches the icon above
+    assert by == 46 + 39 + 39 + bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + 8 + (142 - 78 - 24 - 8 - bd.BOUNDARY_ABOVE)
+
+
+def test_docs_and_docstrings_carry_no_stale_numbers():
+    src = (SCRIPTS / "build_diagram.py").read_text()
+    for stale in ("24 px apart", "11 pt", "240 px pitch", "6.2 px per character"):
+        assert stale not in src, stale
+    skill = (SKILL / "SKILL.md").read_text()
+    assert "#F7F8FA" not in skill
+    style = (SKILL / "references" / "layout-and-style.md").read_text()
+    assert "leaves the title behind" in style                               # overlay title caveat for draw.io editing
+    for readme in ("README.md", "README.en.md"):
+        assert "1.9" in (PLUGIN / readme).read_text() and ("condens" in (PLUGIN / readme).read_text() or "줄여" in (PLUGIN / readme).read_text())
