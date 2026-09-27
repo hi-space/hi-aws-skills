@@ -77,9 +77,11 @@ EXTRA_ICONS = HERE.parent / "assets" / "extra-icons"
 
 ICON = 78
 COL0, COL_PITCH = 130, 224
-LANE0, LANE_PITCH, ROW_GAP = 236, 142, 38
+LANE0, LANE_PITCH = 236, 142
 GROUP_HALF_W, GROUP_GAP = 80, 64
-GROUP_ABOVE, GROUP_BELOW = 46, 32
+GROUP_ABOVE_PAD = 14                                     # px between the title band and the first icon (no boundary in the group)
+GROUP_BELOW_PAD = 8                                      # px between the tallest last-lane label and the card's bottom border
+ROW_CLEAR = 24                                           # px between two cards in adjacent group rows — the lane pitch stretches to keep it
 CLOUD_PAD = 28
 OUTSIDE_GAP = 44                                         # px: users / on-prem sit this much further from the cloud than the grid says,
                                                          # so the edge into the cloud has a 121 px pocket for its text (14 characters)
@@ -250,14 +252,16 @@ class Builder:
         self.nodes = {n["id"]: n for n in spec.get("nodes", [])}
         self.groups = {g["id"]: g for g in spec.get("groups", [])}
         self._check()
+        self._boundary_gids = {b["gid"] for b in boundary_plan(spec, index)[0].values()}
         self.row_breaks = self._row_breaks()
+        self.row_extra = self._row_extra()
 
     # ---- grid ---------------------------------------------------------------------------------
     def cx(self, col: int) -> int:
         return COL0 + COL_PITCH * col
 
     def ly(self, lane: int) -> int:
-        return LANE0 + LANE_PITCH * lane + ROW_GAP * sum(1 for b in self.row_breaks if b <= lane)
+        return LANE0 + LANE_PITCH * lane + sum(v for j, v in self.row_extra.items() if j <= lane)
 
     def outside_shift(self, n: dict) -> int:
         """Users / on-prem left of every inside column move OUTSIDE_GAP px further left (right of them: further
@@ -273,17 +277,41 @@ class Builder:
 
     def _row_breaks(self) -> list[int]:
         """A lane starts a new group row when some group ends on the lane above it and another begins on it;
-        the extra 50 px keeps the lower group's title row clear of the upper group's bottom padding."""
+        the derived extra (`_row_extra`) keeps the lower card ROW_CLEAR px under the upper card."""
         tops = {min(g["lanes"]) for g in self.groups.values()}
         bottoms = {max(g["lanes"]) for g in self.groups.values()}
         return sorted(j for j in tops if j - 1 in bottoms)
 
+    def group_above(self, gid: str) -> int:
+        """Padding above the first icon: the title band, plus a boundary's own title row when the group draws one."""
+        if gid in self._boundary_gids:
+            return TITLE_BAND + 2 + BOUNDARY_ABOVE
+        return TITLE_BAND + GROUP_ABOVE_PAD
+
+    def group_below(self, gid: str) -> int:
+        """Padding below the last icon: the tallest label of the group's nodes on its last lane, plus GROUP_BELOW_PAD —
+        so a label background never touches the card's bottom border. One line when no node sits on that lane."""
+        last = max(self.groups[gid]["lanes"])
+        heights = [self.label_h(n) for n in self.nodes.values() if n.get("group") == gid and n["lane"] == last]
+        return (max(heights) if heights else LABEL_TOP_PAD + LABEL_LINE_H) + GROUP_BELOW_PAD
+
+    def _row_extra(self) -> dict[int, int]:
+        """Extra pixels added to the lane pitch at every group-row break so the cards above and below the break are
+        exactly ROW_CLEAR px apart, whatever their paddings."""
+        extra = {}
+        for j in self.row_breaks:
+            below_pad = max(self.group_below(gid) for gid, g in self.groups.items() if max(g["lanes"]) == j - 1)
+            above_pad = max(self.group_above(gid) for gid, g in self.groups.items() if min(g["lanes"]) == j)
+            extra[j] = below_pad + ROW_CLEAR + above_pad - (LANE_PITCH - ICON)
+        return extra
+
     def group_rect(self, g: dict) -> tuple[int, int, int, int]:
         cols, lanes = sorted(g["cols"]), sorted(g["lanes"])
+        above, below = self.group_above(g["id"]), self.group_below(g["id"])
         x = self.cx(cols[0]) - GROUP_HALF_W
         w = self.cx(cols[-1]) - self.cx(cols[0]) + 2 * GROUP_HALF_W
-        y = self.ly(lanes[0]) - ICON // 2 - GROUP_ABOVE
-        h = self.ly(lanes[-1]) - self.ly(lanes[0]) + ICON + GROUP_ABOVE + GROUP_BELOW
+        y = self.ly(lanes[0]) - ICON // 2 - above
+        h = self.ly(lanes[-1]) - self.ly(lanes[0]) + ICON + above + below
         return x, y, w, h
 
     def _check(self) -> None:

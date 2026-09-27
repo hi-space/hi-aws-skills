@@ -506,7 +506,7 @@ def test_boundary_box_is_drawn_around_adjacent_members():
     assert geo["g__bedrock_badge"] == ("g__bedrock", 0.0, 0.0, float(bd.BADGE_PX), float(bd.BADGE_PX))
     parent, x, y, w, h = geo["g__bedrock"]
     assert parent == "g"
-    assert (x, y) == (bd.BOUNDARY_INSET, bd.GROUP_ABOVE - bd.BOUNDARY_ABOVE)    # the badge row starts under the group's title band
+    assert (x, y) == (bd.BOUNDARY_INSET, bd.TITLE_BAND + 2)                     # the badge row starts just under the group's title band
     assert w == 2 * bd.GROUP_HALF_W * 2 + bd.GROUP_GAP - 2 * bd.BOUNDARY_INSET   # two columns, inset both sides
     assert h == bd.BOUNDARY_ABOVE + bd.ICON + bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW
     # members are children of the boundary, coordinates relative to it; the icon lands on the same absolute cell
@@ -592,3 +592,64 @@ def test_boundary_member_labels_must_fit_one_line_at_17():
     s["nodes"][1]["label"] = "AgentCore Runtimes"                   # 18: wraps → refused inside a boundary
     with pytest.raises(bd.SpecError, match="must fit one line"):
         bd.build(s)
+
+
+# ---- 1.9.0: group padding hugs its content ----------------------------------------------------------
+def _builder(s):
+    return bd.Builder(s, json.loads(bd.INDEX.read_text()))
+
+
+def test_group_above_grows_only_for_a_drawn_boundary():
+    plain = _builder(spec())
+    assert plain.group_above("g") == 46                            # TITLE_BAND 32 + 14
+    boxed = _builder(bspec())                                       # bspec draws the `bedrock` boundary inside group g
+    assert boxed.group_above("g") == 66                            # TITLE_BAND 32 + 2 + BOUNDARY_ABOVE 32: the badge row clears the title band
+
+
+def test_group_below_is_the_tallest_last_lane_label_plus_8():
+    s = spec()
+    b = _builder(s)
+    assert b.group_below("g") == 4 + 20 + 8                        # one-line labels on lane 1
+    s["nodes"][2]["label"] = "OpenSearch Serverless (vector index)"    # b, lane 1 → two lines
+    assert _builder(s).group_below("g") == 4 + 40 + 8
+    # the two-line label is on lane 0 (c), not the last lane: the bottom pad stays one line
+    s = spec()
+    s["nodes"][3]["label"] = "OpenSearch Serverless (vector index)"
+    assert _builder(s).group_below("g") == 32
+    # a declared last lane with none of the group's nodes on it: fall back to one line, no crash
+    s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2], "lanes": [0, 1, 2]}])
+    assert _builder(s).group_below("g") == 32
+
+
+def test_node_label_background_never_reaches_the_card_bottom():
+    s = spec()
+    s["nodes"][2]["label"] = "OpenSearch Serverless (vector index)"
+    b = _builder(s)
+    x, y, w, h = b.group_rect(b.groups["g"])
+    icon_top = b.ly(1) - 39
+    label_bottom = icon_top + 78 + b.label_h(b.nodes["b"])
+    assert y + h - label_bottom == 8
+
+
+def test_adjacent_group_rows_are_always_24_px_apart():
+    # upper card g (lanes 0–1) has a two-line label on its last lane, lower card h (lane 2) draws a boundary:
+    # still exactly 24 px between the cards
+    s = {
+        "title": "T",
+        "groups": [{"id": "g", "label": "G", "cols": [1, 2], "lanes": [0, 1]},
+                   {"id": "h", "label": "H", "cols": [1, 2], "lanes": [2]}],
+        "nodes": [
+            {"id": "a", "label": "API Gateway", "icon": "api_gateway", "col": 1, "lane": 0, "group": "g"},
+            {"id": "b", "label": "OpenSearch Serverless (vector index)", "icon": "lambda", "col": 1, "lane": 1, "group": "g"},
+            {"id": "r", "label": "Runtime", "image": "Res_Amazon-Bedrock-AgentCore_Runtime_48.svg", "col": 1, "lane": 2, "group": "h", "boundary": "bedrock_agentcore"},
+            {"id": "m", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg", "col": 2, "lane": 2, "group": "h", "boundary": "bedrock_agentcore"},
+        ],
+        "edges": [{"from": "a", "to": "b", "label": "query"}, {"from": "b", "to": "r", "label": "vectors"}],
+    }
+    b = _builder(s)
+    gx, gy, gw, gh = b.group_rect(b.groups["g"])
+    hx, hy, hw, hh = b.group_rect(b.groups["h"])
+    assert b.group_below("g") == 52 and b.group_above("h") == 66
+    assert hy - (gy + gh) == 24
+    assert b.row_extra == {2: 52 + 24 + 66 - (142 - 78)}
+    assert b.ly(2) == 236 + 2 * 142 + 78
