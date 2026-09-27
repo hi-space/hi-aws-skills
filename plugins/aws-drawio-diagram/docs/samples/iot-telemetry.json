@@ -213,7 +213,7 @@
       "from": "normalize",
       "to": "sns",
       "num": 6,
-      "label": "publish threshold breach"
+      "label": "publish breach alert"
     },
     {
       "from": "s3lake",

@@ -24,10 +24,10 @@ Spec (JSON):
              {"from": "apigw", "to": "cognito", "dashed": true} ]
 }
 
-Grid: column i center x = 140 + 240·i; lane j center y = 260 + 170·j, plus 50 px for every group row
-boundary above lane j (derived from the groups: a lane where one group ends and another begins).
-Icons are 78 px. Groups are 200 px per column (40 px gaps), 60 px above the first icon, 46 px below
-the last. Edges between cells in the same column/lane are straight (empty corridor). Any other pair is
+Grid: column i center x = 130 + 224·i; lane j center y = 236 + 142·j, plus a derived gap for every group row
+boundary above lane j (a lane where one group ends and another begins) that keeps the cards 24 px apart.
+Icons are 78 px. Groups are 160 px per column (64 px gaps), 46 px above the first icon (66 with a service
+boundary), one label height + 8 px below the last. Edges between cells in the same column/lane are straight (empty corridor). Any other pair is
 joined with ONE bend: first along the source's column to the target's lane, then across ("v", the fan-out
 pattern), or first across on the source's lane, then along the target's column ("h") — whichever route
 crosses no icon (the builder picks "v" when both are free; `"route": "h"` forces the other). Both legs must
@@ -43,7 +43,7 @@ Edge `label` is the brief's *What flows* phrase, drawn on the edge: wrapped into
 the longest leg that has a clear spot (above/below a horizontal leg, beside a vertical one), off every border,
 title row, icon, other label and other line — a bent edge carries it on one of its legs. A solid (primary)
 edge whose text finds no room stops the build (`ERROR label`); on a dashed edge the text is dropped with a
-`note:`. `label_offset` (−1 source … 1 target) pins the position by hand. Node labels longer than 22 characters
+`note:`. `label_offset` (−1 source … 1 target) pins the position by hand. Node labels longer than 17 characters
 break into two lines at the middle space. `icon` names come from scripts/stencil-index.json; `image` names a
 file in assets/extra-icons/.
 
@@ -76,21 +76,21 @@ INDEX = HERE / "stencil-index.json"
 EXTRA_ICONS = HERE.parent / "assets" / "extra-icons"
 
 ICON = 78
-COL0, COL_PITCH = 140, 240
-LANE0, LANE_PITCH, ROW_GAP = 260, 170, 50
-GROUP_HALF_W, GROUP_GAP = 100, 40
-GROUP_ABOVE, GROUP_BELOW = 60, 46
-CLOUD_PAD = 40
-OUTSIDE_GAP = 60                                         # px: users / on-prem sit this much further from the cloud than the grid says,
-                                                         # so the edge into the cloud has a 121 px pocket for its text (16 characters)
-# Edge text (the brief's *What flows* phrase): 11 pt, 6.2 px per character + 2 × 8 px padding, EDGE_LINE_H px per
+COL0, COL_PITCH = 130, 224
+LANE0, LANE_PITCH, ROW_GAP = 236, 142, 38
+GROUP_HALF_W, GROUP_GAP = 80, 64
+GROUP_ABOVE, GROUP_BELOW = 46, 32
+CLOUD_PAD = 28
+OUTSIDE_GAP = 44                                         # px: users / on-prem sit this much further from the cloud than the grid says,
+                                                         # so the edge into the cloud has a 121 px pocket for its text (14 characters)
+# Edge text (the brief's *What flows* phrase): 13 pt, 7.2 px per character + 2 × 6 px padding, EDGE_LINE_H px per
 # line, at most LABEL_MAX_LINES lines of LABEL_MAX_LINE_CHARS characters; the builder slides it along the edge in
 # 1/20 steps and keeps LABEL_SLACK_PX from anything it must not touch. Keep in step with validate_drawio.
-LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_SLACK_PX = 6.2, 8, 4
-EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 14, 3, 24
+LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_SLACK_PX = 7.2, 6, 4
+EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 16, 3, 20
 LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
-TITLE_BAND = 28                                          # px: a container's title row — no edge label sits on it (validate_drawio)
-LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 22       # node label: px per line, gap under the icon, chars per line
+TITLE_BAND = 32                                          # px: a container's title row (15 pt bold + spacingTop) — no edge label sits on it (validate_drawio)
+LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 20, 4, 17       # node label: px per line, gap under the icon, chars per line (17 × ~7.7 px fits a 160 px card)
 TITLE_Y = 32
 LEGEND_W = 300
 MARGIN = 80
@@ -100,21 +100,20 @@ PTS = ("points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,
 GROUP_PTS = ("points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[0,1],[0.25,1],[0.5,1],[0.75,1],[1,1],[0,0.25],"
              "[0,0.5],[0,0.75],[1,0.25],[1,0.5],[1,0.75]];")
 LABEL_STYLE = "verticalLabelPosition=bottom;verticalAlign=top;align=center;"
-# Role groups are drawn as the official AWS "Generic group": dashed #5A6C86 border, no fill, title in the same grey.
-# Tinted per-kind cards (1.7.x) and the filled variant (1.8.1) were tried and dropped: the user wants the official
-# icon-deck look, and the service boundary boxes inside the groups carry the colour. The title keeps 13 bold (the
-# plugin's one visual level for names). GROUP_FILL is what a label inside a group sits on — the canvas, since the
-# group has no fill.
-GROUP_FILL = "#FFFFFF"
-GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;"
+# Role groups are one neutral light-grey card (1.9.0): #F1F3F6 fill, solid #AEB6C2 border, title in the text colour.
+# Dashed unfilled Generic groups (1.8.x) and per-role tints (1.7.x) were tried and dropped: the owner wants groups
+# that read as groups at a glance, with colour reserved for icons and service boundaries. GROUP_FILL is what a
+# label inside a group sits on — the card's fill.
+GROUP_FILL = "#F1F3F6"
+GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F3F6;strokeColor=#AEB6C2;dashed=0;fontColor=#232F3E;"
 # Service boundary box (nodes sharing `boundary` inside one role group), drawn the way the official AWS
 # architecture icons draw a group: a filled square badge in the top-left corner, a 1 px border and a bold title in the
 # service's own category colour. Official group badges (`group_*` stencils: Step Functions workflow, Auto Scaling
 # group, EC2 instance contents, …) are the aws4 group shape with the catalog's colour; any other stencil becomes a
 # BADGE_PX filled square (resourceIcon) on a plain rectangle. Inset from the group's sides, title row under the
 # group's own (TITLE_BAND) and above the first icon, closing under a one-line node label.
-BOUNDARY_INSET, BOUNDARY_ABOVE, BOUNDARY_BELOW, BADGE_PX = 12, 30, 10, 24
-BOUNDARY_TITLE_CHAR_PX = 6.6                             # 12 pt bold Ember, average; the title is one line and never wraps
+BOUNDARY_INSET, BOUNDARY_ABOVE, BOUNDARY_BELOW, BADGE_PX = 10, 32, 8, 24
+BOUNDARY_TITLE_CHAR_PX = 7.7                             # 14 pt bold Ember, average; the title is one line and never wraps
 # Stencils that exist in the catalog (generated from draw.io's dev branch) but render as a blank square in the draw.io
 # builds most people run today: the boundary badge for them is the bundled official SVG instead (assets/extra-icons,
 # allow-listed in extra-icons.txt). The spec still names the stencil, so the brief stays canonical. These are
@@ -599,7 +598,7 @@ class Builder:
         # the label background matches what it sits on — the group's fill inside a group (a boundary has none), the
         # canvas outside — so it hides nothing unless a line strays under it (which the port ratios prevent)
         label = f"{LABEL_STYLE}labelBackgroundColor={GROUP_FILL if n.get('group') else '#FFFFFF'};"
-        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=13;fontStyle=1;"
+        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=15;fontStyle=1;"
                 f"fontFamily={self.font};aspect=fixed;{label}")
         if "icon" in n:
             st = self.index[n["icon"]]
@@ -610,7 +609,7 @@ class Builder:
                 return base + f"fillColor={fill};strokeColor=none;shape=mxgraph.aws4.{n['icon']};"
             raise SpecError(f"node '{n['id']}': '{n['icon']}' is a group badge, not an icon")
         b64 = base64.b64encode((EXTRA_ICONS / n["image"]).read_bytes()).decode()
-        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=13;fontStyle=1;fontFamily={self.font};"
+        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=15;fontStyle=1;fontFamily={self.font};"
                 f"{label}image=data:image/svg+xml,{b64};")
 
     def build(self) -> str:
@@ -641,17 +640,17 @@ class Builder:
         H = int(-(-(bottom + 45) // 10) * 10)
 
         self.vertex("bg", "", "rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;", 0, 0, W, H)
-        title = f'<font style="font-size:20px"><b>{spec.get("title", "Architecture")}</b></font>'
+        title = f'<font style="font-size:24px"><b>{spec.get("title", "Architecture")}</b></font>'
         if spec.get("subtitle"):
             title += f'<br><font color="#5A6C86">{spec["subtitle"]}</font>'
         self.vertex("title", title,
-                    f"text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily={font};fontSize=12;fontColor=#232F3E;spacing=0;",
+                    f"text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily={font};fontSize=13;fontColor=#232F3E;spacing=0;",
                     40, TITLE_Y, W - LEGEND_W - 80, 60)
 
         edges = spec.get("edges", [])
         if any(e.get("dashed") for e in edges) and any(not e.get("dashed") for e in edges):
             lx, ly = W - LEGEND_W, TITLE_Y + 12
-            text = f"text;html=1;align=left;verticalAlign=middle;fontFamily={font};fontSize=11;fontColor=#5A6C86;"
+            text = f"text;html=1;align=left;verticalAlign=middle;fontFamily={font};fontSize=12;fontColor=#5A6C86;"
             self.vertex("lg1", "", "shape=line;strokeWidth=2;strokeColor=#232F3E;html=1;", lx, ly, 40, 10)
             self.vertex("lg1t", spec.get("legend_solid", "request / data flow"), text, lx + 48, ly - 6, 200, 22)
             self.vertex("lg2", "", "shape=line;strokeWidth=2;strokeColor=#232F3E;dashed=1;html=1;", lx, ly + 24, 40, 10)
@@ -659,11 +658,11 @@ class Builder:
 
         if cloud:
             self.vertex("cloud", cloud_label,
-                        f"{GROUP_PTS}outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontFamily={font};fontSize=14;fontStyle=1;"
+                        f"{GROUP_PTS}outlineConnect=0;gradientColor=none;html=1;whiteSpace=wrap;fontFamily={font};fontSize=16;fontStyle=1;"
                         "verticalAlign=top;align=left;spacingLeft=30;shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;"
                         "strokeColor=#232F3E;fontColor=#232F3E;fillColor=none;container=1;dropTarget=1;", *cloud)
         ox, oy = (cloud[0], cloud[1]) if cloud else (0, 0)
-        gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=13;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;"
+        gstyle = (f"{GENERIC_GROUP}strokeWidth=1;fontFamily={font};fontSize=15;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;"
                   "spacingTop=4;container=1;dropTarget=1;")
         for gid, (x, y, w, h) in rects.items():
             self.vertex(gid, self.groups[gid]["label"], gstyle, x - ox, y - oy, w, h, "cloud" if cloud else "1")
@@ -698,7 +697,7 @@ class Builder:
                                       "shorten the title in the Boundary column (`stencil: Title`) or give the members another column")
                 bw += grow
             brects[bid] = (bx, by, bw, bh)
-            common = (f"html=1;fontFamily={font};fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;"
+            common = (f"html=1;fontFamily={font};fontSize=14;fontStyle=1;verticalAlign=top;align=left;spacingLeft=30;"
                       "fillColor=none;strokeWidth=1;awsBoundary=1;container=1;dropTarget=1;")   # no whiteSpace=wrap: one-line title
             if st["kind"] == "group":                             # an official AWS group badge: the aws4 group shape, official colour
                 color = st.get("strokeColor") or "#232F3E"
@@ -733,7 +732,7 @@ class Builder:
         # junction (lines that touch a node side by side are separate edges — see side_offsets)
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
-                     f"fontFamily={font};fontSize=11;fontColor=#232F3E;endArrow=block;endFill=1;")
+                     f"fontFamily={font};fontSize=13;fontColor=#232F3E;endArrow=block;endFill=1;")
         # geometry of every edge first: the text of one edge must not sit on the line of another
         geom = []
         for i, e in enumerate(edges, 1):

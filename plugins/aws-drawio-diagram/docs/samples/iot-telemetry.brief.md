@@ -29,7 +29,7 @@ Language: ko
 | 3 | kinesis → normalize | record batch | sync |
 | 4 | normalize → ddb | upsert latest state | sync |
 | 5 | normalize → s3lake | write to lake | sync |
-| 6 | normalize → sns | publish threshold breach | sync |
+| 6 | normalize → sns | publish breach alert | sync |
 | 7 | s3lake → crawler | new files | sync |
 | 8 | crawler → catalog | update tables | sync |
 | 9 | catalog → athena | query metadata | sync |

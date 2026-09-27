@@ -49,11 +49,11 @@ def test_shipped_sample_specs_build_clean(name):
 
 def test_grid_and_group_arithmetic():
     b = bd.Builder(spec(), json.loads(bd.INDEX.read_text()))
-    assert b.cx(0) == 140 and b.cx(1) == 380 and b.cx(2) == 620
-    assert b.ly(0) == 260 and b.ly(1) == 430
+    assert b.cx(0) == 130 and b.cx(1) == 354 and b.cx(2) == 578
+    assert b.ly(0) == 236 and b.ly(1) == 378
     x, y, w, h = b.group_rect(b.groups["g"])
-    assert (x, w) == (280, 440)                 # two columns: 200 + 40 + 200
-    assert (y, h) == (260 - 39 - 60, 170 + 78 + 60 + 46)
+    assert (x, w) == (274, 384)                 # two columns: 160 + 64 + 160
+    assert (y, h) == (236 - 39 - 46, 142 + 78 + 46 + 32)   # 46 above (title band + 14), 32 below (one-line label + 8)
 
 
 def test_row_break_inserted_between_stacked_groups():
@@ -62,18 +62,19 @@ def test_row_break_inserted_between_stacked_groups():
     s["nodes"].append({"id": "d", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 1, "lane": 2, "group": "h"})
     b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
     assert b.row_breaks == [2]
-    assert b.ly(2) == 260 + 340 + 50
+    # cards 24 px apart: 32 below + 24 + 46 above − (142 − 78) = 38 extra
+    assert b.ly(2) == 236 + 284 + 38
 
 
-def test_node_labels_are_bold_13():
+def test_node_labels_are_bold_15():
     st = styles(bd.build(spec()))
     for nid in ("u", "a", "b", "c"):
-        assert st[nid]["fontSize"] == "13" and st[nid]["fontStyle"] == "1", nid
+        assert st[nid]["fontSize"] == "15" and st[nid]["fontStyle"] == "1", nid
     img = spec()
     img["nodes"][2] = {"id": "b", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
                        "col": 2, "lane": 1, "group": "g"}
     st = styles(bd.build(img))
-    assert st["b"]["fontSize"] == "13" and st["b"]["fontStyle"] == "1"
+    assert st["b"]["fontSize"] == "15" and st["b"]["fontStyle"] == "1"
 
 
 def test_labels_always_below_with_container_background():
@@ -82,11 +83,11 @@ def test_labels_always_below_with_container_background():
     for nid in ("u", "a", "b", "c"):
         assert st[nid]["verticalLabelPosition"] == "bottom" and st[nid]["align"] == "center", nid
         assert "labelPosition" not in st[nid]
-    assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud
-    assert st["a"]["labelBackgroundColor"] == "#FFFFFF"           # inside a role group: groups have no fill
-    # bottom-touching edges attach under the label, not on the icon edge
-    e_ac = styles(xml)["e3"]                                        # a (lane 1) → c (lane 0): enters c's bottom
-    assert e_ac["entryY"] == "1.282" and e_ac["entryPerimeter"] == "0"
+    assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud: the canvas
+    assert st["a"]["labelBackgroundColor"] == "#F1F3F6"           # inside a role group: the card's fill
+    # bottom-touching edges attach under the label, not on the icon edge: (78 + 4 + 20) / 78
+    e_ac = styles(xml)["e3"]
+    assert e_ac["entryY"] == "1.308" and e_ac["entryPerimeter"] == "0"
     assert e_ac["exitY"] == "0"
 
 
@@ -95,9 +96,11 @@ def test_long_labels_wrap_and_lower_the_bottom_port():
     s["nodes"][3]["label"] = "OpenSearch Serverless (vector index)"
     xml = bd.build(s)
     assert 'value="OpenSearch Serverless&lt;br&gt;(vector index)"' in xml
-    assert styles(xml)["e3"]["entryY"] == "1.513"
-    assert bd.Builder.wrap("Kinesis Data Streams") == "Kinesis Data Streams"   # 20 chars: one line
-    assert bd.Builder.wrap("Amazon OpenSearch Service domain") == "Amazon OpenSearch<br>Service domain"
+    assert styles(xml)["e3"]["entryY"] == "1.564"                  # (78 + 4 + 40) / 78
+    assert bd.Builder.wrap("AgentCore Runtime") == "AgentCore Runtime"          # 17 chars: one line
+    assert bd.Builder.wrap("S3 (order archive)") == "S3 (order<br>archive)"    # 18 chars: fills the card → two lines
+    assert bd.Builder.wrap("Kinesis Data Streams") == "Kinesis<br>Data Streams"
+    assert bd.Builder.wrap("OpenSearchServerless") == "OpenSearchServerless"   # no space: cannot wrap, stays one line
 
 
 def test_fan_out_uses_vertical_exit_and_horizontal_entry():
@@ -110,7 +113,7 @@ def test_fan_out_uses_vertical_exit_and_horizontal_entry():
     fan = st["e4"]
     assert (fan["exitX"], fan["exitY"], fan["entryX"], fan["entryY"]) == ("0.5", "0", "0", "0.5")
     # corner pinned at (source centre x, target centre y) so the first leg is always vertical
-    assert '<Array as="points"><mxPoint x="620" y="260"/></Array>' in xml
+    assert '<Array as="points"><mxPoint x="578" y="236"/></Array>' in xml
     errors, warnings = vd.validate_text(xml, INDEX)
     assert errors == [] and warnings == []
 
@@ -121,7 +124,7 @@ def test_outside_label_is_shifted_off_the_cloud_border():
     cells = {c.get("id"): c for c in ET.fromstring(xml).iter("mxCell")}
     assert float(cells["e1"].find("mxGeometry").get("x")) < 0            # slid toward the users, off the cloud border
     # users sit OUTSIDE_GAP further left than the grid column, so the pocket outside the cloud holds real text
-    assert float(cells["u"].find("mxGeometry").get("x")) == 140 - 39 - bd.OUTSIDE_GAP
+    assert float(cells["u"].find("mxGeometry").get("x")) == 130 - 39 - bd.OUTSIDE_GAP
     assert vd.validate_text(xml, INDEX) == ([], [])
 
 
@@ -184,8 +187,8 @@ def test_builder_rejects_far_bends_and_shared_sides():
     xml = bd.build(s)
     assert vd.validate_text(xml, INDEX) == ([], [])
     # the lone top bend keeps the centre; the two bottom bends fan out 20 px apart, each on the side it turns to
-    assert xml.count('<mxPoint x="620" y="') == 1
-    assert xml.count('<mxPoint x="610" y="') == 1 and xml.count('<mxPoint x="630" y="') == 1
+    assert xml.count('<mxPoint x="578" y="') == 1
+    assert xml.count('<mxPoint x="568" y="') == 1 and xml.count('<mxPoint x="588" y="') == 1
     s["nodes"].append({"id": "st", "label": "Straight", "icon": "kinesis", "col": 2, "lane": 2, "group": "g"})
     s["edges"].append({"from": "b", "to": "st"})                     # straight down between the two trunks
     with pytest.raises(bd.SpecError, match="one of them is straight|runs through"):
@@ -229,7 +232,7 @@ def test_split_trunks_give_every_bend_its_own_line_without_crossings():
     assert [round((p - 0.5) * bd.ICON) for p in (ports["e1"], ports["e2"], ports["e3"])] == [-20, 0, 20]
     # the corner of each L sits on its own trunk, and the three lines never cross
     corners = {eid: xml.split(f'id="{eid}"')[1].split("mxPoint x=\"")[1].split('"')[0] for eid in ports}
-    assert corners == {"e1": "600", "e2": "620", "e3": "640"}
+    assert corners == {"e1": "558", "e2": "578", "e3": "598"}
     node_xy = {nid: (b.cx(n["col"]) - bd.ICON // 2, b.ly(n["lane"]) - bd.ICON // 2) for nid, n in b.nodes.items()}
     label_h = {nid: b.label_h(n) for nid, n in b.nodes.items()}
     offs = b.side_offsets()
@@ -433,16 +436,18 @@ def test_label_placement_avoids_other_edges_lines():
     assert vd.validate_text(xml, INDEX) == ([], [])
 
 
-# ---- 1.8.0: role groups are the official AWS Generic group ---------------------------------------------
-def test_role_groups_are_the_official_generic_group():
-    # the icon deck's Generic group: dashed #5A6C86, no fill; labels sit on the white canvas everywhere
+# ---- 1.9.0: role groups are filled light-grey cards ----------------------------------------------------
+def test_role_groups_are_filled_cards():
+    # one neutral light-grey card with a solid border; labels inside take the card colour, outside the canvas
     xml = bd.build(spec(edges=[{"from": "u", "to": "a", "label": "HTTPS"}, {"from": "a", "to": "b", "label": "invoke"}, {"from": "a", "to": "c", "dashed": True}]))
     st = styles(xml)
     g = st["g"]
-    assert g["fillColor"] == "none" and g["strokeColor"] == "#5A6C86" and g["dashed"] == "1" and g["fontColor"] == "#5A6C86"
-    assert g["fontSize"] == "13" and g["fontStyle"] == "1" and g["container"] == "1"
-    assert st["a"]["labelBackgroundColor"] == "#FFFFFF" and st["u"]["labelBackgroundColor"] == "#FFFFFF"
-    assert st["e1"]["labelBackgroundColor"] == "#FFFFFF" and st["e2"]["labelBackgroundColor"] == "#FFFFFF"
+    assert g["fillColor"] == "#F1F3F6" and g["strokeColor"] == "#AEB6C2" and g["dashed"] == "0" and g["fontColor"] == "#232F3E"
+    assert g["fontSize"] == "15" and g["fontStyle"] == "1" and g["container"] == "1"
+    assert st["a"]["labelBackgroundColor"] == "#F1F3F6" and st["u"]["labelBackgroundColor"] == "#FFFFFF"
+    assert st["e1"]["labelBackgroundColor"] == "#FFFFFF"           # HTTPS sits outside the cloud
+    assert st["e2"]["labelBackgroundColor"] == "#F1F3F6"           # invoke sits inside card g
+    assert st["cloud"]["fontSize"] == "16" and st["e2"]["fontSize"] == "13"
 
 
 def test_newer_stencils_get_their_badge_from_the_bundled_svg():
@@ -493,7 +498,7 @@ def test_boundary_box_is_drawn_around_adjacent_members():
     # the official AWS group look: filled square badge, 1 px border and bold title in the service's category colour
     assert b["awsBoundary"] == "1" and b["container"] == "1" and "shape" not in b
     assert b["fillColor"] == "none" and b["strokeColor"] == "#01A88D" and b["fontColor"] == "#01A88D"
-    assert b["fontSize"] == "12" and b["fontStyle"] == "1"
+    assert b["fontSize"] == "14" and b["fontStyle"] == "1"
     assert 'value="Amazon Bedrock"' in xml
     badge = st["g__bedrock_badge"]
     assert badge["shape"] == "mxgraph.aws4.resourceIcon" and badge["resIcon"] == "mxgraph.aws4.bedrock"
@@ -501,14 +506,14 @@ def test_boundary_box_is_drawn_around_adjacent_members():
     assert geo["g__bedrock_badge"] == ("g__bedrock", 0.0, 0.0, float(bd.BADGE_PX), float(bd.BADGE_PX))
     parent, x, y, w, h = geo["g__bedrock"]
     assert parent == "g"
-    assert (x, y) == (bd.BOUNDARY_INSET, bd.BOUNDARY_ABOVE)                     # 30 px: under the group's 28 px title band
+    assert (x, y) == (bd.BOUNDARY_INSET, bd.GROUP_ABOVE - bd.BOUNDARY_ABOVE)    # the badge row starts under the group's title band
     assert w == 2 * bd.GROUP_HALF_W * 2 + bd.GROUP_GAP - 2 * bd.BOUNDARY_INSET   # two columns, inset both sides
     assert h == bd.BOUNDARY_ABOVE + bd.ICON + bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW
     # members are children of the boundary, coordinates relative to it; the icon lands on the same absolute cell
     p1, x1, y1, _, _ = geo["m1"]
     assert p1 == "g__bedrock" and (x1, y1) == (bd.GROUP_HALF_W - bd.ICON // 2 - bd.BOUNDARY_INSET, bd.BOUNDARY_ABOVE)
     assert geo["x"][0] == "g"                                                    # the non-member stays in the group
-    assert st["m1"]["labelBackgroundColor"] == "#FFFFFF"                         # nothing is filled: canvas white
+    assert st["m1"]["labelBackgroundColor"] == "#F1F3F6"                         # the boundary has no fill: the card shows through
     # default title = catalog label
     xml = bd.build(bspec())
     st = styles(xml)
@@ -578,3 +583,12 @@ def test_boundary_errors():
         n["boundary"] = "bedrockk"
     with pytest.raises(bd.SpecError, match="bedrockk"):
         bd.build(unknown)
+
+
+def test_boundary_member_labels_must_fit_one_line_at_17():
+    s = bspec()                                                     # nodes[1] = m1, a member of the drawn `bedrock` boundary
+    s["nodes"][1]["label"] = "AgentCore Runtime"                    # 17: allowed
+    bd.build(s)
+    s["nodes"][1]["label"] = "AgentCore Runtimes"                   # 18: wraps → refused inside a boundary
+    with pytest.raises(bd.SpecError, match="must fit one line"):
+        bd.build(s)

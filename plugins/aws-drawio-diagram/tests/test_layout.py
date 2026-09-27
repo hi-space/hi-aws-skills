@@ -182,18 +182,18 @@ def test_builder_draws_every_what_flows_phrase_wrapped_to_the_room_it_has():
     assert values[("gw", "fn")][0] == "invoke with the<br>validated order"
     assert values[("gw", "auth")][0] == "validate JWT" and values[("gw", "auth")][1]["align"] in ("right", "left")
     assert values[("fn", "cache")][0] == "session lookup" and values[("fn", "cache")][1]["align"] in ("right", "left")
-    assert values[("fn", "db")][0] == "put<br>item" and values[("fn", "db")][2] is not None      # slid into a pocket
+    assert values[("fn", "db")][0] == "put<br>item"                             # wrapped into the 64 px seam between the cards
     errors, warnings = vd.validate_text(xml, INDEX)
     assert errors == [] and warnings == [], warnings
 
 
 def test_label_wrapping_helpers():
     assert bd.wrap_lines("Fetch dynamic credentials (optional)", 24) == ["Fetch dynamic", "credentials (optional)"]
-    assert bd.label_lines("Fetch dynamic credentials (optional)", 29) == ["Fetch dynamic", "credentials (optional)"]  # balanced
+    assert bd.label_lines("Fetch dynamic credentials (optional)", 29) == ["Fetch dynamic", "credentials", "(optional)"]  # capped at 20 per line
     assert bd.label_lines("put item", 6) == ["put", "item"]
     assert bd.label_lines("StartExecution", 6) is None                       # a word wider than the line
     assert bd.label_lines("one two three four five six seven eight", 6) is None   # more than 3 lines
-    assert bd.chars_that_fit(162) == 22 and bd.chars_that_fit(61) == 6 and bd.chars_that_fit(121) == 16
+    assert bd.chars_that_fit(146) == 18 and bd.chars_that_fit(64) == 6 and bd.chars_that_fit(121) == 14 and bd.chars_that_fit(76) == 8
 
 
 def test_layout_prefers_a_straight_edge_for_a_labeled_relationship():

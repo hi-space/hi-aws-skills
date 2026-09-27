@@ -380,3 +380,9 @@ def test_w6_accepts_a_boundary_inside_a_role_group_but_not_one_in_the_cloud():
     w6 = [w for w in warnings if w.startswith("W6")]
     assert len(w6) == 1 and "'bad'" in w6[0] and "'ok" not in " ".join(warnings)
     assert not [w for w in warnings if w.startswith("W9") and "badge" in w]      # badges are not floating components
+
+
+def test_validator_constants_mirror_the_builder():
+    import build_diagram as bd
+    assert (vd.LABEL_CHAR_PX, vd.LABEL_PAD_PX, vd.EDGE_LINE_H) == (bd.LABEL_CHAR_PX, bd.LABEL_PAD_PX, bd.EDGE_LINE_H)
+    assert (vd.NODE_LINE_H, vd.NODE_LABEL_PAD, vd.TITLE_BAND) == (bd.LABEL_LINE_H, bd.LABEL_TOP_PAD, bd.TITLE_BAND)
