@@ -310,14 +310,13 @@
       >
         <button class="tab active" data-variant="">Minimal light</button>
         <button class="tab" data-variant="-dark">Minimal dark</button>
-        <button class="tab" data-variant="-full">Full editorial</button>
       </div>
     </header>
 
     <main>
       <iframe
         id="preview"
-        src="example-architecture.html"
+        src="example-architecture.svg"
         title="Preview"
       ></iframe>
     </main>
@@ -336,7 +335,8 @@
           tab.disabled = single && tab.dataset.variant !== "";
           tab.classList.toggle("active", tab.dataset.variant === state.variant);
         });
-        const src = `example-${state.type}${state.variant}.html`;
+        const ext = state.type === "policy-trace-animated" ? "html" : "svg";
+        const src = `example-${state.type}${state.variant}.${ext}`;
         iframe.src = src;
         openRaw.href = src;
       }
