@@ -209,7 +209,10 @@ error paths.
 
 `B` is the **under-the-label** port: `(78 + 4 + 20 × lines) / 78` → `1.308` for a one-line label, `1.564` for two
 lines. A vertical edge therefore starts or ends below the node's label instead of running through it; the
-arrowhead of an edge arriving from below sits just under the text. `exitPerimeter=0` / `entryPerimeter=0` are
+arrowhead of an edge arriving from below sits just under the text. For a **resource stencil** (`shape=mxgraph.aws4.<name>`, `aspect=fixed` in
+draw.io's aws4.xml) draw.io measures the ratio on the glyph's own box, centred in the 78 px cell (a 44×28 cloud paints
+78×50), so the builder rescales `B` from `scripts/stencil-aspect.json` (`Builder.glyph_box`); a hand-written 1.308 on such a
+node lands on the icon and the line runs through the label. `exitPerimeter=0` / `entryPerimeter=0` are
 required, otherwise draw.io snaps the point back onto the icon.
 
 - **Same column or same lane.** Connected icons share x (vertical edge) or y (horizontal edge) exactly. If a pair

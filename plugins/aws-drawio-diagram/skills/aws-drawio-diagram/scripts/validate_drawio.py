@@ -36,6 +36,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 INDEX = HERE / "stencil-index.json"
+ASPECT = HERE / "stencil-aspect.json"
+_ASPECT = json.loads(ASPECT.read_text())["shapes"] if ASPECT.exists() else {}
 
 SERVICE_FRAMES = {"resourceIcon", "productIcon"}
 GROUP_SHAPES = {"group", "group2", "groupCenter"}
@@ -129,7 +131,20 @@ def _blockers(icons, geo, exclude, a, b):
     return out
 
 
-def _edge_path(style, sg, tg):
+def _glyph_geometry(node_style: dict[str, str] | None, g):
+    """The box draw.io measures port ratios on. Resource stencils (`shape=mxgraph.aws4.<name>`, aspect=fixed in
+    aws4.xml) use the glyph's own box, centred in the cell; everything else uses the cell (build_diagram.glyph_box)."""
+    if node_style:
+        m = re.match(r"mxgraph\.aws4\.([a-z0-9_]+)$", node_style.get("shape", ""))
+        wh = _ASPECT.get(m.group(1)) if m else None
+        if wh and wh[1] < wh[0]:
+            x, y, w, h = g
+            gh = h * wh[1] / wh[0]
+            return (x, y + (h - gh) / 2, w, gh)
+    return g
+
+
+def _edge_path(style, sg, tg, s_style=None, t_style=None):
     """Return the polyline draw.io will draw for a straight or single-bend (L) edge; None if the
     endpoints need two bends. Straight: aligned
     centers. L: exit side and entry side on different axes, corner in the direction each port faces."""
@@ -137,6 +152,13 @@ def _edge_path(style, sg, tg):
     tx, ty, tw, th = tg
     scx, scy, tcx, tcy = sx + sw / 2, sy + sh / 2, tx + tw / 2, ty + th / 2
     ex, ey, nx, ny = (_port(style, k) for k in ("exitX", "exitY", "entryX", "entryY"))
+    # under-the-label ports (exitY/entryY > 1) are ratios of the box draw.io measures them on (_glyph_geometry)
+    if ey is not None and ey > 1.0:
+        _, gy, _, gh = _glyph_geometry(s_style, sg)
+        ey = (gy + ey * gh - sy) / sh
+    if ny is not None and ny > 1.0:
+        _, gy, _, gh = _glyph_geometry(t_style, tg)
+        ny = (gy + ny * gh - ty) / th
     has_ports = None not in (ex, ey, nx, ny)
     # exitY/entryY above 1 mean "under the node label" (builder ports); the segment starts there
     if abs(scx - tcx) <= ALIGN_TOLERANCE:
@@ -180,7 +202,7 @@ def _layout_warnings(cells: dict[str, ET.Element]) -> list[str]:
         if s not in icons or t not in icons:
             continue
         style = parse_style(cell.get("style"))
-        path = _edge_path(style, geo[s], geo[t])
+        path = _edge_path(style, geo[s], geo[t], parse_style(cells[s].get("style")), parse_style(cells[t].get("style")))
         if path is None:
             sx, sy, sw, sh = geo[s]
             tx, ty, tw, th = geo[t]
@@ -337,7 +359,7 @@ def _label_warnings(cells: dict[str, ET.Element]) -> list[str]:
         if s not in icons or t not in icons:
             continue
         style = parse_style(cell.get("style"))
-        path = _edge_path(style, geo[s], geo[t])
+        path = _edge_path(style, geo[s], geo[t], parse_style(cells[s].get("style")), parse_style(cells[t].get("style")))
         if not isinstance(path, list):
             continue
         paths[cid] = path

@@ -73,6 +73,8 @@ from xml.sax.saxutils import escape
 
 HERE = Path(__file__).resolve().parent
 INDEX = HERE / "stencil-index.json"
+ASPECT = HERE / "stencil-aspect.json"   # shape w/h from draw.io's aws4.xml: resource stencils are aspect=fixed and
+                                        # draw.io measures their ports against the glyph box, not the 78 px cell
 EXTRA_ICONS = HERE.parent / "assets" / "extra-icons"
 
 ICON = 78
@@ -273,6 +275,7 @@ class Builder:
     def __init__(self, spec: dict, index: dict):
         self.spec = spec
         self.index = index["stencils"]
+        self.aspect = json.loads(ASPECT.read_text())["shapes"] if ASPECT.exists() else {}
         self.font = spec.get("font", "Amazon Ember")
         self.cells: list[str] = []
         self.notes: list[str] = []                           # e.g. a dashed edge whose text found no room
@@ -560,9 +563,25 @@ class Builder:
         """Height of the label block under the icon (gap + lines)."""
         return LABEL_TOP_PAD + LABEL_LINE_H * (self.wrap(n["label"]).count("<br>") + 1)
 
+    def glyph_box(self, n: dict) -> tuple[float, float]:
+        """(top offset, height) of what draw.io treats as the node's box for port ratios. A service icon is the full
+        78 px cell. A resource stencil (`shape=mxgraph.aws4.<name>`) is aspect=fixed in aws4.xml, and mxCellState
+        .getPerimeterBounds then uses the glyph's own box — a 44×28 cloud paints 78×50 centred in the cell — so an
+        exitY of 1.308 measured on that box lands on the icon's bottom edge and the line runs through the label
+        (seen on internet_alt1 and sagemaker_train, 2026-09-28). Wide glyphs need the ratio rescaled; tall ones
+        keep the full height."""
+        if "icon" in n and self.index.get(n["icon"], {}).get("kind") == "resource":
+            wh = self.aspect.get(n["icon"])
+            if wh and wh[1] < wh[0]:
+                h = ICON * wh[1] / wh[0]
+                return (ICON - h) / 2, h
+        return 0.0, float(ICON)
+
     def bottom_ratio(self, n: dict) -> float:
-        """exitY/entryY that puts the port under the label rather than on the icon's bottom edge."""
-        return round((ICON + self.label_h(n)) / ICON, 3)
+        """exitY/entryY that puts the port under the label rather than on the icon's bottom edge, as a ratio of the
+        box draw.io measures it on (glyph_box)."""
+        off, h = self.glyph_box(n)
+        return round((ICON + self.label_h(n) - off) / h, 3)
 
     @staticmethod
     def edge_path(e, d, kind, node_xy, label_h, offs=(0.0, 0.0)) -> list[tuple[float, float]]:

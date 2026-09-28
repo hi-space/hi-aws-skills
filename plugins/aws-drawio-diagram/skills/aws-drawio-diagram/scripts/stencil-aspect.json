@@ -1,0 +1,4153 @@
+{
+"generated_from": "draw.io stencils/aws4.xml (shape w/h; aspect=fixed)",
+"shapes": {
+"a1_instance": [
+44.0,
+44.0
+],
+"access_analyzer": [
+44.046,
+44.458
+],
+"action": [
+43.915,
+43.915
+],
+"activate": [
+53.008,
+56.0
+],
+"actuator": [
+40.271,
+44.778
+],
+"ad_connector": [
+44.037,
+40.583
+],
+"addon": [
+44.117,
+22.553
+],
+"agent": [
+44.515,
+41.678
+],
+"agent2": [
+44.0,
+43.938
+],
+"alarm": [
+43.94,
+44.183
+],
+"alert": [
+43.34,
+38.0
+],
+"alexa_enabled_device": [
+44.153,
+44.153
+],
+"alexa_for_business": [
+46.0,
+55.0
+],
+"alexa_skill": [
+43.868,
+43.868
+],
+"alexa_smart_home_skill": [
+78.138,
+78.11
+],
+"alexa_voice_service": [
+77.982,
+78.176
+],
+"all_products": [
+56.0,
+56.0
+],
+"ami": [
+43.827,
+43.827
+],
+"amplify": [
+56.097,
+43.179
+],
+"amplify_aws_amplify_studio": [
+44.0,
+39.925
+],
+"analytics": [
+56.122,
+44.0
+],
+"apache_mxnet_on_aws": [
+56.0,
+56.0
+],
+"api_gateway": [
+56.0,
+56.05
+],
+"app_config": [
+55.707,
+55.706
+],
+"app_mesh": [
+45.848,
+54.288
+],
+"app_runner": [
+56.0,
+56.0
+],
+"app_studio": [
+48.0,
+56.767
+],
+"app_wizard": [
+53.202,
+54.0
+],
+"appfabric": [
+57.324,
+56.006
+],
+"appflow": [
+55.624,
+42.0
+],
+"application": [
+29.179,
+45.374
+],
+"application_auto_scaling": [
+55.977,
+56.074
+],
+"application_composer": [
+56.004,
+56.015
+],
+"application_cost_profiler": [
+56.0,
+56.0
+],
+"application_discovery_service": [
+56.144,
+56.0
+],
+"application_discovery_service_aws_agentless_collector": [
+44.357,
+44.005
+],
+"application_discovery_service_aws_discovery_agent": [
+44.197,
+35.632
+],
+"application_discovery_service_migration_evaluator_collector": [
+44.357,
+43.694
+],
+"application_integration": [
+56.0,
+56.0
+],
+"application_load_balancer": [
+44.001,
+44.0
+],
+"application_recovery_controller": [
+56.0,
+53.014
+],
+"apps": [
+78.266,
+78.154
+],
+"appstream_20": [
+56.079,
+56.0
+],
+"appsync": [
+54.0,
+52.913
+],
+"ar_vr": [
+56.0,
+31.935
+],
+"archive": [
+35.344,
+43.992
+],
+"artifact": [
+56.0,
+56.0
+],
+"athena": [
+59.003,
+57.0
+],
+"athena_data_source_connectors": [
+44.348,
+44.0
+],
+"attribute": [
+43.89,
+43.89
+],
+"attributes": [
+44.0,
+43.125
+],
+"audit_manager": [
+56.098,
+56.0
+],
+"augmented_ai": [
+56.096,
+57.135
+],
+"aurora": [
+58.0,
+54.0
+],
+"aurora_instance": [
+43.954,
+43.955
+],
+"aurora_instance_alt": [
+43.908,
+43.91
+],
+"authenticated_user": [
+44.0,
+44.0
+],
+"auto_scaling": [
+55.0,
+56.0
+],
+"auto_scaling2": [
+43.92,
+44.261
+],
+"auto_scaling3": [
+50.0,
+50.015
+],
+"automation": [
+43.945,
+43.945
+],
+"autoscaling": [
+56.0,
+56.109
+],
+"aws_backup_for_aws_cloudformation": [
+44.001,
+36.0
+],
+"aws_backup_legal_hold": [
+44.0,
+44.0
+],
+"aws_backup_support_for_amazon_fsx_for_netapp_ontap": [
+44.513,
+36.504
+],
+"aws_backup_vault_lock": [
+44.0,
+44.0
+],
+"aws_backup_virtual_machine_monitor": [
+39.296,
+44.0
+],
+"aws_cloud": [
+78.135,
+78.228
+],
+"aws_glue_data_quality": [
+44.448,
+44.0
+],
+"aws_glue_for_ray": [
+44.0,
+44.0
+],
+"aws_user_notifications": [
+55.127,
+47.801
+],
+"b2b_data_interchange": [
+56.001,
+56.0
+],
+"backint_agent": [
+54.941,
+54.883
+],
+"backup": [
+56.0,
+56.0
+],
+"backup_audit_manager": [
+44.0,
+44.0
+],
+"backup_aws_backup_support_for_amazon_s3": [
+43.62,
+43.943
+],
+"backup_aws_backup_support_for_vmware_workloads": [
+44.1,
+44.198
+],
+"backup_backup_plan": [
+34.0,
+44.0
+],
+"backup_backup_restore": [
+45.855,
+46.354
+],
+"backup_compliance_reporting": [
+36.0,
+44.0
+],
+"backup_compute": [
+44.0,
+43.0
+],
+"backup_database": [
+44.0,
+43.0
+],
+"backup_gateway": [
+44.0,
+43.0
+],
+"backup_plan": [
+34.0,
+44.0
+],
+"backup_recovery_point_objective": [
+44.308,
+43.989
+],
+"backup_recovery_time_objective": [
+46.152,
+44.235
+],
+"backup_restore": [
+45.855,
+46.352
+],
+"backup_storage": [
+44.0,
+43.0
+],
+"backup_vault": [
+44.0,
+44.0
+],
+"backup_virtual_machine": [
+44.0,
+44.0
+],
+"backup_virtual_machine_monitor": [
+39.296,
+44.0
+],
+"bank": [
+44.033,
+44.034
+],
+"batch": [
+56.0,
+55.0
+],
+"bedrock": [
+56.0,
+56.039
+],
+"bedrock_agentcore": [
+56.003,
+56.039
+],
+"blockchain": [
+55.0,
+17.0
+],
+"blockchain_resource": [
+43.968,
+13.877
+],
+"bottlerocket": [
+35.023,
+56.454
+],
+"braket": [
+57.713,
+56.452
+],
+"braket_chandelier": [
+30.0,
+44.0
+],
+"braket_chip": [
+44.107,
+44.337
+],
+"braket_embedded_simulator": [
+44.0,
+44.0
+],
+"braket_managed_simulator": [
+44.0,
+44.0
+],
+"braket_noise_simulator": [
+44.702,
+44.0
+],
+"braket_qpu": [
+44.412,
+44.013
+],
+"braket_simulator": [
+44.702,
+40.0
+],
+"braket_simulator_1": [
+44.0,
+44.0
+],
+"braket_simulator_2": [
+44.0,
+44.0
+],
+"braket_simulator_3": [
+44.0,
+44.0
+],
+"braket_simulator_4": [
+44.0,
+44.0
+],
+"braket_state_vector": [
+44.427,
+40.0
+],
+"braket_tensor_network": [
+44.427,
+44.0
+],
+"bucket": [
+42.355,
+44.057
+],
+"bucket_with_objects": [
+42.183,
+43.88
+],
+"budgets": [
+59.037,
+61.567
+],
+"budgets_2": [
+54.0,
+56.0
+],
+"business_application": [
+56.158,
+56.0
+],
+"bycicle": [
+43.939,
+43.938
+],
+"c4_instance": [
+44.0,
+44.0
+],
+"c5_instance": [
+44.0,
+44.0
+],
+"c5a": [
+44.0,
+44.0
+],
+"c5ad": [
+44.0,
+44.0
+],
+"c5d": [
+44.0,
+44.0
+],
+"c5n_instance": [
+44.0,
+44.0
+],
+"c6g_instance": [
+44.0,
+44.0
+],
+"c6gd": [
+44.0,
+44.0
+],
+"cache_node": [
+43.779,
+43.778
+],
+"cached_volume": [
+35.164,
+43.892
+],
+"camera": [
+43.937,
+43.937
+],
+"camera2": [
+44.0,
+35.0
+],
+"car": [
+43.945,
+43.945
+],
+"cart": [
+43.946,
+43.945
+],
+"certificate_manager": [
+34.041,
+44.058
+],
+"certificate_manager_2": [
+43.951,
+40.455
+],
+"certificate_manager_3": [
+56.0,
+52.0
+],
+"change_set": [
+37.036,
+44.044
+],
+"chat": [
+44.0,
+38.546
+],
+"chatbot": [
+55.522,
+57.0
+],
+"checklist": [
+36.962,
+43.954
+],
+"checklist_cost": [
+44.09,
+43.992
+],
+"checklist_fault_tolerant": [
+44.048,
+44.0
+],
+"checklist_performance": [
+44.001,
+44.0
+],
+"checklist_security": [
+44.0,
+43.986
+],
+"chime": [
+56.0,
+56.0
+],
+"chime_sdk": [
+55.999,
+56.06
+],
+"classic_load_balancer": [
+44.003,
+44.002
+],
+"clean_rooms": [
+56.964,
+56.0
+],
+"client": [
+43.797,
+43.044
+],
+"client_vpn": [
+56.011,
+47.434
+],
+"cloud9": [
+44.0,
+30.083
+],
+"cloud_control_api": [
+56.247,
+44.792
+],
+"cloud_development_kit": [
+56.0,
+56.225
+],
+"cloud_digital_interface": [
+44.0,
+44.0
+],
+"cloud_directory": [
+38.0,
+54.031
+],
+"cloud_extension_ros": [
+43.936,
+43.936
+],
+"cloud_map": [
+56.003,
+39.264
+],
+"cloud_map_resource": [
+43.996,
+45.254
+],
+"cloud_wan": [
+56.0,
+56.0
+],
+"cloud_wan_segment_network": [
+44.053,
+44.026
+],
+"cloud_wan_transit_gateway_route_table_attachment": [
+44.0,
+44.0
+],
+"cloud_wan_virtual_pop": [
+44.0,
+44.0
+],
+"cloudendure_disaster_recovery": [
+56.0,
+48.872
+],
+"cloudendure_migration": [
+57.799,
+43.038
+],
+"cloudformation": [
+56.0,
+48.995
+],
+"cloudfront": [
+56.0,
+56.0
+],
+"cloudfront_functions": [
+44.0,
+44.0
+],
+"cloudhsm": [
+56.0,
+55.0
+],
+"cloudsearch": [
+64.924,
+63.115
+],
+"cloudsearch2": [
+64.614,
+63.0
+],
+"cloudshell": [
+55.84,
+56.377
+],
+"cloudtrail": [
+56.0,
+34.062
+],
+"cloudtrail_cloudtrail_lake": [
+43.213,
+44.0
+],
+"cloudwatch": [
+64.541,
+57.059
+],
+"cloudwatch_2": [
+56.39,
+51.185
+],
+"cloudwatch_cross_account_observability": [
+43.658,
+43.982
+],
+"cloudwatch_data_protection": [
+44.0,
+38.973
+],
+"cloudwatch_evidently": [
+44.0,
+44.0
+],
+"cloudwatch_logs": [
+44.538,
+33.0
+],
+"cloudwatch_metrics_insights": [
+43.0,
+44.0
+],
+"cloudwatch_rum": [
+44.056,
+43.982
+],
+"cloudwatch_synthetics": [
+44.0,
+43.248
+],
+"cluster": [
+43.921,
+43.919
+],
+"codeartifact": [
+55.0,
+55.678
+],
+"codebuild": [
+58.081,
+56.0
+],
+"codecatalyst": [
+56.025,
+56.031
+],
+"codecommit": [
+57.0,
+56.0
+],
+"codedeploy": [
+57.014,
+57.0
+],
+"codeguru": [
+43.5,
+50.24
+],
+"codeguru_2": [
+50.0,
+56.0
+],
+"codepipeline": [
+55.0,
+55.0
+],
+"codestar": [
+55.01,
+56.0
+],
+"codewhisperer": [
+56.032,
+55.599
+],
+"coffee_pot": [
+43.946,
+43.945
+],
+"cognito": [
+56.191,
+52.0
+],
+"cold_storage": [
+40.0,
+43.94
+],
+"command_line_interface": [
+56.0,
+54.0
+],
+"comprehend": [
+57.554,
+56.0
+],
+"comprehend_medical": [
+56.054,
+56.0
+],
+"compute": [
+55.0,
+55.0
+],
+"compute_optimizer": [
+56.002,
+56.051
+],
+"config": [
+54.0,
+54.0
+],
+"connect": [
+57.0,
+51.235
+],
+"connector": [
+44.0,
+16.449
+],
+"contact_center": [
+52.074,
+56.172
+],
+"container_1": [
+43.972,
+28.233
+],
+"container_2": [
+43.964,
+28.228
+],
+"container_3": [
+43.976,
+28.235
+],
+"container_registry_image": [
+44.0,
+44.0
+],
+"containers": [
+56.0,
+56.0
+],
+"control_tower": [
+55.0,
+55.0
+],
+"corporate_data_center": [
+53.153,
+78.068
+],
+"corporate_data_center2": [
+16.621,
+25.0
+],
+"corretto": [
+56.0,
+56.024
+],
+"cost_and_usage_report": [
+54.0,
+52.0
+],
+"cost_explorer": [
+55.349,
+53.49
+],
+"cost_management": [
+46.0,
+56.0
+],
+"credentials": [
+32.0,
+44.071
+],
+"custom_billing_manager": [
+50.0,
+56.0
+],
+"custom_event_bus_resource": [
+56.098,
+55.0
+],
+"customer_enablement": [
+54.0,
+58.246
+],
+"customer_engagement": [
+56.0,
+56.0
+],
+"customer_gateway": [
+44.0,
+44.0
+],
+"d2_instance": [
+44.0,
+44.0
+],
+"d3_instance": [
+44.0,
+44.0
+],
+"d3en_instance": [
+44.0,
+44.0
+],
+"data_encryption_key": [
+35.221,
+43.962
+],
+"data_exchange": [
+56.0,
+48.04
+],
+"data_exchange_for_apis": [
+44.195,
+43.414
+],
+"data_lake_resource_icon": [
+44.0,
+43.595
+],
+"data_pipeline": [
+54.0,
+48.0
+],
+"data_set": [
+35.33,
+44.0
+],
+"data_stream": [
+44.001,
+44.0
+],
+"data_table": [
+44.0,
+33.0
+],
+"data_transfer_terminal": [
+56.0,
+56.0
+],
+"database": [
+38.0,
+56.0
+],
+"database_migration_service": [
+29.0,
+53.0
+],
+"database_migration_workflow_job": [
+28.0,
+44.005
+],
+"datasync": [
+56.002,
+47.19
+],
+"datasync_discovery": [
+45.312,
+44.455
+],
+"datazone": [
+56.195,
+56.097
+],
+"datazone_business_data_catalog": [
+40.0,
+44.0
+],
+"datazone_data_portal": [
+44.0,
+44.0
+],
+"datazone_data_projects": [
+44.0,
+44.0
+],
+"db_instance": [
+57.918,
+78.135
+],
+"db_instance_read_replica": [
+57.918,
+78.135
+],
+"db_instance_standby": [
+57.918,
+78.135
+],
+"db_on_instance": [
+78.008,
+78.109
+],
+"db_on_instance2": [
+43.284,
+44.356
+],
+"deadline_cloud": [
+50.0,
+56.041
+],
+"deep_learning_amis": [
+56.502,
+56.5
+],
+"deep_learning_containers": [
+56.136,
+46.0
+],
+"deepcomposer": [
+56.0,
+56.0
+],
+"deeplens": [
+25.0,
+54.0
+],
+"deepracer": [
+57.082,
+37.245
+],
+"default_event_bus_resource": [
+55.999,
+45.0
+],
+"dense_compute_node": [
+43.92,
+43.92
+],
+"dense_storage_node": [
+43.956,
+43.956
+],
+"deployment": [
+45.284,
+44.854
+],
+"deployments": [
+36.507,
+43.989
+],
+"desired_state": [
+43.915,
+43.914
+],
+"desktop_and_app_streaming": [
+56.504,
+56.0
+],
+"detective": [
+55.0,
+56.061
+],
+"developer_tools": [
+57.409,
+56.86
+],
+"development_environment": [
+44.014,
+40.064
+],
+"device_farm": [
+48.0,
+56.046
+],
+"devops_agent": [
+56.0,
+56.0
+],
+"devops_guru": [
+56.0,
+56.0
+],
+"devops_guru_insights": [
+44.0,
+44.267
+],
+"direct_connect": [
+56.0,
+57.168
+],
+"directory_service": [
+53.0,
+40.0
+],
+"disk": [
+44.028,
+44.028
+],
+"distro_for_opentelemetry": [
+56.0,
+48.845
+],
+"document": [
+32.0,
+44.0
+],
+"documentdb_elastic_clusters": [
+44.0,
+44.0
+],
+"documentdb_with_mongodb_compatibility": [
+51.0,
+57.0
+],
+"documents": [
+36.096,
+43.965
+],
+"documents2": [
+37.916,
+44.005
+],
+"documents3": [
+34.001,
+44.0
+],
+"door_lock": [
+43.946,
+43.946
+],
+"download_distribution": [
+44.002,
+44.002
+],
+"dynamodb": [
+48.077,
+56.0
+],
+"dynamodb_dax": [
+43.862,
+42.591
+],
+"dynamodb_standard_access_table_class": [
+42.514,
+44.0
+],
+"dynamodb_standard_infrequent_access_table_class": [
+40.514,
+44.0
+],
+"dynamodb_stream": [
+44.073,
+44.0
+],
+"ec2": [
+56.0,
+56.0
+],
+"ec2_aws_microservice_extractor_for_net": [
+44.0,
+43.987
+],
+"ec2_c6a_instance": [
+44.0,
+44.0
+],
+"ec2_c6gn_instance": [
+44.0,
+44.0
+],
+"ec2_c6i_instance": [
+44.0,
+44.0
+],
+"ec2_c6in_instance": [
+44.0,
+44.0
+],
+"ec2_c7g_instance": [
+44.0,
+44.0
+],
+"ec2_c7gn_instance": [
+44.0,
+44.0
+],
+"ec2_dl1_instance": [
+44.0,
+44.0
+],
+"ec2_g5_instance": [
+44.0,
+44.0
+],
+"ec2_g5g_instance": [
+44.0,
+44.0
+],
+"ec2_hpc6a_instance": [
+44.0,
+44.0
+],
+"ec2_hpc6id_instance": [
+44.0,
+44.0
+],
+"ec2_i4i_instance": [
+44.0,
+44.0
+],
+"ec2_im4gn_instance": [
+44.0,
+44.0
+],
+"ec2_image_builder": [
+57.0,
+52.0
+],
+"ec2_inf2_instance": [
+44.0,
+44.0
+],
+"ec2_instance_contents": [
+24.0,
+24.0
+],
+"ec2_is4gen_instance": [
+44.0,
+44.0
+],
+"ec2_m1_mac_instance": [
+44.0,
+44.0
+],
+"ec2_m6a_instance": [
+44.0,
+44.0
+],
+"ec2_m6i_instance": [
+44.0,
+44.0
+],
+"ec2_m6idn_instance": [
+44.0,
+44.0
+],
+"ec2_m6in_instance": [
+44.0,
+44.0
+],
+"ec2_p4de_instance": [
+44.0,
+44.0
+],
+"ec2_r6a_instance": [
+44.0,
+44.0
+],
+"ec2_r6i_instance": [
+44.0,
+44.0
+],
+"ec2_r6idn_instance": [
+44.0,
+44.0
+],
+"ec2_r6in_instance": [
+44.0,
+44.0
+],
+"ec2_r7iz_instance": [
+44.0,
+44.0
+],
+"ec2_trn1_instance": [
+44.0,
+44.0
+],
+"ec2_vt1_instance": [
+44.0,
+44.0
+],
+"ec2_x2gd_instance": [
+44.0,
+44.0
+],
+"ec2_x2idn_instance": [
+44.0,
+44.0
+],
+"ec2_x2iedn_instance": [
+44.0,
+44.0
+],
+"ec2_x2iezn_instance": [
+44.0,
+44.0
+],
+"echo": [
+22.967,
+43.902
+],
+"ecr": [
+51.0,
+57.072
+],
+"ecs": [
+51.0,
+57.046
+],
+"ecs_anywhere": [
+40.0,
+43.784
+],
+"ecs_copilot_cli": [
+44.0,
+41.049
+],
+"ecs_service": [
+35.506,
+44.0
+],
+"ecs_service_connect": [
+44.0,
+40.0
+],
+"ecs_task": [
+33.5,
+44.0
+],
+"edge_location": [
+43.889,
+43.889
+],
+"efs_infrequentaccess": [
+48.0,
+50.416
+],
+"efs_standard": [
+50.369,
+50.557
+],
+"eks": [
+51.0,
+57.046
+],
+"eks_anywhere": [
+55.93,
+56.045
+],
+"eks_cloud": [
+55.769,
+56.046
+],
+"eks_distro": [
+55.931,
+56.046
+],
+"eks_on_outposts": [
+44.0,
+44.05
+],
+"elastic_beanstalk": [
+53.0,
+48.116
+],
+"elastic_block_store": [
+56.0,
+56.0
+],
+"elastic_block_store_amazon_data_lifecycle_manager": [
+41.93,
+44.018
+],
+"elastic_block_store_volume_gp3": [
+36.133,
+44.0
+],
+"elastic_fabric_adapter": [
+56.0,
+46.0
+],
+"elastic_file_system": [
+56.0,
+56.0
+],
+"elastic_file_system_elastic_throughput": [
+44.0,
+43.0
+],
+"elastic_file_system_infrequent_access": [
+44.0,
+43.098
+],
+"elastic_file_system_intelligent_tiering": [
+44.001,
+43.18
+],
+"elastic_file_system_one_zone": [
+44.087,
+44.0
+],
+"elastic_file_system_one_zone_infrequent_access": [
+44.087,
+44.0
+],
+"elastic_file_system_one_zone_standard": [
+44.0,
+44.0
+],
+"elastic_file_system_standard": [
+44.0,
+44.0
+],
+"elastic_file_system_standard_infrequent_access": [
+44.0,
+43.098
+],
+"elastic_inference": [
+49.0,
+46.702
+],
+"elastic_inference_2": [
+56.0,
+55.049
+],
+"elastic_ip_address": [
+44.195,
+17.852
+],
+"elastic_load_balancing": [
+50.0,
+50.0
+],
+"elastic_network_adapter": [
+44.068,
+43.994
+],
+"elastic_network_interface": [
+44.002,
+44.003
+],
+"elastic_transcoder": [
+56.0,
+59.032
+],
+"elastic_vmware_service": [
+56.0,
+56.0
+],
+"elasticache": [
+56.0,
+53.0
+],
+"elasticache_for_memcached": [
+43.944,
+40.671
+],
+"elasticache_for_redis": [
+44.008,
+40.896
+],
+"elasticache_for_valkey": [
+44.0,
+40.662
+],
+"elasticsearch_service": [
+54.42,
+54.0
+],
+"elemental": [
+56.0,
+48.0
+],
+"elemental_link": [
+50.0,
+55.545
+],
+"elemental_mediaconnect": [
+46.004,
+54.041
+],
+"elemental_mediaconvert": [
+48.0,
+54.042
+],
+"elemental_medialive": [
+48.006,
+55.049
+],
+"elemental_mediapackage": [
+48.0,
+55.044
+],
+"elemental_mediastore": [
+48.0,
+54.042
+],
+"elemental_mediatailor": [
+46.0,
+51.035
+],
+"email": [
+43.989,
+38.584
+],
+"email_2": [
+44.0,
+27.2
+],
+"email_notification": [
+44.0,
+44.0
+],
+"emr": [
+56.857,
+56.0
+],
+"emr_engine": [
+44.065,
+33.549
+],
+"emr_engine_mapr_m3": [
+78.109,
+59.258
+],
+"emr_engine_mapr_m5": [
+78.109,
+59.258
+],
+"emr_engine_mapr_m7": [
+78.109,
+59.258
+],
+"encrypted_data": [
+35.164,
+43.892
+],
+"end_user_messaging": [
+56.0,
+53.79
+],
+"endpoint": [
+44.0,
+44.0
+],
+"endpoints": [
+43.89,
+43.89
+],
+"entity_resolution": [
+56.0,
+56.0
+],
+"event": [
+43.839,
+43.296
+],
+"event_event_based": [
+43.78,
+44.029
+],
+"event_resource": [
+48.849,
+48.42
+],
+"event_time_based": [
+44.106,
+44.227
+],
+"eventbridge": [
+54.089,
+56.0
+],
+"eventbridge_custom_event_bus_resource": [
+44.247,
+38.939
+],
+"eventbridge_default_event_bus_resource": [
+44.002,
+30.001
+],
+"eventbridge_pipes": [
+44.087,
+44.0
+],
+"eventbridge_saas_partner_event_bus_resource": [
+43.318,
+42.572
+],
+"eventbridge_scheduler": [
+44.0,
+43.0
+],
+"eventbridge_schema": [
+44.0,
+44.0
+],
+"eventbridge_schema_registry": [
+44.0,
+44.0
+],
+"express_workflow": [
+58.104,
+56.0
+],
+"external_sdk": [
+38.45,
+44.131
+],
+"external_toolkit": [
+38.299,
+44.154
+],
+"f1_instance": [
+44.0,
+44.0
+],
+"factory": [
+43.945,
+43.945
+],
+"fargate": [
+50.0,
+51.022
+],
+"fault_injection_simulator": [
+55.739,
+56.912
+],
+"file_cache": [
+56.0,
+56.0
+],
+"file_cache_hybrid_nfs_linked_datasets": [
+44.0,
+44.0
+],
+"file_cache_on_premises_nfs_linked_datasets": [
+44.0,
+44.0
+],
+"file_cache_s3_linked_datasets": [
+44.071,
+44.0
+],
+"file_gateway": [
+38.799,
+44.1
+],
+"file_system": [
+44.034,
+41.23
+],
+"filtering_rule": [
+44.003,
+44.003
+],
+"finding": [
+40.854,
+43.935
+],
+"finspace": [
+56.0,
+55.056
+],
+"firetv": [
+43.889,
+30.799
+],
+"firetv_stick": [
+43.941,
+19.474
+],
+"firewall_manager": [
+56.0,
+53.0
+],
+"fleet_management": [
+42.776,
+44.339
+],
+"flow_logs": [
+44.0,
+44.001
+],
+"folder": [
+44.0,
+40.0
+],
+"folders": [
+44.0,
+40.0
+],
+"forecast": [
+56.0,
+51.0
+],
+"forums": [
+44.232,
+43.202
+],
+"fraud_detector": [
+56.367,
+56.0
+],
+"freertos": [
+56.0,
+52.895
+],
+"fsx": [
+54.0,
+28.893
+],
+"fsx_file_gateway": [
+43.993,
+44.0
+],
+"fsx_for_lustre": [
+53.019,
+19.473
+],
+"fsx_for_netapp_ontap": [
+56.478,
+33.142
+],
+"fsx_for_openzfs": [
+56.0,
+30.066
+],
+"fsx_for_windows_file_server": [
+56.0,
+28.0
+],
+"g3_instance": [
+44.0,
+44.0
+],
+"g4ad_instance": [
+44.0,
+44.0
+],
+"g4dn": [
+44.0,
+44.0
+],
+"game_tech": [
+50.598,
+47.923
+],
+"game_tech2": [
+56.0,
+39.0
+],
+"gamekit": [
+55.0,
+51.01
+],
+"gamelift": [
+56.055,
+56.0
+],
+"gamelift_2": [
+56.0,
+56.01
+],
+"gamelift_streams": [
+56.0,
+56.0
+],
+"games": [
+55.999,
+39.0
+],
+"gamesparks": [
+56.056,
+56.013
+],
+"gateway": [
+42.886,
+43.879
+],
+"gateway_load_balancer": [
+44.0,
+44.0
+],
+"gear": [
+44.012,
+44.011
+],
+"general": [
+45.3,
+52.3
+],
+"general_access_points": [
+35.802,
+43.96
+],
+"generic": [
+43.946,
+43.945
+],
+"generic_application": [
+44.0,
+44.0
+],
+"generic_database": [
+34.645,
+43.899
+],
+"generic_firewall": [
+44.964,
+38.472
+],
+"genomics_cli": [
+56.0,
+56.0
+],
+"git_repository": [
+34.002,
+44.0
+],
+"glacier": [
+42.302,
+44.259
+],
+"glacier_deep_archive": [
+42.333,
+44.168
+],
+"global_accelerator": [
+44.946,
+55.934
+],
+"global_secondary_index": [
+43.8,
+43.799
+],
+"globe": [
+43.0,
+43.0
+],
+"glue": [
+32.0,
+54.0
+],
+"glue_crawlers": [
+44.0,
+44.0
+],
+"glue_data_catalog": [
+40.0,
+44.0
+],
+"glue_databrew": [
+56.0,
+56.0
+],
+"glue_elastic_views": [
+56.0,
+56.0
+],
+"greengrass": [
+50.0,
+50.0
+],
+"ground_station": [
+42.0,
+54.0
+],
+"group_account": [
+100.0,
+100.0
+],
+"group_auto_scaling_group": [
+100.0,
+100.0
+],
+"group_availability_zone": [
+100.0,
+100.0
+],
+"group_aws_cloud": [
+100.0,
+100.0
+],
+"group_aws_cloud_alt": [
+35.0,
+35.0
+],
+"group_aws_step_functions_workflow": [
+377.953,
+377.953
+],
+"group_corporate_data_center": [
+35.0,
+35.0
+],
+"group_ec2_instance_contents": [
+35.0,
+35.0
+],
+"group_elastic_beanstalk": [
+99.748,
+99.748
+],
+"group_elastic_load_balancing": [
+377.953,
+377.953
+],
+"group_iot_greengrass": [
+377.953,
+377.953
+],
+"group_iot_greengrass_deployment": [
+377.953,
+377.953
+],
+"group_on_premise": [
+100.0,
+100.0
+],
+"group_region": [
+377.953,
+377.953
+],
+"group_security_group": [
+35.0,
+35.0
+],
+"group_spot_fleet": [
+100.0,
+100.0
+],
+"group_subnet": [
+377.953,
+377.953
+],
+"group_vpc": [
+377.953,
+377.953
+],
+"group_vpc2": [
+400.0,
+400.0
+],
+"guardduty": [
+56.0,
+56.0
+],
+"h1_instance": [
+44.0,
+44.0
+],
+"habana_gaudi": [
+44.0,
+44.0
+],
+"hardware_board": [
+43.964,
+43.963
+],
+"hdfs_cluster": [
+43.94,
+43.94
+],
+"healthimaging": [
+55.316,
+56.98
+],
+"healthlake": [
+56.0,
+56.0
+],
+"healthscribe": [
+55.497,
+56.0
+],
+"high_memory_instance": [
+44.0,
+44.0
+],
+"honeycode": [
+48.0,
+55.655
+],
+"hosted_zone": [
+43.169,
+44.072
+],
+"house": [
+43.945,
+43.945
+],
+"http2_protocol": [
+43.961,
+43.961
+],
+"http_notification": [
+44.0,
+44.0
+],
+"http_protocol": [
+43.961,
+43.961
+],
+"i2": [
+44.0,
+44.0
+],
+"i3_instance": [
+44.0,
+44.0
+],
+"i3en": [
+44.0,
+44.0
+],
+"identity_access_management_iam_roles_anywhere": [
+43.982,
+44.0
+],
+"identity_and_access_management": [
+56.0,
+42.0
+],
+"illustration_desktop": [
+99.713,
+90.613
+],
+"illustration_devices": [
+100.139,
+72.844
+],
+"illustration_notification": [
+256.519,
+208.678
+],
+"illustration_office_building": [
+100.0,
+71.274
+],
+"illustration_users": [
+99.602,
+99.794
+],
+"import_export": [
+43.997,
+34.326
+],
+"inf1": [
+44.0,
+44.0
+],
+"inferentia": [
+44.0,
+44.0
+],
+"infrequent_access_storage_class": [
+53.884,
+56.0
+],
+"inspector": [
+56.597,
+53.0
+],
+"instance": [
+77.996,
+78.033
+],
+"instance2": [
+44.0,
+44.0
+],
+"instance_with_cloudwatch": [
+77.996,
+78.033
+],
+"instance_with_cloudwatch2": [
+48.0,
+48.0
+],
+"instances": [
+43.92,
+43.92
+],
+"instances_2": [
+43.967,
+43.966
+],
+"intelligent_tiering": [
+42.418,
+44.123
+],
+"interactive_video": [
+56.0,
+56.515
+],
+"internet": [
+44.026,
+28.497
+],
+"internet_alt1": [
+44.025,
+28.494
+],
+"internet_alt2": [
+79.343,
+76.174
+],
+"internet_alt22": [
+44.025,
+43.511
+],
+"internet_gateway": [
+43.91,
+43.909
+],
+"internet_of_things": [
+56.0,
+56.0
+],
+"inventory": [
+43.89,
+44.041
+],
+"iot_1click": [
+50.0,
+50.0
+],
+"iot_analytics": [
+50.0,
+50.0
+],
+"iot_analytics_channel": [
+36.731,
+44.097
+],
+"iot_analytics_data_store": [
+29.264,
+44.0
+],
+"iot_analytics_dataset": [
+35.33,
+44.0
+],
+"iot_analytics_pipeline": [
+44.0,
+24.0
+],
+"iot_button": [
+54.0,
+50.0
+],
+"iot_core": [
+50.044,
+48.0
+],
+"iot_core_device_advisor": [
+44.25,
+45.024
+],
+"iot_core_device_location": [
+44.097,
+44.295
+],
+"iot_device_defender": [
+46.0,
+54.0
+],
+"iot_device_defender_iot_device_jobs": [
+36.0,
+44.0
+],
+"iot_device_gateway": [
+44.143,
+40.784
+],
+"iot_device_jobs_resource": [
+36.0,
+44.0
+],
+"iot_device_management": [
+49.0,
+56.043
+],
+"iot_device_management_fleet": [
+44.0,
+44.0
+],
+"iot_device_tester": [
+44.0,
+44.283
+],
+"iot_edukit": [
+56.001,
+56.017
+],
+"iot_events": [
+54.0,
+42.0
+],
+"iot_expresslink": [
+56.024,
+57.204
+],
+"iot_fleetwise": [
+56.0,
+57.208
+],
+"iot_greengrass_artifact": [
+39.0,
+44.0
+],
+"iot_greengrass_component": [
+44.0,
+44.0
+],
+"iot_greengrass_component_machine_learning": [
+44.0,
+44.0
+],
+"iot_greengrass_component_nucleus": [
+44.0,
+44.0
+],
+"iot_greengrass_component_private": [
+44.0,
+44.0
+],
+"iot_greengrass_component_public": [
+44.0,
+44.0
+],
+"iot_greengrass_interprocess_communication": [
+44.0,
+44.0
+],
+"iot_greengrass_protocol": [
+44.0,
+44.0
+],
+"iot_greengrass_recipe": [
+31.0,
+44.0
+],
+"iot_greengrass_stream_manager": [
+44.0,
+34.0
+],
+"iot_lorawan_protocol": [
+44.0,
+44.0
+],
+"iot_over_the_air_update": [
+43.965,
+35.906
+],
+"iot_roborunner": [
+56.0,
+56.0
+],
+"iot_sailboat": [
+44.0,
+44.0
+],
+"iot_sitewise": [
+52.035,
+41.0
+],
+"iot_sitewise_asset": [
+43.087,
+44.0
+],
+"iot_sitewise_asset_hierarchy": [
+44.0,
+44.0
+],
+"iot_sitewise_asset_model": [
+43.0,
+43.0
+],
+"iot_sitewise_asset_properties": [
+44.0,
+44.0
+],
+"iot_sitewise_data_streams": [
+44.0,
+44.0
+],
+"iot_thing_freertos_device": [
+44.0,
+44.0
+],
+"iot_thing_humidity_sensor": [
+44.0,
+44.0
+],
+"iot_thing_industrial_pc": [
+44.0,
+44.0
+],
+"iot_thing_plc": [
+44.0,
+44.0
+],
+"iot_thing_relay": [
+44.0,
+44.0
+],
+"iot_thing_stacklight": [
+44.0,
+44.0
+],
+"iot_thing_temperature_humidity_sensor": [
+44.0,
+44.0
+],
+"iot_thing_temperature_sensor": [
+44.0,
+44.0
+],
+"iot_thing_temperature_vibration_sensor": [
+44.0,
+44.0
+],
+"iot_thing_vibration_sensor": [
+44.0,
+44.0
+],
+"iot_things_graph": [
+54.716,
+52.38
+],
+"iot_twinmaker": [
+55.96,
+57.254
+],
+"iq": [
+55.871,
+55.134
+],
+"item": [
+43.89,
+43.89
+],
+"items": [
+44.0,
+43.125
+],
+"json_script": [
+32.0,
+44.0
+],
+"kendra": [
+64.103,
+63.0
+],
+"key_management_service": [
+51.996,
+49.56
+],
+"key_management_service_external_key_store": [
+44.344,
+44.926
+],
+"keyspaces": [
+56.08,
+59.0
+],
+"kinesis": [
+54.0,
+56.0
+],
+"kinesis_data_analytics": [
+54.0,
+56.0
+],
+"kinesis_data_firehose": [
+52.625,
+50.107
+],
+"kinesis_data_streams": [
+54.0,
+56.0
+],
+"kinesis_video_streams": [
+54.0,
+56.0
+],
+"lake_formation": [
+48.0,
+54.0
+],
+"lambda": [
+54.05,
+56.0
+],
+"lambda_function": [
+43.96,
+43.961
+],
+"layers": [
+43.92,
+43.92
+],
+"lex": [
+53.0,
+52.0
+],
+"license_manager": [
+38.0,
+54.067
+],
+"license_manager_application_discovery": [
+43.829,
+43.927
+],
+"license_manager_license_blending": [
+44.021,
+44.068
+],
+"lightbulb": [
+43.945,
+43.946
+],
+"lightsail": [
+53.0,
+46.0
+],
+"lightsail_for_research": [
+56.039,
+57.143
+],
+"local_zones": [
+41.699,
+57.0
+],
+"location_service": [
+56.02,
+56.0
+],
+"location_service_geofence": [
+44.076,
+44.027
+],
+"location_service_map": [
+44.156,
+44.032
+],
+"location_service_place": [
+34.0,
+44.0
+],
+"location_service_routes": [
+44.0,
+44.0
+],
+"location_service_track": [
+44.0,
+44.0
+],
+"logs": [
+32.0,
+44.0
+],
+"long_term_security_credential": [
+43.959,
+39.141
+],
+"lookout_for_equipment": [
+56.063,
+56.0
+],
+"lookout_for_metrics": [
+56.458,
+56.29
+],
+"lookout_for_vision": [
+56.0,
+55.0
+],
+"lumberyard": [
+56.208,
+38.039
+],
+"m4_instance": [
+44.0,
+43.999
+],
+"m5_instance": [
+44.0,
+44.0
+],
+"m5a_instance": [
+44.0,
+44.0
+],
+"m5d_instance": [
+44.0,
+44.0
+],
+"m5dn_instance": [
+44.0,
+44.0
+],
+"m5n": [
+56.0,
+56.0
+],
+"m5n_instance": [
+44.0,
+44.0
+],
+"m5zn_instance": [
+44.0,
+44.0
+],
+"m6g_instance": [
+44.0,
+44.0
+],
+"m6gd_instance": [
+44.0,
+44.0
+],
+"mac_instance": [
+44.0,
+44.0
+],
+"machine_learning": [
+56.027,
+56.036
+],
+"macie": [
+56.75,
+24.499
+],
+"magnifying_glass": [
+44.767,
+44.229
+],
+"magnifying_glass_2": [
+44.437,
+44.0
+],
+"mainframe_modernization": [
+55.813,
+55.943
+],
+"mainframe_modernization_analyzer": [
+43.707,
+44.0
+],
+"mainframe_modernization_compiler": [
+44.158,
+44.0
+],
+"mainframe_modernization_converter": [
+44.212,
+44.0
+],
+"mainframe_modernization_developer": [
+43.042,
+42.0
+],
+"mainframe_modernization_runtime": [
+44.072,
+25.0
+],
+"maintenance_windows": [
+44.0,
+44.0
+],
+"managed_apache_cassandra_service": [
+56.08,
+59.0
+],
+"managed_blockchain": [
+55.056,
+36.268
+],
+"managed_ms_ad": [
+44.008,
+43.252
+],
+"managed_service_for_apache_flink": [
+52.07,
+50.522
+],
+"managed_service_for_grafana": [
+56.053,
+56.034
+],
+"managed_service_for_prometheus": [
+38.0,
+56.0
+],
+"managed_services": [
+51.77,
+49.075
+],
+"managed_streaming_for_kafka": [
+52.0,
+50.591
+],
+"managed_workflows_for_apache_airflow": [
+56.0,
+56.0
+],
+"management_and_governance": [
+56.0,
+56.0
+],
+"management_console": [
+56.0,
+56.0
+],
+"management_console2": [
+44.0,
+39.0
+],
+"marketplace": [
+48.98,
+49.545
+],
+"media_services": [
+56.0,
+44.0
+],
+"mediaconnect_gateway": [
+44.27,
+44.558
+],
+"medical_emergency": [
+44.039,
+44.039
+],
+"memorydb_for_redis": [
+55.962,
+55.955
+],
+"mesh": [
+43.153,
+43.999
+],
+"message": [
+38.0,
+44.0
+],
+"metrics": [
+43.0,
+39.24
+],
+"mfa_token": [
+44.003,
+44.002
+],
+"migration_and_transfer": [
+56.203,
+55.184
+],
+"migration_evaluator": [
+54.718,
+54.718
+],
+"migration_hub": [
+49.0,
+51.954
+],
+"migration_hub_refactor_spaces_applications": [
+44.0,
+44.0
+],
+"migration_hub_refactor_spaces_environments": [
+44.0,
+44.0
+],
+"migration_hub_refactor_spaces_services": [
+44.0,
+44.0
+],
+"mobile": [
+56.0,
+56.0
+],
+"mobile_application": [
+52.913,
+56.055
+],
+"mobile_client": [
+23.986,
+43.826
+],
+"mobile_hub": [
+62.733,
+66.178
+],
+"monitoring": [
+44.036,
+32.667
+],
+"monitron": [
+56.0,
+56.0
+],
+"mq": [
+53.0,
+46.0
+],
+"mq_broker": [
+44.0,
+38.782
+],
+"mqtt_protocol": [
+43.961,
+43.961
+],
+"ms_sql_instance": [
+78.117,
+78.022
+],
+"ms_sql_instance_alternate": [
+78.273,
+78.086
+],
+"msk_amazon_msk_connect": [
+44.0,
+43.0
+],
+"multimedia": [
+43.882,
+41.346
+],
+"multiple_volumes_resource": [
+44.487,
+34.101
+],
+"mysql_db_instance": [
+78.117,
+78.022
+],
+"mysql_db_instance_alternate": [
+78.273,
+78.086
+],
+"namespace": [
+43.988,
+44.142
+],
+"nat_gateway": [
+44.003,
+44.003
+],
+"neptune": [
+55.0,
+55.0
+],
+"network_access_control_list": [
+44.0,
+44.001
+],
+"network_firewall": [
+56.0,
+56.917
+],
+"network_firewall_endpoints": [
+43.901,
+44.0
+],
+"network_load_balancer": [
+44.003,
+44.003
+],
+"networking_and_content_delivery": [
+52.0,
+55.937
+],
+"neuron_ml_sdk": [
+48.0,
+56.043
+],
+"nice_dcv": [
+57.205,
+56.82
+],
+"nice_enginframe": [
+56.0,
+48.0
+],
+"nimble_studio": [
+56.254,
+54.828
+],
+"nitro_enclaves": [
+48.0,
+56.0
+],
+"non_cached_volume": [
+35.243,
+43.991
+],
+"notebook": [
+38.586,
+43.973
+],
+"nova": [
+56.0,
+56.04
+],
+"nova2": [
+56.002,
+56.013
+],
+"object": [
+43.942,
+43.941
+],
+"office_building": [
+28.353,
+44.523
+],
+"omics": [
+56.389,
+56.0
+],
+"one_zone_ia": [
+42.302,
+44.0
+],
+"open_3d_engine": [
+56.0,
+55.49
+],
+"open_3d_engine_2": [
+56.0,
+56.0
+],
+"opensearch_dashboards": [
+44.025,
+33.0
+],
+"opensearch_ingestion": [
+44.0,
+44.0
+],
+"opensearch_observability": [
+44.438,
+43.955
+],
+"opensearch_service_cluster_administrator_node": [
+44.172,
+44.0
+],
+"opensearch_service_data_node": [
+44.002,
+44.0
+],
+"opensearch_service_index": [
+44.0,
+44.0
+],
+"opensearch_service_traces": [
+44.0,
+44.0
+],
+"opensearch_service_ultrawarm_node": [
+44.0,
+44.04
+],
+"opsworks": [
+48.0,
+53.0
+],
+"opsworks_apps": [
+43.896,
+43.896
+],
+"opsworks_permissions": [
+30.585,
+43.984
+],
+"optimized_instance": [
+77.996,
+78.033
+],
+"oracle_database_at_aws": [
+52.0,
+56.0
+],
+"oracle_db_instance": [
+78.117,
+78.022
+],
+"oracle_db_instance_alternate": [
+77.93,
+78.021
+],
+"organizations": [
+50.0,
+50.045
+],
+"organizations_account": [
+43.064,
+45.596
+],
+"organizations_account2": [
+44.0,
+44.0
+],
+"organizations_management_account": [
+44.108,
+43.855
+],
+"organizations_management_account2": [
+44.104,
+44.107
+],
+"organizations_organizational_unit": [
+47.68,
+40.879
+],
+"organizations_organizational_unit2": [
+44.0,
+44.0
+],
+"outposts": [
+30.502,
+51.0
+],
+"outposts_1u_and_2u_servers": [
+56.0,
+37.386
+],
+"outposts_family": [
+56.0,
+56.167
+],
+"p2_instance": [
+44.0,
+44.0
+],
+"p3_instance": [
+44.0,
+44.0
+],
+"p3dn_instance": [
+44.0,
+44.0
+],
+"p4_instance": [
+44.0,
+44.0
+],
+"p4d_instance": [
+44.0,
+44.0
+],
+"panorama": [
+56.0,
+56.0
+],
+"parallel_cluster": [
+56.607,
+48.0
+],
+"parallel_computing_service": [
+56.0,
+48.01
+],
+"parameter_store": [
+42.176,
+43.845
+],
+"partner_central": [
+56.0,
+55.729
+],
+"patch_manager": [
+44.055,
+44.055
+],
+"payment_cryptography": [
+56.0,
+55.582
+],
+"peering": [
+44.001,
+44.002
+],
+"permissions": [
+35.243,
+43.991
+],
+"permissions_2": [
+53.008,
+76.438
+],
+"personal_health_dashboard": [
+54.0,
+52.031
+],
+"personalize": [
+51.0,
+52.0
+],
+"pinpoint": [
+48.0,
+48.0
+],
+"pinpoint_journey": [
+41.96,
+41.01
+],
+"police_emergency": [
+43.986,
+43.987
+],
+"policy": [
+43.95,
+37.845
+],
+"polly": [
+54.109,
+54.0
+],
+"postgresql_instance": [
+78.129,
+78.078
+],
+"private_5g": [
+56.0,
+55.71
+],
+"private_certificate_authority": [
+56.0,
+56.0
+],
+"privatelink": [
+65.69,
+40.9
+],
+"professional_services": [
+57.569,
+55.427
+],
+"programming_language": [
+44.0,
+28.673
+],
+"proton": [
+56.097,
+56.0
+],
+"q": [
+48.0,
+54.695
+],
+"quantum_ledger_database": [
+56.0,
+53.0
+],
+"quantum_technologies": [
+51.617,
+56.0
+],
+"question": [
+23.244,
+44.119
+],
+"queue": [
+78.057,
+46.998
+],
+"quick_suite": [
+48.0,
+54.251
+],
+"quicksight": [
+54.0,
+50.0
+],
+"quicksight_paginated_reports": [
+35.0,
+44.0
+],
+"r4_instance": [
+44.0,
+44.0
+],
+"r5_instance": [
+44.0,
+44.0
+],
+"r5a_instance": [
+44.0,
+44.0
+],
+"r5ad_instance": [
+44.0,
+44.0
+],
+"r5b_instance": [
+44.0,
+44.0
+],
+"r5d_instance": [
+44.0,
+44.0
+],
+"r5gd_instance": [
+44.0,
+44.0
+],
+"r5n": [
+56.0,
+56.0
+],
+"r5n_instance": [
+44.0,
+44.0
+],
+"r6g_instance": [
+44.0,
+44.0
+],
+"rdn_instance": [
+44.0,
+44.0
+],
+"rds": [
+56.0,
+56.0
+],
+"rds_blue_green_deployments": [
+44.046,
+32.824
+],
+"rds_instance": [
+44.002,
+43.892
+],
+"rds_instance_alt": [
+43.908,
+43.908
+],
+"rds_mariadb_instance": [
+43.971,
+43.861
+],
+"rds_mariadb_instance_alt": [
+43.932,
+43.932
+],
+"rds_multi_az": [
+44.002,
+32.681
+],
+"rds_multi_az_db_cluster": [
+44.0,
+43.843
+],
+"rds_mysql_instance": [
+43.964,
+43.852
+],
+"rds_mysql_instance_alt": [
+43.909,
+43.909
+],
+"rds_on_vmware": [
+56.0,
+54.0
+],
+"rds_optimized_writes": [
+44.081,
+44.117
+],
+"rds_oracle_instance": [
+44.001,
+43.89
+],
+"rds_oracle_instance_alt": [
+43.908,
+43.909
+],
+"rds_piop": [
+50.0,
+50.0
+],
+"rds_piops": [
+43.908,
+43.908
+],
+"rds_postgresql_instance": [
+43.964,
+43.853
+],
+"rds_postgresql_instance_alt": [
+43.908,
+43.909
+],
+"rds_proxy": [
+43.927,
+43.816
+],
+"rds_proxy_alt": [
+43.756,
+43.756
+],
+"rds_sql_server_instance": [
+43.964,
+43.853
+],
+"rds_sql_server_instance_alt": [
+43.909,
+43.908
+],
+"rds_trusted_language_extensions_for_postgresql": [
+33.033,
+44.0
+],
+"recover": [
+42.0,
+42.0
+],
+"red_hat_openshift": [
+57.128,
+58.309
+],
+"redshift": [
+38.0,
+56.0
+],
+"redshift_auto_copy": [
+44.001,
+44.0
+],
+"redshift_data_sharing_governance": [
+44.0,
+43.818
+],
+"redshift_ml": [
+44.0,
+44.055
+],
+"redshift_query_editor_v20_light": [
+44.187,
+44.09
+],
+"redshift_ra3": [
+44.0,
+44.0
+],
+"redshift_streaming_ingestion": [
+39.999,
+44.0
+],
+"registry": [
+43.945,
+43.945
+],
+"rekognition": [
+64.965,
+64.967
+],
+"rekognition_2": [
+56.144,
+56.0
+],
+"rekognition_image": [
+44.401,
+43.955
+],
+"rekognition_video": [
+44.063,
+44.053
+],
+"replication": [
+43.959,
+42.912
+],
+"replication_time_control": [
+44.005,
+42.958
+],
+"reported_state": [
+43.984,
+43.985
+],
+"repost": [
+58.06,
+56.0
+],
+"repost_private": [
+99.773,
+99.991
+],
+"rescue": [
+43.92,
+43.92
+],
+"reserved_instance_reporting": [
+56.0,
+56.0
+],
+"resilience_hub": [
+56.031,
+49.508
+],
+"resource": [
+43.995,
+45.248
+],
+"resource_access_manager": [
+56.0,
+56.0
+],
+"resource_explorer": [
+52.46,
+56.055
+],
+"resources": [
+38.456,
+44.138
+],
+"robomaker": [
+56.0,
+56.0
+],
+"robotics": [
+56.0,
+55.5
+],
+"role": [
+44.125,
+25.403
+],
+"route_53": [
+56.0,
+56.124
+],
+"route_53_application_recovery_controller": [
+43.984,
+44.052
+],
+"route_53_readiness_checks": [
+43.983,
+44.052
+],
+"route_53_resolver": [
+43.984,
+43.983
+],
+"route_53_resolver_dns_firewall": [
+44.031,
+43.352
+],
+"route_53_resolver_query_logging": [
+43.983,
+44.085
+],
+"route_53_routing_controls": [
+43.984,
+44.052
+],
+"route_table": [
+43.944,
+43.07
+],
+"router": [
+44.0,
+44.0
+],
+"rtb_fabric": [
+56.0,
+56.0
+],
+"rule": [
+26.635,
+44.259
+],
+"rule_2": [
+43.967,
+43.074
+],
+"rule_3": [
+43.931,
+38.032
+],
+"run_command": [
+43.963,
+31.089
+],
+"s3": [
+53.884,
+56.0
+],
+"s3_batch_operations": [
+44.0,
+44.0
+],
+"s3_express_one_zone": [
+44.07,
+44.0
+],
+"s3_file_gateway": [
+42.005,
+44.0
+],
+"s3_multi_region_access_points": [
+43.0,
+44.0
+],
+"s3_object_lambda": [
+29.225,
+43.523
+],
+"s3_object_lambda_access_points": [
+44.0,
+44.016
+],
+"s3_object_lock": [
+40.0,
+44.0
+],
+"s3_on_outposts": [
+44.058,
+44.0
+],
+"s3_on_outposts_storage": [
+55.995,
+56.0
+],
+"s3_replication_time_control": [
+44.005,
+42.958
+],
+"s3_select": [
+44.047,
+44.0
+],
+"s3_storage_lens": [
+44.098,
+44.051
+],
+"s3_tables": [
+44.0,
+44.0
+],
+"s3_vectors": [
+42.355,
+44.308
+],
+"saas_event_bus_resource": [
+43.95,
+43.407
+],
+"sagemaker": [
+54.0,
+55.104
+],
+"sagemaker_2": [
+52.0,
+52.092
+],
+"sagemaker_canvas": [
+44.0,
+44.0
+],
+"sagemaker_geospatial_ml": [
+44.0,
+44.0
+],
+"sagemaker_ground_truth": [
+54.0,
+54.056
+],
+"sagemaker_model": [
+43.935,
+44.262
+],
+"sagemaker_notebook": [
+38.586,
+43.972
+],
+"sagemaker_shadow_testing": [
+44.248,
+44.0
+],
+"sagemaker_studio_lab": [
+56.0,
+55.285
+],
+"sagemaker_train": [
+43.999,
+35.968
+],
+"saml_token": [
+44.109,
+44.0
+],
+"satellite": [
+54.968,
+47.864
+],
+"savings_plans": [
+55.308,
+54.392
+],
+"search_documents": [
+38.746,
+44.0
+],
+"secrets_manager": [
+56.0,
+56.0
+],
+"security_agent": [
+50.0,
+56.276
+],
+"security_group": [
+19.505,
+26.011
+],
+"security_hub": [
+48.34,
+55.032
+],
+"security_hub_finding": [
+40.854,
+43.935
+],
+"security_identity_and_compliance": [
+42.0,
+56.308
+],
+"security_incident_response": [
+55.13,
+53.511
+],
+"security_lake": [
+56.051,
+56.017
+],
+"sensor": [
+40.338,
+44.79
+],
+"server_migration_service": [
+55.054,
+56.0
+],
+"serverless": [
+56.435,
+37.416
+],
+"serverless_application_repository": [
+56.0,
+37.184
+],
+"servers": [
+44.0,
+42.999
+],
+"service": [
+44.126,
+43.0
+],
+"service_catalog": [
+56.0,
+56.0
+],
+"service_management_connector": [
+56.729,
+56.0
+],
+"servo": [
+43.937,
+31.705
+],
+"shadow": [
+43.915,
+44.868
+],
+"shield": [
+47.422,
+54.011
+],
+"shield2": [
+45.434,
+43.138
+],
+"shield_shield_advanced": [
+38.685,
+44.009
+],
+"signer": [
+55.997,
+56.008
+],
+"simple_ad": [
+43.925,
+43.052
+],
+"simple_email_service": [
+56.0,
+56.0
+],
+"simple_storage_service_directory_bucket": [
+42.36,
+44.05
+],
+"simple_storage_service_s3_glacier_instant_retrieval": [
+44.33,
+44.258
+],
+"simspace_weaver": [
+56.045,
+56.007
+],
+"simulation": [
+43.991,
+36.203
+],
+"simulator": [
+38.948,
+44.755
+],
+"single_sign_on": [
+58.49,
+56.694
+],
+"site_to_site_vpn": [
+51.186,
+56.687
+],
+"snapshot": [
+31.757,
+43.924
+],
+"snowball": [
+56.0,
+44.0
+],
+"snowball_edge": [
+56.395,
+53.395
+],
+"snowcone": [
+56.0,
+44.0
+],
+"snowmobile": [
+56.0,
+54.0
+],
+"sns": [
+55.0,
+52.0
+],
+"source_code": [
+32.0,
+44.0
+],
+"spot_instance": [
+43.92,
+43.862
+],
+"sql_primary": [
+78.117,
+78.022
+],
+"sql_replica": [
+78.117,
+78.022
+],
+"sql_workbench": [
+56.538,
+56.0
+],
+"sqs": [
+57.071,
+46.0
+],
+"ssl_padlock": [
+44.221,
+44.222
+],
+"stack": [
+43.92,
+43.047
+],
+"stack2": [
+43.953,
+43.953
+],
+"standard_ia": [
+42.415,
+44.0
+],
+"state_manager": [
+43.889,
+43.89
+],
+"step_functions": [
+56.0,
+56.0
+],
+"storage": [
+52.0,
+56.0
+],
+"storage_gateway": [
+56.0,
+57.169
+],
+"streaming_distribution": [
+43.945,
+43.945
+],
+"sts": [
+44.0,
+28.251
+],
+"sts_alternate": [
+35.164,
+43.892
+],
+"sumerian": [
+53.0,
+55.0
+],
+"supply_chain": [
+48.0,
+56.043
+],
+"support": [
+56.736,
+56.177
+],
+"systems_manager": [
+56.0,
+57.219
+],
+"systems_manager_application_manager": [
+44.0,
+41.48
+],
+"systems_manager_change_calendar": [
+43.896,
+40.348
+],
+"systems_manager_change_manager": [
+43.896,
+40.347
+],
+"systems_manager_compliance": [
+37.563,
+44.0
+],
+"systems_manager_distributor": [
+44.076,
+44.0
+],
+"systems_manager_incident_manager": [
+56.005,
+57.135
+],
+"systems_manager_opscenter": [
+44.578,
+44.826
+],
+"systems_manager_session_manager": [
+44.0,
+44.0
+],
+"t2_instance": [
+44.0,
+44.0
+],
+"t3_instance": [
+44.0,
+44.0
+],
+"t3a_instance": [
+44.0,
+44.0
+],
+"t4g_instance": [
+44.0,
+44.0
+],
+"table": [
+43.928,
+43.927
+],
+"tape_gateway": [
+41.641,
+43.922
+],
+"tape_storage": [
+44.011,
+21.23
+],
+"telco_network_builder": [
+55.995,
+56.466
+],
+"template": [
+36.963,
+43.956
+],
+"temporary_security_credential": [
+43.938,
+43.494
+],
+"tensorflow_on_aws": [
+56.0,
+56.0
+],
+"textract": [
+56.097,
+48.0
+],
+"textract_analyze_lending": [
+44.0,
+44.0
+],
+"thermostat": [
+44.008,
+44.008
+],
+"thinkbox_deadline": [
+48.774,
+56.056
+],
+"thinkbox_draft": [
+47.531,
+54.559
+],
+"thinkbox_frost": [
+50.453,
+55.95
+],
+"thinkbox_krakatoa": [
+50.094,
+56.171
+],
+"thinkbox_sequoia": [
+48.958,
+56.267
+],
+"thinkbox_stoke": [
+49.924,
+56.153
+],
+"thinkbox_xmesh": [
+48.765,
+56.045
+],
+"timestream": [
+52.0,
+56.0
+],
+"tools_and_sdks": [
+48.0,
+56.044
+],
+"topic": [
+44.0,
+38.0
+],
+"topic_2": [
+29.996,
+43.914
+],
+"torchserve": [
+47.115,
+55.448
+],
+"traditional_server": [
+25.499,
+44.013
+],
+"training_certification": [
+51.0,
+56.009
+],
+"trainium_instance": [
+44.0,
+44.0
+],
+"transcribe": [
+56.111,
+56.0
+],
+"transfer_family": [
+45.674,
+51.09
+],
+"transfer_family_aws_as2": [
+42.98,
+44.277
+],
+"transfer_for_ftp_resource": [
+42.954,
+44.061
+],
+"transfer_for_ftps_resource": [
+42.874,
+44.155
+],
+"transfer_for_sftp": [
+44.131,
+49.576
+],
+"transfer_for_sftp_resource": [
+42.981,
+44.076
+],
+"transform": [
+48.0,
+56.424
+],
+"transit_gateway": [
+54.0,
+54.0
+],
+"transit_gateway_attachment": [
+44.0,
+44.0
+],
+"translate": [
+49.0,
+56.0
+],
+"travel": [
+44.007,
+44.008
+],
+"trusted_advisor": [
+52.0,
+54.02
+],
+"user": [
+40.0,
+44.0
+],
+"user_notifications": [
+55.127,
+47.801
+],
+"users": [
+44.0,
+44.0
+],
+"utility": [
+44.008,
+44.007
+],
+"vault": [
+35.53,
+44.114
+],
+"verified_access": [
+56.607,
+55.998
+],
+"verified_permissions": [
+56.0,
+56.0
+],
+"virtual_gateway": [
+44.0,
+44.227
+],
+"virtual_node": [
+44.0,
+44.0
+],
+"virtual_private_cloud": [
+79.343,
+49.577
+],
+"virtual_router": [
+44.0,
+44.0
+],
+"virtual_service": [
+44.025,
+42.027
+],
+"virtual_tape_library": [
+35.245,
+43.991
+],
+"vmware_cloud_on_aws": [
+56.0,
+42.958
+],
+"volume": [
+35.427,
+43.985
+],
+"volume_gateway": [
+36.663,
+43.923
+],
+"vpc": [
+56.189,
+54.406
+],
+"vpc_access_points": [
+30.468,
+43.932
+],
+"vpc_carrier_gateway": [
+44.0,
+44.0
+],
+"vpc_lattice": [
+56.0,
+56.0
+],
+"vpc_network_access_analyzer": [
+44.0,
+44.958
+],
+"vpc_privatelink": [
+56.0,
+37.187
+],
+"vpc_reachability_analyzer": [
+44.0,
+44.0
+],
+"vpc_traffic_mirroring": [
+43.95,
+43.95
+],
+"vpc_virtual_private_cloud_vpc": [
+44.0,
+42.954
+],
+"vpn_connection": [
+39.597,
+44.019
+],
+"vpn_gateway": [
+44.003,
+44.001
+],
+"waf": [
+56.0,
+56.0
+],
+"waf_bad_bot": [
+44.0,
+40.0
+],
+"waf_bot": [
+44.0,
+44.0
+],
+"waf_bot_control": [
+44.0,
+44.0
+],
+"waf_labels": [
+44.0,
+44.009
+],
+"waf_managed_rule": [
+44.0,
+44.0
+],
+"waf_rule": [
+44.0,
+44.0
+],
+"wavelength": [
+50.0,
+56.0
+],
+"well_architect_tool": [
+54.093,
+59.0
+],
+"well_architected_tool": [
+54.093,
+59.0
+],
+"wickr": [
+52.0,
+56.0
+],
+"windfarm": [
+44.056,
+44.056
+],
+"work_package": [
+16.171,
+13.985
+],
+"workdocs": [
+56.0,
+56.0
+],
+"worklink": [
+56.0,
+56.0
+],
+"workmail": [
+56.0,
+56.0
+],
+"workspaces": [
+56.0,
+52.039
+],
+"workspaces_family": [
+56.0,
+56.0
+],
+"workspaces_family_amazon_workspaces": [
+44.0,
+41.041
+],
+"workspaces_family_amazon_workspaces_core": [
+44.0,
+44.954
+],
+"workspaces_thin_client": [
+56.0,
+56.0
+],
+"workspaces_workspaces_web": [
+44.025,
+41.719
+],
+"x1_instance": [
+77.996,
+78.033
+],
+"x1_instance2": [
+44.0,
+44.0
+],
+"x1e_instance": [
+44.0,
+44.0
+],
+"xray": [
+55.0,
+53.152
+],
+"z1d_instance": [
+44.0,
+44.0
+]
+}
+}
