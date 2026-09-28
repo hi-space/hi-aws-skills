@@ -29,10 +29,14 @@ FOREIGN_RE = re.compile(
 
 
 def extract_svg(html_text: str) -> str:
-    start = re.search(r"<svg\b", html_text)
-    if not start:
+    start = None
+    for m in re.finditer(r"<!--.*?-->|<svg\b", html_text, re.S):
+        if m.group(0).startswith("<svg"):
+            start = m
+            break
+    if start is None:
         raise ValueError("no <svg> block in source")
-    depth, pos = 0, start.start()
+    depth = 0
     for m in re.finditer(r"<svg\b|</svg\s*>", html_text[start.start():]):
         depth += 1 if m.group(0).startswith("<svg") else -1
         if depth == 0:

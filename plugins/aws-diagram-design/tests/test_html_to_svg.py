@@ -77,3 +77,18 @@ def test_no_svg_is_an_error(tmp_path):
     src.write_text("<html><body>hi</body></html>", encoding="utf-8")
     r = subprocess.run([sys.executable, str(SCRIPTS / "html_to_svg.py"), str(src)], capture_output=True, text=True)
     assert r.returncode == 1 and "no <svg>" in r.stderr
+
+
+def test_convert_adds_xmlns_when_missing(tmp_path):
+    page = PAGE.replace(' xmlns="http://www.w3.org/2000/svg"', "", 1)
+    out = tmp_path / "x.svg"
+    out.write_text(h2s.convert(page), encoding="utf-8")
+    text = out.read_text(encoding="utf-8")
+    assert text.count('xmlns="http://www.w3.org/2000/svg"') == 1
+    assert sc.verify(out) == []
+
+
+def test_extract_skips_svg_inside_html_comment():
+    page = PAGE.replace("<svg viewBox", "<!-- <svg viewBox=\"0 0 1 1\"><title>stale</title></svg> -->\n<svg viewBox", 1)
+    svg = h2s.extract_svg(page)
+    assert svg.startswith('<svg viewBox="0 0 400 200"') and "stale" not in svg
