@@ -4,6 +4,8 @@ import re
 import subprocess
 import sys
 
+import pytest
+
 from conftest import GOOD_SVG, SCRIPTS, load_script
 
 fz = load_script("finalize")
@@ -103,3 +105,47 @@ def test_geometry_finding_fails_check(tmp_path):
     p.write_text(GOOD_SVG.replace('<rect x="40" y="72" width="80" height="56"', '<rect x="105" y="90" width="40" height="10" fill="#fff"/>\n  <rect x="40" y="72" width="100" height="60"'), encoding="utf-8")
     r = run(p, "--check-only")
     assert r.returncode == 1 and "clipped" in r.stdout + r.stderr
+
+
+def test_html_shell_adds_noto_only_for_hangul():
+    plain = fz.html_shell(GOOD_SVG, 400, 200)
+    korean = fz.html_shell(GOOD_SVG.replace(">Client<", ">클라이언트<"), 400, 200)
+    assert "fonts.googleapis.com" not in plain
+    assert "Noto+Sans+KR" in korean
+    assert "width:400px;height:200px" in plain.replace(" ", "")
+
+
+def test_png_size_default_scale(good_svg):
+    pytest.importorskip("playwright")
+    r = run(good_svg)
+    assert r.returncode == 0, r.stderr
+    png = good_svg.with_suffix(".png")
+    assert png.exists() and fz.png_size(png) == (800, 400)
+
+
+def test_png_size_fractional_scale(good_svg, tmp_path):
+    pytest.importorskip("playwright")
+    out_dir = tmp_path / "png"
+    r = run(good_svg, "--scale", "1.25", "--png-dir", out_dir)
+    assert r.returncode == 0, r.stderr
+    assert fz.png_size(out_dir / "demo.png") == (500, 250)
+
+
+def test_scale_out_of_range_rejected(good_svg):
+    r = run(good_svg, "--scale", "6")
+    assert r.returncode == 2 and "1" in r.stderr and "4" in r.stderr
+
+
+def test_missing_playwright_keeps_svg(good_svg, monkeypatch):
+    # simulate absence by forcing the import to fail inside render_png
+    import builtins
+    real_import = builtins.__import__
+
+    def fake(name, *a, **k):
+        if name.startswith("playwright"):
+            raise ImportError(name)
+        return real_import(name, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", fake)
+    assert fz.render_png(GOOD_SVG, good_svg.with_suffix(".png"), 2.0) is False
+    assert not good_svg.with_suffix(".png").exists()

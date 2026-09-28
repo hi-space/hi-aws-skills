@@ -148,6 +148,53 @@ def has_hangul(text: str) -> bool:
     return bool(HANGUL_RE.search(text))
 
 
+def viewbox(svg_text: str) -> tuple[float, float]:
+    m = re.search(r'viewBox="\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)\s*"', svg_text)
+    if not m:
+        raise ValueError("svg has no viewBox")
+    return float(m.group(1)), float(m.group(2))
+
+
+def html_shell(svg_text: str, w: float, h: float) -> str:
+    """Minimal in-memory page: fonts come from the SVG's own @font-face; Noto Sans KR only for Hangul."""
+    body = svg_text.split("?>", 1)[1] if svg_text.lstrip().startswith("<?xml") else svg_text
+    kr = f'<link href="{KR_FONTS}" rel="stylesheet">' if has_hangul(svg_text) else ""
+    return (
+        "<!doctype html><html><head><meta charset=\"utf-8\">" + kr +
+        f"<style>html,body{{margin:0;padding:0;background:transparent}}svg{{display:block;width:{w:g}px;height:{h:g}px}}</style>"
+        f"</head><body>{body}</body></html>"
+    )
+
+
+def render_png(svg_text: str, out: Path, scale: float) -> bool:
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("Playwright isn't installed; SVG written, PNG skipped. To enable PNG:\n  pip install playwright\n  playwright install chromium", file=sys.stderr)
+        return False
+    w, h = viewbox(svg_text)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as pw:
+        browser = pw.chromium.launch()
+        page = browser.new_page(device_scale_factor=scale, viewport={"width": int(w) + 16, "height": int(h) + 16})
+        page.set_content(html_shell(svg_text, w, h), wait_until="load")
+        try:
+            page.wait_for_load_state("networkidle", timeout=5000)  # Noto Sans KR stylesheet, when present
+        except Exception:
+            print("warning: webfont request did not settle (offline?); Hangul may use an installed fallback", file=sys.stderr)
+        page.evaluate("document.fonts.ready")
+        page.locator("svg").first.screenshot(path=str(out), omit_background=True)
+        browser.close()
+    return True
+
+
+def png_size(path: Path) -> tuple[int, int]:
+    import struct
+    with path.open("rb") as fh:
+        head = fh.read(24)
+    return struct.unpack(">II", head[16:24])
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("svg", type=Path)
@@ -156,6 +203,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-png", action="store_true")
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
+    if not 1 <= a.scale <= 4:
+        ap.error("--scale must be within 1..4 (see references/export.md § Sizing)")
     if a.svg.suffix.lower() != ".svg":
         print(f"finalize.py takes a .svg; for motion .html use references/export.md", file=sys.stderr)
         return 2
@@ -171,6 +220,12 @@ def main(argv: list[str] | None = None) -> int:
     text = a.svg.read_text(encoding="utf-8")
     a.svg.write_text(embed_fonts(text), encoding="utf-8")
     print(f"fonts embedded: {a.svg}")
+    if a.no_png:
+        return 0
+    out = (a.png_dir or a.svg.parent) / (a.svg.stem + ".png")
+    if render_png(a.svg.read_text(encoding="utf-8"), out, a.scale):
+        w, h = png_size(out)
+        print(f"png: {out} ({w}×{h})")
     return 0
 
 
