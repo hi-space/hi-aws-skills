@@ -137,6 +137,13 @@ def embed_fonts(svg_text: str) -> str:
     return inject_style(stripped, font_face_css(used_faces(stripped), embed=True), FONT_MARKER)
 
 
+def run_checks(path: Path) -> list[str]:
+    errors = _load_sibling("self_check").verify_svg(path)
+    if errors:
+        return errors  # geometry regexes are meaningless on malformed XML
+    return _load_sibling("verify-geometry").check(path)
+
+
 def has_hangul(text: str) -> bool:
     return bool(HANGUL_RE.search(text))
 
@@ -149,6 +156,18 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--no-png", action="store_true")
     ap.add_argument("--check-only", action="store_true")
     a = ap.parse_args(argv)
+    if a.svg.suffix.lower() != ".svg":
+        print(f"finalize.py takes a .svg; for motion .html use references/export.md", file=sys.stderr)
+        return 2
+    errors = run_checks(a.svg)
+    if errors:
+        print(f"FAIL {a.svg}")
+        for e in errors:
+            print(f"  - {e}")
+        return 1
+    print(f"OK {a.svg}")
+    if a.check_only:
+        return 0
     text = a.svg.read_text(encoding="utf-8")
     a.svg.write_text(embed_fonts(text), encoding="utf-8")
     print(f"fonts embedded: {a.svg}")

@@ -69,3 +69,37 @@ def test_embed_resolves_fonts_from_skill_dir(tmp_path, good_svg):
     r = subprocess.run([sys.executable, str(SCRIPTS / "finalize.py"), str(good_svg), "--no-png"], cwd=tmp_path, capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     assert "base64," in good_svg.read_text(encoding="utf-8")
+
+
+def run(*args, cwd=None):
+    return subprocess.run([sys.executable, str(SCRIPTS / "finalize.py"), *map(str, args)], cwd=cwd, capture_output=True, text=True)
+
+
+def test_check_only_passes_and_does_not_write(good_svg):
+    before = good_svg.read_text(encoding="utf-8")
+    r = run(good_svg, "--check-only")
+    assert r.returncode == 0 and "OK" in r.stdout
+    assert good_svg.read_text(encoding="utf-8") == before
+
+
+def test_check_failure_leaves_file_untouched(tmp_path):
+    p = tmp_path / "bad.svg"
+    bad = GOOD_SVG.replace("</svg>", "<script>1</script></svg>")
+    p.write_text(bad, encoding="utf-8")
+    r = run(p, "--no-png")
+    assert r.returncode == 1 and "script" in r.stdout + r.stderr
+    assert p.read_text(encoding="utf-8") == bad
+
+
+def test_check_reports_unescaped_ampersand(tmp_path):
+    p = tmp_path / "amp.svg"
+    p.write_text(GOOD_SVG.replace(">Client<", ">R&D<"), encoding="utf-8")
+    r = run(p, "--check-only")
+    assert r.returncode == 1 and "&amp;" in r.stdout + r.stderr
+
+
+def test_geometry_finding_fails_check(tmp_path):
+    p = tmp_path / "clip.svg"
+    p.write_text(GOOD_SVG.replace('<rect x="40" y="72" width="80" height="56"', '<rect x="105" y="90" width="40" height="10" fill="#fff"/>\n  <rect x="40" y="72" width="100" height="60"'), encoding="utf-8")
+    r = run(p, "--check-only")
+    assert r.returncode == 1 and "clipped" in r.stdout + r.stderr
