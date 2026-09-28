@@ -98,3 +98,16 @@ def test_relevant_css_drops_root_svg_layout_rule():
     css = "svg { width: 100%; min-width: 900px; display: block; }\nsvg text { fill: red; }\n.node-title { font-weight: 600; }"
     kept = h2s.relevant_css(css, h2s.extract_svg(PAGE))
     assert "min-width" not in kept and "svg text" in kept and ".node-title" in kept
+
+
+def test_root_vars_kept_when_var_used_only_in_kept_css():
+    css = ":root { --ink: #232F3E; --sans: 'Amazon Ember'; }\n.node-title { fill: var(--ink); font: 600 13px var(--sans); }\nbody { color: var(--ink); }"
+    svg = h2s.extract_svg(PAGE).replace('fill="var(--ink)"', 'fill="#000"')  # markup itself has no var(
+    kept = h2s.relevant_css(css, svg)
+    assert kept.startswith(":root") and "--ink" in kept and ".node-title" in kept and "body" not in kept
+
+
+def test_root_vars_dropped_when_nothing_uses_them():
+    css = ":root { --ink: #232F3E; }\n.node-title { fill: #000; }"
+    svg = h2s.extract_svg(PAGE).replace('fill="var(--ink)"', 'fill="#000"')
+    assert ":root" not in h2s.relevant_css(css, svg)

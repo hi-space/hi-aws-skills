@@ -66,9 +66,9 @@ def _rules(css: str) -> list[tuple[str, str]]:
     return rules
 
 
-def _selector_applies(selector: str, classes: set[str], ids: set[str], uses_var: bool) -> bool:
+def _selector_applies(selector: str, classes: set[str], ids: set[str]) -> bool:
     if selector == ":root" or selector.startswith(":root"):
-        return uses_var
+        return False  # :root retention is decided separately in relevant_css, once kept rules are known
     elements = [t for t in re.split(r"[\s>+~]+", re.sub(r"[.#:\[][^\s>+~]*", "", selector)) if t]
     if elements == ["svg"]:
         return False  # bare root-svg selector (e.g. "svg", "svg:root") is page layout, not content styling
@@ -84,12 +84,18 @@ def _selector_applies(selector: str, classes: set[str], ids: set[str], uses_var:
 def relevant_css(css: str, svg: str) -> str:
     classes = {c for group in re.findall(r'class="([^"]+)"', svg) for c in group.split()}
     ids = set(re.findall(r'id="([^"]+)"', svg))
-    uses_var = "var(" in svg
+    rules = _rules(css)
+    kept_bodies: list[tuple[str, str]] = []
     kept: list[str] = []
-    for selector, body in _rules(css):
-        parts = [p.strip() for p in selector.split(",") if _selector_applies(p.strip(), classes, ids, uses_var)]
+    for selector, body in rules:
+        parts = [p.strip() for p in selector.split(",") if _selector_applies(p.strip(), classes, ids)]
         if parts:
+            kept_bodies.append((selector, body))
             kept.append(f"{', '.join(parts)} {{ {body} }}")
+    uses_var = "var(" in svg or any("var(" in body for _, body in kept_bodies)
+    if uses_var:
+        roots = [f"{selector} {{ {body} }}" for selector, body in rules if selector == ":root" or selector.startswith(":root")]
+        kept = roots + kept
     return "\n".join(kept)
 
 
