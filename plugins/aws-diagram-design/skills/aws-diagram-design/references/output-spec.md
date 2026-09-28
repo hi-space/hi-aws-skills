@@ -4,7 +4,7 @@ Four dials decide what an imported diagram becomes. Set them **before** redrawin
 
 | Dial | Question it answers | Default |
 |---|---|---|
-| **Format** | Where does this file land? | `html` |
+| **Format** | Where does this file land? | `svg+png` |
 | **Size** | How big is the canvas, and how far away is the reader? | `doc-inline` |
 | **Detail level** | Reproduce every element, or compress it? | `balanced` |
 | **Audience** | How technical should the wording be? | `mixed` |
@@ -15,20 +15,19 @@ Infer choices that are clear from the request (for example, "for my deck" implie
 
 ## 1. Format
 
-| Format | Deliverable | Keeps | Drops |
-|---|---|---|---|
-| `html` | self-contained `.html` (default) | header, diagram, summary cards, footer, live fonts | nothing |
-| `svg` | `.svg` next to the source | the `<svg>` node, vector text | editorial wrapper; fonts substitute in offline tools |
-| `png` | `.png` at `device_scale_factor` | pixels exactly as the browser renders them | vector editability |
-| `html+png` | both | — | — |
+| Format | Deliverable | Notes |
+|---|---|---|
+| `svg+png` (default) | `<base>.svg` + `<base>.png` | SVG is the source of truth; PNG rendered by `finalize.py` |
+| `svg` | `<base>.svg` only | Fonts embedded; for Figma/Illustrator hand-off |
+| `png` | `<base>.png` only | The SVG is still drawn and finalized, then deleted on request |
 
-Always generate the HTML first — `svg` and `png` are produced *from* it via [`export.md`](export.md). Never hand-author an SVG file directly; the HTML is the source of truth and the only artifact the taste gate (SKILL.md §9) is written against.
+Draw the SVG from `assets/template.svg` (or `-dark` / `-terminal`), then run `python3 <skill-dir>/scripts/finalize.py <base>.svg`. Never write PNG any other way; never hand-copy `@font-face` data URIs.
 
 Pick by destination:
 
-| Destination | Format | Size preset |
+| Destination | Use | Size preset |
 |---|---|---|
-| Blog post, README, docs site | `html` (embed) or `png` | `doc-inline` |
+| Blog post, README, docs site | `png` (embed) or `svg` | `doc-inline` |
 | Keynote / PowerPoint / Google Slides | `png` @2 | `slide-16x9` |
 | Figma / Illustrator / further editing | `svg` | `fit` |
 | X / LinkedIn / OG link card | `png` @2 | `social-og` |
@@ -95,7 +94,7 @@ How much of the source survives. This is a *count* dial — it governs how many 
 
 1. **Zoning is mandatory.** Above 9 nodes, every node belongs to a labeled zone (2–4 zones, hairline-bordered, `paper-2` fill, mono uppercase zone label at top-left). An unzoned 20-node diagram is a wiring diagram, not a schematic.
 2. **Connector rules don't relax.** SKILL.md §6 rules 1–5 still apply at 24 nodes. If you can't route it without overlaps, you're over the real ceiling — split.
-3. **Above 24 nodes, split.** Produce an overview (zones as nodes, `balanced` grammar) plus one detail diagram per zone. Name them `<base>-overview.html`, `<base>-<zone>.html`. Never ship a 40-node single canvas.
+3. **Above 24 nodes, split.** Produce an overview (zones as nodes, `balanced` grammar) plus one detail diagram per zone. Name them `<base>-overview.svg`, `<base>-<zone>.svg`. Never ship a 40-node single canvas.
 4. **Accent stays at 2.** More nodes never buys more focal elements.
 
 ### Degrade ladder
@@ -178,4 +177,4 @@ Run alongside the SKILL.md §9 taste gate.
 - [ ] CJK labels given a font fallback?
 - [ ] Fidelity ledger reported for anything cut?
 - [ ] Diagram `<svg>` has `role="img"`, resolving `aria-labelledby`, a non-empty first-child `<title>`, a non-empty `<desc>`, and per-diagram/variant prefixed IDs?
-- [ ] Requested non-HTML formats produced via [`export.md`](export.md), not hand-authored?
+- [ ] `finalize.py` run on the SVG — check OK, fonts embedded, PNG written?

@@ -1,6 +1,6 @@
 ---
-description: Export an aws-diagram-design HTML diagram file to .svg and .png next to the source
-argument-hint: <html-file> [--svg-only|--png-only] [--scale=N] [--output=<path>]
+description: Render an aws-diagram-design SVG to PNG (or lift a 1.x/motion HTML diagram to SVG + PNG)
+argument-hint: <svg-or-html-file> [--scale=N] [--png-dir=<dir>]
 allowed-tools:
   - Read
   - Write
@@ -9,28 +9,26 @@ allowed-tools:
   - Glob
 ---
 
-Export the diagram HTML at `$1` to `.svg` and/or `.png`, following the procedure documented in [`skills/aws-diagram-design/references/export.md`](../skills/aws-diagram-design/references/export.md). Treat that reference as the source of truth — don't reimplement the logic here.
+Produce the PNG for the diagram at `$1`, following [`skills/aws-diagram-design/references/export.md`](../skills/aws-diagram-design/references/export.md). Treat that reference as the source of truth — don't reimplement the logic here.
 
 Full argument string: `$ARGUMENTS`
 
-## Defaults
+## Behaviour by input
 
-- Produce **both** `.svg` and `.png` next to the source (e.g. `diagram.html` → `diagram.svg` + `diagram.png`).
-- PNG renders at `device_scale_factor=2`.
+- **`.svg`** (the normal deliverable) → run `python3 <skill-dir>/scripts/finalize.py <file> [--scale N] [--png-dir DIR]`. This re-checks the file, embeds the Amazon Ember faces it uses, and writes `<stem>.png` next to it.
+- **`.html` produced by aws-diagram-design 1.x** (static page with one diagram) → run `python3 <skill-dir>/scripts/html_to_svg.py <file>` to get `<stem>.svg`, then `finalize.py` on that. Report both new paths; leave the HTML in place unless the user asks to delete it.
+- **`.html` motion diagram** (has `data-motion-root`) → follow `export.md § PNG from a motion HTML` (static frame via `?motion=static`). No SVG is produced for motion files.
 
 ## Flags
 
-- `--svg-only` — emit only the SVG. Skip Playwright entirely.
-- `--png-only` — emit only the PNG.
-- `--scale=1` / `--scale=2` / `--scale=3` — override the PNG device scale factor. Default `2`.
-- `--output=<path>` — override the output base path; the format extension is appended. Applies to both formats when both are produced.
+- `--scale=N` — PNG device scale factor, 1–4, fractional allowed (`1.25` turns a 960-wide viewBox into 1200 px). Default `2`.
+- `--png-dir=<dir>` — write the PNG somewhere other than next to the source.
 
 ## Required behaviour
 
-1. **No source path provided** → ask the user which `.html` file to export. Don't guess.
-2. **Source is `assets/index.html`** (the gallery, multiple SVGs in one file) → refuse and ask which specific diagram file. Per the reference's edge-case section.
-3. **Source has no `<svg>` block** → refuse and tell the user; don't write anything.
-4. **PNG requested but Playwright not installed** → surface the install instruction from the reference verbatim and stop. Do **not** auto-install.
-5. **PNG requested with `--scale` outside {1,2,3}** → reject; valid values are 1, 2, 3.
+1. **No path provided** → ask which file to export. Don't guess.
+2. **Source is `assets/index.html`** (gallery) → refuse and ask for a specific diagram file.
+3. **`finalize.py` exits 1** → show its FAIL lines verbatim and stop; the file was not modified.
+4. **Playwright missing** → `finalize.py` prints the install instruction; relay it verbatim, do **not** auto-install.
 
-After producing the outputs, report the file paths and sizes back to the user.
+After producing the outputs, report the file paths and pixel sizes back to the user.

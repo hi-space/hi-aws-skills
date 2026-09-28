@@ -109,16 +109,16 @@ Fresh layout on the 4px grid, per the type reference and SKILL.md §6–§7. Exp
 
 ## Step 6 — Deliver
 
-1. Write the `.html`.
+1. Write the `.svg` from the chosen template.
 2. Run the SKILL.md §9 taste gate **and** the [`output-spec.md` §6](output-spec.md) checklist.
-3. Produce `svg` / `png` if the format dial asked for them — via [`export.md`](export.md), from the HTML.
+3. `python3 <skill-dir>/scripts/finalize.py <base>.svg` — check, embed fonts, PNG (skip the PNG with `--no-png` only for `format=svg`).
 4. Report the fidelity ledger ([`output-spec.md` §5](output-spec.md)). Every import gets one; the user knows the source and will notice what's gone.
 
 ---
 
 ## Worked example
 
-[`assets/example-import-drawio.html`](../assets/example-import-drawio.html) is the output of this procedure run on `scripts/fixtures/sample-architecture.drawio` (12 nodes, 8 edges, 2 container groups) at `format=html`, `size=doc-inline`, `detail=balanced`, `audience=mixed`.
+[`assets/example-import-drawio.svg`](../assets/example-import-drawio.svg) is the output of this procedure run on `scripts/fixtures/sample-architecture.drawio` (12 nodes, 8 edges, 2 container groups) at `format=svg+png`, `size=doc-inline`, `detail=balanced`, `audience=mixed`.
 
 What the run decided, and why:
 
@@ -140,7 +140,7 @@ What the run decided, and why:
 Default is page 0. When the file has several pages:
 
 - **Ask which page** unless the user named one. List them from the digest header — names and node counts.
-- `--page all` when they want everything: one HTML file per page, named `<base>-<page-name>.html`, each independently type-selected. Pages in one draw.io file are frequently different diagram types.
+- `--page all` when they want everything: one SVG per page, named `<base>-<page-name>.svg`, each independently type-selected. Pages in one draw.io file are frequently different diagram types.
 - Don't merge pages into one canvas unless asked. A 3-page file merged is a 40-node fail.
 
 ## Edge cases

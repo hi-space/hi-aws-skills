@@ -69,16 +69,16 @@ Load the selected `type-*.md`. Override the grammar only when the content disagr
 
 ## Step 6 — Deliver
 
-1. Write the self-contained HTML.
+1. Write the standalone SVG.
 2. Run the SKILL.md §9 taste gate and [`output-spec.md` §6](output-spec.md) checklist.
-3. Export SVG/PNG only when requested, following [`export.md`](export.md).
+3. `python3 <skill-dir>/scripts/finalize.py <base>.svg` — check, embed fonts, PNG (skip the PNG with `--no-png` only for `format=svg`).
 4. Report the fidelity ledger: source count, drawn count, and every merge, collapse, or drop.
 
 ---
 
 ## Worked example
 
-[`assets/example-import-mermaid.html`](../assets/example-import-mermaid.html) redraws `scripts/fixtures/sample-flowchart.mmd` at `format=html`, `size=doc-inline`, `detail=balanced`, `audience=mixed`.
+[`assets/example-import-mermaid.svg`](../assets/example-import-mermaid.svg) redraws `scripts/fixtures/sample-flowchart.mmd` at `format=svg+png`, `size=doc-inline`, `detail=balanced`, `audience=mixed`.
 
 | Source | Output | Reason |
 |---|---|---|
@@ -96,7 +96,7 @@ The extractor reports 9 IR nodes (7 drawable plus 2 containers) and 7 edges; the
 Markdown is the Mermaid analogue of multi-page draw.io. The header lists every fenced block with grammar and node/edge counts.
 
 - With no `--diagram`, inspect diagram 0 and ask which block if the user did not identify one.
-- `--diagram all` creates one independently type-selected output per block, named `<base>-<index>.html`.
+- `--diagram all` creates one independently type-selected output per block, named `<base>-<index>.svg`.
 - Do not merge blocks onto one canvas unless asked. Adjacent blocks frequently use different grammars.
 
 ## Edge cases

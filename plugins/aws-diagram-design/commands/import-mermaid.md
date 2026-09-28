@@ -1,6 +1,6 @@
 ---
 description: Redraw Mermaid as an editorial diagram at a chosen format, size, and detail level
-argument-hint: <mermaid-file> [--format=html|svg|png|html+png] [--size=<preset>] [--detail=faithful|balanced|simplified] [--audience=engineer|mixed|executive] [--type=<diagram-type>] [--diagram=N|all] [--variant=light|dark|full] [--output=<path>]
+argument-hint: <mermaid-file> [--format=svg+png|svg|png] [--size=<preset>] [--detail=faithful|balanced|simplified] [--audience=engineer|mixed|executive] [--type=<diagram-type>] [--diagram=N|all] [--variant=light|dark|terminal] [--output=<path>]
 allowed-tools:
   - Read
   - Write
@@ -17,7 +17,7 @@ Accepts `.mmd`, `.mermaid`, and Markdown files containing fenced `mermaid` block
 
 ## Defaults
 
-- `--format=html` — a self-contained HTML file next to the source.
+- `--format=svg+png` — `<base>.svg` and `<base>.png` next to the source.
 - `--size=doc-inline` — `viewBox 0 0 960 600`.
 - `--detail=balanced` · `--audience=mixed`.
 - `--variant=light` — the minimal light template.
@@ -26,13 +26,13 @@ Accepts `.mmd`, `.mermaid`, and Markdown files containing fenced `mermaid` block
 
 ## Flags
 
-- `--format` — `html` (default), `svg`, `png`, or `html+png`. Non-HTML formats are produced from HTML through `references/export.md`.
+- `--format` — `svg+png` (default), `svg`, or `png`. The diagram is authored as `.svg`; `finalize.py` produces the PNG.
 - `--size` — any preset in `output-spec.md` §2: `doc-inline`, `doc-wide`, `slide-16x9`, `slide-4x3`, `social-og`, `social-square`, `print-a4-landscape`, `print-letter-landscape`, `fit`.
 - `--detail` — `faithful` (≤24 nodes, zoned), `balanced` (≤12), `simplified` (≤7).
 - `--audience` — `engineer`, `mixed`, `executive`. Governs wording, not element count.
 - `--type` — force a diagram type instead of inferring it.
 - `--diagram` — diagram index or `all` (one file per block).
-- `--variant` — `light`, `dark`, or `full` editorial template.
+- `--variant` — `light`, `dark`, or `terminal` skin (`template.svg`, `template-dark.svg`, `template-terminal.svg`).
 - `--output` — output base path; the extension is appended per format.
 
 ## Required behaviour
