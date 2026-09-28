@@ -112,7 +112,7 @@ def test_html_shell_adds_noto_only_for_hangul():
     korean = fz.html_shell(GOOD_SVG.replace(">Client<", ">클라이언트<"), 400, 200)
     assert "fonts.googleapis.com" not in plain
     assert "Noto+Sans+KR" in korean
-    assert "width:400px;height:200px" in plain.replace(" ", "")
+    assert "width:400px!important;height:200px!important" in plain.replace(" ", "")
 
 
 def test_png_size_default_scale(good_svg):
@@ -129,6 +129,15 @@ def test_png_size_fractional_scale(good_svg, tmp_path):
     r = run(good_svg, "--scale", "1.25", "--png-dir", out_dir)
     assert r.returncode == 0, r.stderr
     assert fz.png_size(out_dir / "demo.png") == (500, 250)
+
+
+def test_png_size_survives_root_svg_rule_in_file(good_svg):
+    pytest.importorskip("playwright")
+    svg = good_svg.read_text(encoding="utf-8").replace("<defs>", "<defs><style>svg { width: 100%; min-width: 900px; }</style>")
+    good_svg.write_text(svg, encoding="utf-8")
+    r = run(good_svg)
+    assert r.returncode == 0, r.stderr
+    assert fz.png_size(good_svg.with_suffix(".png")) == (800, 400)
 
 
 def test_scale_out_of_range_rejected(good_svg):

@@ -161,7 +161,9 @@ def html_shell(svg_text: str, w: float, h: float) -> str:
     kr = f'<link href="{KR_FONTS}" rel="stylesheet">' if has_hangul(svg_text) else ""
     return (
         "<!doctype html><html><head><meta charset=\"utf-8\">" + kr +
-        f"<style>html,body{{margin:0;padding:0;background:transparent}}svg{{display:block;width:{w:g}px;height:{h:g}px}}</style>"
+        f"<style>html,body{{margin:0;padding:0;background:transparent}}"
+        f"svg{{display:block;width:{w:g}px !important;height:{h:g}px !important;"
+        f"min-width:0 !important;max-width:none !important;min-height:0 !important;max-height:none !important}}</style>"
         f"</head><body>{body}</body></html>"
     )
 

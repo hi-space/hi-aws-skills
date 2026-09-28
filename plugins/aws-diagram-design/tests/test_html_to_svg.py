@@ -92,3 +92,9 @@ def test_extract_skips_svg_inside_html_comment():
     page = PAGE.replace("<svg viewBox", "<!-- <svg viewBox=\"0 0 1 1\"><title>stale</title></svg> -->\n<svg viewBox", 1)
     svg = h2s.extract_svg(page)
     assert svg.startswith('<svg viewBox="0 0 400 200"') and "stale" not in svg
+
+
+def test_relevant_css_drops_root_svg_layout_rule():
+    css = "svg { width: 100%; min-width: 900px; display: block; }\nsvg text { fill: red; }\n.node-title { font-weight: 600; }"
+    kept = h2s.relevant_css(css, h2s.extract_svg(PAGE))
+    assert "min-width" not in kept and "svg text" in kept and ".node-title" in kept

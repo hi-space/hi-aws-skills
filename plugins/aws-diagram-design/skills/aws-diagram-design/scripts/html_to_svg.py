@@ -69,13 +69,15 @@ def _rules(css: str) -> list[tuple[str, str]]:
 def _selector_applies(selector: str, classes: set[str], ids: set[str], uses_var: bool) -> bool:
     if selector == ":root" or selector.startswith(":root"):
         return uses_var
+    elements = [t for t in re.split(r"[\s>+~]+", re.sub(r"[.#:\[][^\s>+~]*", "", selector)) if t]
+    if elements == ["svg"]:
+        return False  # bare root-svg selector (e.g. "svg", "svg:root") is page layout, not content styling
     if re.search(r"\bsvg\b", selector):
         return True
     if any(re.search(rf"\.{re.escape(c)}(?![\w-])", selector) for c in classes):
         return True
     if any(re.search(rf"#{re.escape(i)}(?![\w-])", selector) for i in ids):
         return True
-    elements = [t for t in re.split(r"[\s>+~]+", re.sub(r"[.#:\[][^\s>+~]*", "", selector)) if t]
     return bool(elements) and all(e in SVG_ELEMENTS for e in elements)
 
 
