@@ -22,6 +22,7 @@
 @font-face { font-family: 'Amazon Ember'; font-weight: 800; font-style: normal; src: local('Amazon Ember Heavy'), local('Amazon Ember'); }
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 400; font-style: normal; src: local('Amazon Ember Mono'); }
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 700; font-style: normal; src: local('Amazon Ember Mono Bold'), local('Amazon Ember Mono'); }
+:root { --page: #0a0a0a; --paper: #141414; --bar: #1b1b1b; --border: #2b2b2b; --ink: #f5f5f5; --muted: #9a9a9a; --soft: #5c5c5c; --accent: #ff5a36; --accent-tint: rgba(255, 90, 54, 0.12); --mono: "Geist Mono", ui-monospace, monospace; }
 .ring { fill: none; stroke: var(--muted); stroke-width: 1.2; }
 .spoke { fill: none; stroke: var(--soft); stroke-width: 1; stroke-dasharray: 5 4; }
 .station { fill: var(--paper); stroke: var(--ink); stroke-width: 1; }
