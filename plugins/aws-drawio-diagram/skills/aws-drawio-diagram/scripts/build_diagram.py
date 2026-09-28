@@ -93,7 +93,7 @@ LABEL_BORDER_SLACK_PX = 8                                # px: an edge label kee
 EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 17, 3, 20
 LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
 TITLE_BAND = 32                                          # px: a container's title row (15 pt bold + spacingTop) — no edge label sits on it (validate_drawio)
-LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 17       # node label (14 pt bold): px per line, gap under the icon, chars per line (17 × ~7.3 px fits a 160 px card)
+LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 20, 4, 17       # node label (15 pt bold): px per line, gap under the icon, chars per line (17 × ~7.7 px fits a 160 px card)
 TITLE_Y = 32
 LEGEND_W = 300
 MARGIN = 80
@@ -687,7 +687,7 @@ class Builder:
         # the label background matches what it sits on — the group's fill inside a group (a boundary has none), the
         # canvas outside — so it hides nothing unless a line strays under it (which the port ratios prevent)
         label = f"{LABEL_STYLE}labelBackgroundColor={GROUP_FILL if n.get('group') else '#FFFFFF'};"
-        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=14;fontStyle=1;"
+        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=15;fontStyle=1;"
                 f"fontFamily={self.font};aspect=fixed;{label}")
         if "icon" in n:
             st = self.index[n["icon"]]
@@ -698,7 +698,7 @@ class Builder:
                 return base + f"fillColor={fill};strokeColor=none;shape=mxgraph.aws4.{n['icon']};"
             raise SpecError(f"node '{n['id']}': '{n['icon']}' is a group badge, not an icon")
         b64 = base64.b64encode((EXTRA_ICONS / n["image"]).read_bytes()).decode()
-        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=14;fontStyle=1;fontFamily={self.font};"
+        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=15;fontStyle=1;fontFamily={self.font};"
                 f"{label}image=data:image/svg+xml,{b64};")
 
     def build(self) -> str:

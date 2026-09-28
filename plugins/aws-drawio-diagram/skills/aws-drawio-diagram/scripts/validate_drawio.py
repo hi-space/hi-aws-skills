@@ -237,7 +237,7 @@ def _overlap_warnings(paths: dict[str, list]) -> list[str]:
 LABEL_CHAR_PX = 7.2      # ~14 px Amazon Ember / Helvetica average glyph advance, conservative (build_diagram LABEL_CHAR_PX)
 LABEL_PAD_PX = 6
 EDGE_LINE_H = 17         # px per line of a 14 pt edge label (the builder wraps long text with <br>)
-NODE_LINE_H, NODE_LABEL_PAD = 18, 4   # node labels: 14 pt bold under the icon (build_diagram LABEL_LINE_H / LABEL_TOP_PAD)
+NODE_LINE_H, NODE_LABEL_PAD = 20, 4   # node labels: 15 pt bold under the icon (build_diagram LABEL_LINE_H / LABEL_TOP_PAD)
 TITLE_BAND = 32          # px: a container's title row (15 pt bold + spacingTop) — an edge label there reads as part of the title
 
 

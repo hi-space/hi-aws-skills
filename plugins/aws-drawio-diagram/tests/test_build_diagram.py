@@ -53,7 +53,7 @@ def test_grid_and_group_arithmetic():
     assert b.ly(0) == 236 and b.ly(1) == 378
     x, y, w, h = b.group_rect(b.groups["g"])
     assert (x, w) == (274, 384)                 # two columns: 160 + 64 + 160
-    assert (y, h) == (236 - 39 - 46, 142 + 78 + 46 + 30)   # 46 above (title band + 14), 30 below (one-line label 22 + 8)
+    assert (y, h) == (236 - 39 - 46, 142 + 78 + 46 + 32)   # 46 above (title band + 14), 32 below (one-line label 24 + 8)
 
 
 def test_row_break_inserted_between_stacked_groups():
@@ -62,19 +62,19 @@ def test_row_break_inserted_between_stacked_groups():
     s["nodes"].append({"id": "d", "label": "CloudWatch", "icon": "cloudwatch_2", "col": 1, "lane": 2, "group": "h"})
     b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
     assert b.row_breaks == [2]
-    # cards 36 px apart: 30 below + 36 + 46 above − (142 − 78) = 48 extra
-    assert b.ly(2) == 236 + 284 + 48
+    # cards 36 px apart: 32 below + 36 + 46 above − (142 − 78) = 50 extra
+    assert b.ly(2) == 236 + 284 + 50
 
 
-def test_node_labels_are_bold_14():
+def test_node_labels_are_bold_15():
     st = styles(bd.build(spec()))
     for nid in ("u", "a", "b", "c"):
-        assert st[nid]["fontSize"] == "14" and st[nid]["fontStyle"] == "1", nid
+        assert st[nid]["fontSize"] == "15" and st[nid]["fontStyle"] == "1", nid
     img = spec()
     img["nodes"][2] = {"id": "b", "label": "Memory", "image": "Res_Amazon-Bedrock-AgentCore_Memory_48.svg",
                        "col": 2, "lane": 1, "group": "g"}
     st = styles(bd.build(img))
-    assert st["b"]["fontSize"] == "14" and st["b"]["fontStyle"] == "1"
+    assert st["b"]["fontSize"] == "15" and st["b"]["fontStyle"] == "1"
 
 
 def test_labels_always_below_with_container_background():
@@ -85,9 +85,9 @@ def test_labels_always_below_with_container_background():
         assert "labelPosition" not in st[nid]
     assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud: the canvas
     assert st["a"]["labelBackgroundColor"] == "#F1F3F6"           # inside a role group: the card's fill
-    # bottom-touching edges attach under the label, not on the icon edge: (78 + 4 + 18) / 78
+    # bottom-touching edges attach under the label, not on the icon edge: (78 + 4 + 20) / 78
     e_ac = styles(xml)["e3"]
-    assert e_ac["entryY"] == "1.282" and e_ac["entryPerimeter"] == "0"
+    assert e_ac["entryY"] == "1.308" and e_ac["entryPerimeter"] == "0"
     assert e_ac["exitY"] == "0"
 
 
@@ -96,7 +96,7 @@ def test_long_labels_wrap_and_lower_the_bottom_port():
     s["nodes"][3]["label"] = "OpenSearch Serverless (vector index)"
     xml = bd.build(s)
     assert 'value="OpenSearch Serverless&lt;br&gt;(vector index)"' in xml
-    assert styles(xml)["e3"]["entryY"] == "1.513"                  # (78 + 4 + 36) / 78
+    assert styles(xml)["e3"]["entryY"] == "1.564"                  # (78 + 4 + 40) / 78
     assert bd.Builder.wrap("AgentCore Runtime") == "AgentCore Runtime"          # 17 chars: one line
     assert bd.Builder.wrap("S3 (order archive)") == "S3 (order<br>archive)"    # 18 chars: fills the card → two lines
     assert bd.Builder.wrap("Kinesis Data Streams") == "Kinesis<br>Data Streams"
@@ -609,16 +609,16 @@ def test_group_above_grows_only_for_a_drawn_boundary():
 def test_group_below_is_the_tallest_last_lane_label_plus_8():
     s = spec()
     b = _builder(s)
-    assert b.group_below("g") == 4 + 18 + 8                        # one-line labels on lane 1
+    assert b.group_below("g") == 4 + 20 + 8                        # one-line labels on lane 1
     s["nodes"][2]["label"] = "OpenSearch Serverless (vector index)"    # b, lane 1 → two lines
-    assert _builder(s).group_below("g") == 4 + 36 + 8
+    assert _builder(s).group_below("g") == 4 + 40 + 8
     # the two-line label is on lane 0 (c), not the last lane: the bottom pad stays one line
     s = spec()
     s["nodes"][3]["label"] = "OpenSearch Serverless (vector index)"
-    assert _builder(s).group_below("g") == 30
+    assert _builder(s).group_below("g") == 32
     # a declared last lane with none of the group's nodes on it: fall back to one line, no crash
     s = spec(groups=[{"id": "g", "label": "G", "cols": [1, 2], "lanes": [0, 1, 2]}])
-    assert _builder(s).group_below("g") == 30
+    assert _builder(s).group_below("g") == 32
 
 
 def test_node_label_background_never_reaches_the_card_bottom():
@@ -649,17 +649,17 @@ def test_adjacent_group_rows_are_always_36_px_apart():
     b = _builder(s)
     gx, gy, gw, gh = b.group_rect(b.groups["g"])
     hx, hy, hw, hh = b.group_rect(b.groups["h"])
-    assert b.group_below("g") == 48 and b.group_above("h") == 66
+    assert b.group_below("g") == 52 and b.group_above("h") == 66
     assert hy - (gy + gh) == 36
-    assert b.row_extra == {2: 48 + 36 + 66 - (142 - 78)}
-    assert b.ly(2) == 236 + 2 * 142 + 86
+    assert b.row_extra == {2: 52 + 36 + 66 - (142 - 78)}
+    assert b.ly(2) == 236 + 2 * 142 + 90
 
 
 def test_boundary_on_the_last_lane_keeps_clear_of_the_card_bottom():
     # members on lane 1 (the card's last lane): the boundary's bottom border must not sit on the card's bottom border
     s = bspec(cells=((1, 1), (2, 1), (1, 0)))
     b = _builder(s)
-    assert b.group_below("g") == bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW + bd.BOUNDARY_INSET   # 40
+    assert b.group_below("g") == bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW + bd.BOUNDARY_INSET   # 42
     geo = geometry(bd.build(s))
     _, gx, gy, gw, gh = geo["g"]
     _, bx, by, bw, bh = geo["g__bedrock"]                            # relative to the group
