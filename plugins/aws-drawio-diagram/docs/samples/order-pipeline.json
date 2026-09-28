@@ -2,7 +2,6 @@
   "id": "order-pipeline",
   "page": "Order Pipeline",
   "title": "이벤트 기반 주문 처리 파이프라인",
-  "subtitle": "Event-driven order processing · hi-aws-skills sample · 2026-09-12 · v1",
   "groups": [
     {
       "id": "g_api",

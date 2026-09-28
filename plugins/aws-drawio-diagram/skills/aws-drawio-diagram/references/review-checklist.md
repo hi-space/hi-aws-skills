@@ -63,8 +63,8 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
 - [ ] **Read order**: main request path runs left → right on one lane; auxiliary paths hang below (or above);
       the eye finds the entry point in the first second.
 - [ ] **Grouping**: 2–7 role groups, each titled, each with 1–4 icons; no group with more empty cells than
-      icons; no lonely icon floating in the cloud. Role groups are light-grey cards (#F1F3F6 fill, solid border, 15 px
-      title that never sits under a line — on a one-column card the builder may draw it over the line on a patch); a service boundary box appears only around ≥ 2 adjacent resources of one platform service, badge visible,
+      icons; no lonely icon floating in the cloud. Role groups are dashed grey outlines, no fill, 15 px grey
+      title that never sits under a line — on a one-column group the builder may draw it over the line on a white patch); a service boundary box appears only around ≥ 2 adjacent resources of one platform service, badge visible,
       titled with the service name, its members' labels one line each — never around N copies of one stencil, and
       never one box for two services (Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ SageMaker Unified Studio).
 - [ ] **Balance**: the cloud box has no empty quadrant larger than a group; the canvas hugs the content
@@ -78,10 +78,11 @@ everything. Verdict is `ready` or `not ready`; there is no "ready with warnings"
       "too long, acceptable" next to a solid edge describes a build that did not pass, and is `not ready`.
       `note: label dropped` on a dashed edge is allowed. A phrase the Drawer condensed still means what the
       Architect wrote (`StartExecution` → `start saga` yes; `token validation` → `—` no). Node labels ≤ 3 words.
-- [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); title 20 bold, subtitle grey;
-      group titles and node labels 13 bold; nothing in a second colour except the grey subtitle/legend, the
-      a boundary's service colour (badge, border and title in the official AWS group look).
-- [ ] **Legend** present iff there are two edge kinds; title carries author · date · version.
+- [ ] **Typography**: one font family throughout (Amazon Ember or Noto Sans); group titles and node labels
+      15 bold, edge text 14; nothing in a second colour except the grey group outlines and titles and a
+      boundary's service colour (badge, border and title in the official AWS group look).
+- [ ] **No page furniture**: no title block, subtitle or legend on the canvas — the drawing starts at the cloud
+      box; the heading and the solid/dashed explanation live in the guide.
 
 ## D. Correct as architecture (sanity re-check)
 

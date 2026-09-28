@@ -50,10 +50,10 @@ def test_shipped_sample_specs_build_clean(name):
 def test_grid_and_group_arithmetic():
     b = bd.Builder(spec(), json.loads(bd.INDEX.read_text()))
     assert b.cx(0) == 130 and b.cx(1) == 354 and b.cx(2) == 578
-    assert b.ly(0) == 236 and b.ly(1) == 378
+    assert b.ly(0) == 160 and b.ly(1) == 302
     x, y, w, h = b.group_rect(b.groups["g"])
     assert (x, w) == (274, 384)                 # two columns: 160 + 64 + 160
-    assert (y, h) == (236 - 39 - 46, 142 + 78 + 46 + 32)   # 46 above (title band + 14), 32 below (one-line label 24 + 8)
+    assert (y, h) == (160 - 39 - 46, 142 + 78 + 46 + 32)   # 46 above (title band + 14), 32 below (one-line label 24 + 8)
 
 
 def test_row_break_inserted_between_stacked_groups():
@@ -63,7 +63,7 @@ def test_row_break_inserted_between_stacked_groups():
     b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
     assert b.row_breaks == [2]
     # cards 36 px apart: 32 below + 36 + 46 above − (142 − 78) = 50 extra
-    assert b.ly(2) == 236 + 284 + 50
+    assert b.ly(2) == 160 + 284 + 50
 
 
 def test_node_labels_are_bold_15():
@@ -84,7 +84,7 @@ def test_labels_always_below_with_container_background():
         assert st[nid]["verticalLabelPosition"] == "bottom" and st[nid]["align"] == "center", nid
         assert "labelPosition" not in st[nid]
     assert st["u"]["labelBackgroundColor"] == "#FFFFFF"           # outside the cloud: the canvas
-    assert st["a"]["labelBackgroundColor"] == "#F1F3F6"           # inside a role group: the card's fill
+    assert st["a"]["labelBackgroundColor"] == "#FFFFFF"           # inside a role group too: the group has no fill
     # bottom-touching edges attach under the label, not on the icon edge: (78 + 4 + 20) / 78
     e_ac = styles(xml)["e3"]
     assert e_ac["entryY"] == "1.308" and e_ac["entryPerimeter"] == "0"
@@ -113,7 +113,7 @@ def test_fan_out_uses_vertical_exit_and_horizontal_entry():
     fan = st["e4"]
     assert (fan["exitX"], fan["exitY"], fan["entryX"], fan["entryY"]) == ("0.5", "0", "0", "0.5")
     # corner pinned at (source centre x, target centre y) so the first leg is always vertical
-    assert '<Array as="points"><mxPoint x="578" y="236"/></Array>' in xml
+    assert '<Array as="points"><mxPoint x="578" y="160"/></Array>' in xml
     errors, warnings = vd.validate_text(xml, INDEX)
     assert errors == [] and warnings == []
 
@@ -436,17 +436,17 @@ def test_label_placement_avoids_other_edges_lines():
     assert vd.validate_text(xml, INDEX) == ([], [])
 
 
-# ---- 1.9.0: role groups are filled light-grey cards ----------------------------------------------------
-def test_role_groups_are_filled_cards():
-    # one neutral light-grey card with a solid border; labels inside take the card colour, outside the canvas
+# ---- 1.9.1: role groups are dashed outlines again (the 1.9.0 grey card was reverted) ---------------------
+def test_role_groups_are_dashed_outlines():
+    # no fill, grey dashed border, grey 15 px bold title; every label sits on white wherever it is
     xml = bd.build(spec(edges=[{"from": "u", "to": "a", "label": "HTTPS"}, {"from": "a", "to": "b", "label": "invoke"}, {"from": "a", "to": "c", "dashed": True}]))
     st = styles(xml)
     g = st["g"]
-    assert g["fillColor"] == "#F1F3F6" and g["strokeColor"] == "#AEB6C2" and g["dashed"] == "0" and g["fontColor"] == "#232F3E"
+    assert g["fillColor"] == "none" and g["strokeColor"] == "#5A6C86" and g["dashed"] == "1" and g["fontColor"] == "#5A6C86"
     assert g["fontSize"] == "15" and g["fontStyle"] == "1" and g["container"] == "1"
-    assert st["a"]["labelBackgroundColor"] == "#F1F3F6" and st["u"]["labelBackgroundColor"] == "#FFFFFF"
+    assert st["a"]["labelBackgroundColor"] == "#FFFFFF" and st["u"]["labelBackgroundColor"] == "#FFFFFF"
     assert st["e1"]["labelBackgroundColor"] == "#FFFFFF"           # HTTPS sits outside the cloud
-    assert st["e2"]["labelBackgroundColor"] == "#F1F3F6"           # invoke sits inside card g
+    assert st["e2"]["labelBackgroundColor"] == "#FFFFFF"           # invoke sits inside group g: same white
     assert st["cloud"]["fontSize"] == "16" and st["e2"]["fontSize"] == "14"
 
 
@@ -513,7 +513,7 @@ def test_boundary_box_is_drawn_around_adjacent_members():
     p1, x1, y1, _, _ = geo["m1"]
     assert p1 == "g__bedrock" and (x1, y1) == (bd.GROUP_HALF_W - bd.ICON // 2 - bd.BOUNDARY_INSET, bd.BOUNDARY_ABOVE)
     assert geo["x"][0] == "g"                                                    # the non-member stays in the group
-    assert st["m1"]["labelBackgroundColor"] == "#F1F3F6"                         # the boundary has no fill: the card shows through
+    assert st["m1"]["labelBackgroundColor"] == "#FFFFFF"                         # neither the boundary nor the group has a fill
     # default title = catalog label
     xml = bd.build(bspec())
     st = styles(xml)
@@ -652,7 +652,7 @@ def test_adjacent_group_rows_are_always_36_px_apart():
     assert b.group_below("g") == 52 and b.group_above("h") == 66
     assert hy - (gy + gh) == 36
     assert b.row_extra == {2: 52 + 36 + 66 - (142 - 78)}
-    assert b.ly(2) == 236 + 2 * 142 + 90
+    assert b.ly(2) == 160 + 2 * 142 + 90
 
 
 def test_boundary_on_the_last_lane_keeps_clear_of_the_card_bottom():
@@ -704,7 +704,7 @@ def test_long_title_on_a_one_column_card_is_drawn_over_the_line():
     assert cells["g"].get("value") == ""                              # the title moves to an overlay …
     t = cells["g__title"]
     assert t.get("value") == "Observability" and t.get("parent") == "1"
-    assert st["g__title"]["labelBackgroundColor"] == "#F1F3F6" and st["g__title"]["fontSize"] == "15"
+    assert st["g__title"]["labelBackgroundColor"] == "#FFFFFF" and st["g__title"]["fontSize"] == "15"
     assert xml.index('id="g__title"') > xml.index('source="c"')         # … drawn after the edge, so it covers the line
     assert any("title" in n and "Observability" in n for n in b.notes)
     assert vd.validate_text(xml, INDEX) == ([], [])
@@ -800,3 +800,20 @@ def test_docs_and_docstrings_carry_no_stale_numbers():
     assert "leaves the title behind" in style                               # overlay title caveat for draw.io editing
     for readme in ("README.md", "README.en.md"):
         assert "1.9" in (PLUGIN / readme).read_text() and ("condens" in (PLUGIN / readme).read_text() or "줄여" in (PLUGIN / readme).read_text())
+
+
+# ---- 1.9.1: no page title, subtitle or legend — the drawing is the whole page ---------------------------
+def test_no_page_title_or_legend():
+    s = spec(edges=[{"from": "u", "to": "a", "label": "HTTPS"}, {"from": "a", "to": "b", "label": "invoke"},
+                    {"from": "a", "to": "c", "dashed": True}])
+    s["subtitle"] = "team · 2026 · v1"
+    xml = bd.build(s)
+    import xml.etree.ElementTree as ET
+    ids = {c.get("id") for c in ET.fromstring(xml).iter("mxCell")}
+    assert not ({"title", "lg1", "lg1t", "lg2", "lg2t"} & ids)
+    assert "font-size:24px" not in xml and "team · 2026" not in xml
+    assert 'name="T"' in xml                                          # the title still names the page
+    b = bd.Builder(s, json.loads(bd.INDEX.read_text()))
+    cloud_top = b.group_rect(b.groups["g"])[1] - bd.CLOUD_PAD
+    assert 20 <= cloud_top <= 60                                      # no empty band above the cloud
+    assert vd.validate_text(xml, INDEX) == ([], [])

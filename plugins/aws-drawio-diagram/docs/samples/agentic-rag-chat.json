@@ -2,7 +2,6 @@
   "id": "agentic-rag",
   "page": "Agentic RAG Chat",
   "title": "Agentic RAG Chat — Serverless on AWS",
-  "subtitle": "hi-aws-skills sample · 2026-09-24 · v3",
   "groups": [
     {
       "id": "g_front",

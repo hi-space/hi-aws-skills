@@ -21,11 +21,11 @@ grouping and typography rules below replace its sparse 280 px layout.
 | Group-row gap | **derived** so cards in adjacent rows are `ROW_CLEAR` = **36 px** apart | The builder adds `below(upper) + 36 + above(lower) − 64` px at every row break (`Builder._row_extra`); 36 px holds a one-line edge label with 4 px to each card. |
 | Group width | **160 px per column**, 64 px gap | Group x = first column center − 80; width = 160 × columns + 64 × (columns − 1). The 64 px seam is where a cross-group edge's text goes (6 characters per line). |
 | Group height | **46 px above** the first icon (**66** when the group draws a service boundary), **tallest last-lane label + 8 px below** | 46 = 32 px title band (`TITLE_BAND`) + `GROUP_ABOVE_PAD` 14; the boundary variant adds its own 32 px title row; below = 32 for one-line labels, 52 for two, 42 when a boundary ends on that lane (`GROUP_BELOW_PAD`, `Builder.group_above` / `group_below`). A node label background therefore never touches the card's bottom border. |
-| Cloud padding | 28 px around the outermost groups | AWS Cloud x = first group x − 28; title row inside it. |
-| Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1240 × 960. **Never** a fixed 2400 × 1400 page. |
+| Cloud padding | 28 px around the outermost groups | AWS Cloud x = first group x − 28; its own title row inside it. |
+| Canvas | the drawing plus ~30 px of white on every side | No page title, subtitle or legend (1.9.1): the drawing is the whole page. Typical 4-column diagram: ~1200 × 880. **Never** a fixed 2400 × 1400 page. |
 
 Column *i* center `x = 130 + 224·i` (column 0 is the outside column for users/clients: `130, 354, 578, 802, …`).
-Lane *j* center `y = 236 + 142·j`, plus the derived row extra for every group-row break above lane *j*. A group-row
+Lane *j* center `y = 160 + 142·j`, plus the derived row extra for every group-row break above lane *j*. A group-row
 break is a lane where one group ends and another begins (the builder derives it; by hand, compute
 `below + 36 + above − 64` yourself — 50 px for one-line labels and no boundary). Icon top-left = center − 39.
 
@@ -54,24 +54,24 @@ An AWS diagram without role groups reads as a scatter of logos. Group first, the
   more empty cells than icons, or an empty band across the top of the cloud, means the lane plan is wrong: move
   upper-lane items there (auth, static assets, memory) or fan out downward instead.
 
-**Role group style — one light-grey card.** Every role group is the same neutral card: `#F1F3F6` fill, 1 px solid
-`#AEB6C2` border, title 15 bold in the text colour. The builder emits it as `GENERIC_GROUP` in `build_diagram.py`:
+**Role group style — a dashed outline.** Every role group is draw.io's plain *Generic group*: no fill, 1 px dashed
+grey border, title 15 bold in the same grey. The builder emits it as `GENERIC_GROUP` in `build_diagram.py`:
 
 ```
-rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F3F6;strokeColor=#AEB6C2;dashed=0;fontColor=#232F3E;strokeWidth=1;fontFamily=Amazon Ember;fontSize=15;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
+rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;strokeWidth=1;fontFamily=Amazon Ember;fontSize=15;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=4;container=1;dropTarget=1;
 ```
 
-Labels inside a card sit on the card's colour (`labelBackgroundColor=#F1F3F6`, `GROUP_FILL`); labels on the cloud
-or the canvas sit on white. Because no label may cross a border (§5), a label is always on one surface. Colour
-otherwise belongs to the icons and to the service boundaries below. (History: dashed unfilled Generic groups, 1.8.x,
-and per-role tints, 1.7.x, were tried and dropped — groups must read as groups at a glance, 2026-09-27.)
+Every label — node or edge, inside a group or not — sits on white (`labelBackgroundColor=#FFFFFF`, `GROUP_FILL`), so
+a label that must cover a line hides it cleanly. Colour belongs to the icons and to the service boundaries below.
+(History: per-role tints, 1.7.x, and one light-grey filled card, 1.9.0, were both tried and dropped — the owner
+prefers the plain outline, 2026-09-28.)
 
 **The title never sits under a line.** A vertical edge into or out of the first lane's icon crosses the title band
 at that column's centre. The builder measures the title (`text_px`: 0.55 em per Latin character, 1 em per CJK
 character) and, when it would reach the line, moves it to the right of the line (`spacingLeft` = line x + 8) if it
 still fits inside the card — a two-column card almost always has the room. When it does not (a one-column card
-with a title longer than ~8 Latin characters), the title is drawn **last, over the line, on a patch of the card's
-colour**: a separate `text` cell `<group id>__title` with `labelBackgroundColor=#F1F3F6`, and the group cell's own
+with a title longer than ~8 Latin characters), the title is drawn **last, over the line, on a white patch**: a
+separate `text` cell `<group id>__title` with `labelBackgroundColor=#FFFFFF`, and the group cell's own
 `value` is empty (the validator still treats the band as titled). The builder prints
 `note: group '…': title '…' is crossed by a line …` so the author can rename the group or move the node; the
 picture stays legible either way. A title wider than its card wraps inside it (`Builder.title_lines`, greedy by
@@ -143,7 +143,7 @@ AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagem
 
 ## 3. Typography
 
-One family, four sizes. Put `fontFamily=Amazon Ember;` in **every** cell style (icons, groups, edges, text).
+One family, three sizes. Put `fontFamily=Amazon Ember;` in **every** cell style (icons, groups, edges, text).
 draw.io cannot embed fonts: the PNG uses whatever the exporting machine has installed, and the `.drawio`
 uses the viewer's. Amazon Ember ships with the sibling plugin
 (`plugins/aws-diagram-design/skills/aws-diagram-design/assets/fonts/ttf/`; copy to `~/.fonts` and run
@@ -152,42 +152,35 @@ where Ember is not allowed — then write `fontFamily=Noto Sans;` instead.
 
 | Element | Size | Weight | Color |
 |---|---|---|---|
-| Diagram title | 24 | bold | `#232F3E` |
-| Subtitle (author · date · version) | 13 | regular | `#5A6C86` |
 | AWS Cloud / badge group label | 16 | bold | group color |
-| Role group label | 15 | bold | `#232F3E` |
+| Role group label | 15 | bold | `#5A6C86` |
 | Node label | 15 | bold | `#232F3E` |
 | Service boundary title | 14 | bold | service colour |
 | Edge label | 14 | regular | `#232F3E` |
-| Legend | 12 | regular | `#5A6C86` |
 
 Node labels: 1–3 words, sentence case, qualifier in parentheses (`S3 (static site)`, `Bedrock (Claude)`).
 Node labels are bold (`fontSize=15;fontStyle=1`) so the service name reads as fast as the icon; group
-titles share the size and weight, which keeps one visual level for "names" and one for the grey subtitle/legend.
+titles share the size and weight (in grey), which keeps one visual level for "names".
 
-## 4. Canvas, title, legend
+## 4. Canvas
 
 ```xml
-<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1240" pageHeight="960" math="0" shadow="0">
+<mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="880" math="0" shadow="0">
 ```
 
-First cells after the root: a **white** full-canvas background (prevents black PNGs), then the title, then a
-legend when the diagram has more than one edge type.
+First cell after the root: a **white** full-canvas background (prevents black PNGs). There is **no page title,
+subtitle or legend** (dropped in 1.9.1 — the picture is shown next to its own heading and guide, and the solid /
+dashed edge kinds are explained there). The spec's `title` only names the draw.io page. The cloud box starts about
+30–50 px below the page top and the canvas ends ~30 px right of and below the drawing (`MARGIN`).
 
 ```xml
 <mxCell id="bg" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;" vertex="1" parent="1">
-  <mxGeometry x="0" y="0" width="1240" height="960" as="geometry" />
+  <mxGeometry x="0" y="0" width="1200" height="880" as="geometry" />
 </mxCell>
-<mxCell id="title" value="&lt;font style=&quot;font-size:24px&quot;&gt;&lt;b&gt;Diagram Title&lt;/b&gt;&lt;/font&gt;&lt;br&gt;&lt;font color=&quot;#5A6C86&quot;&gt;Author · Date · Version&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily=Amazon Ember;fontSize=13;fontColor=#232F3E;spacing=0;" vertex="1" parent="1">
-  <mxGeometry x="40" y="32" width="700" height="60" as="geometry" />
-</mxCell>
-<mxCell id="lg1" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="44" width="40" height="10" as="geometry" /></mxCell>
-<mxCell id="lg1t" value="request / data flow" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=12;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="38" width="160" height="22" as="geometry" /></mxCell>
-<mxCell id="lg2" value="" style="shape=line;strokeWidth=2;strokeColor=#232F3E;dashed=1;html=1;" vertex="1" parent="1"><mxGeometry x="1020" y="68" width="40" height="10" as="geometry" /></mxCell>
-<mxCell id="lg2t" value="async / auxiliary" style="text;html=1;align=left;verticalAlign=middle;fontFamily=Amazon Ember;fontSize=12;fontColor=#5A6C86;" vertex="1" parent="1"><mxGeometry x="1068" y="62" width="160" height="22" as="geometry" /></mxCell>
 ```
 
-Legend lines are `shape=line` **vertices**, not edges (edges without source/target fail `E3`).
+Any free-standing line you do draw (none by default) must be a `shape=line` **vertex**, not an edge — edges without
+source/target fail `E3`.
 
 ## 5. Edges — one straight segment each
 
@@ -284,11 +277,10 @@ by situation (`chars_that_fit` in `build_diagram.py`):
 
 ## 6. Node labels — always below the icon
 
-Every node label sits under its icon, centred, 15 bold, on the card's colour inside a group and on white outside:
+Every node label sits under its icon, centred, 15 bold, on white:
 
 ```
-verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F1F3F6;   (inside a role group — the card's fill, §2)
-verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;   (outside the cloud)
+verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#FFFFFF;
 ```
 
 No side labels, no top labels, no `label_pos` switches: the reader always finds the name in the same place.
@@ -349,5 +341,5 @@ the guide is where every relationship — labeled on the picture or not — is e
 
 For every node: which group? which column, which lane? label ≤ 17 characters or split in two? For
 every edge: same column or lane, or a proper fan-out? corridor empty? label only in a free gap? For the canvas:
-white background, title, legend if two edge types, no half-empty page, no empty band. Then run the validator
+white background, no title or legend cell, no half-empty page, no empty band. Then run the validator
 and **look at the PNG** — the Reviewer's checklist (`review-checklist.md`) is what you will be measured against.

@@ -2,7 +2,6 @@
   "id": "iot-telemetry",
   "page": "IoT Telemetry",
   "title": "IoT 텔레메트리 수집·분석 플랫폼",
-  "subtitle": "Factory sensors → hot state + data lake · hi-aws-skills sample · 2026-09-12 · v1",
   "groups": [
     {
       "id": "g_ingest",

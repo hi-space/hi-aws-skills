@@ -130,13 +130,13 @@ def test_codebase_input_rules_are_present():
     assert "Spot-check" in assess and "call count" in assess
 
 
-def test_filled_cards_and_service_boundaries_are_documented():
-    # 1.9.0: role groups are light-grey cards on the 224 × 142 grid; same-service icons that land adjacent get a badge box
+def test_dashed_groups_and_service_boundaries_are_documented():
+    # 1.9.1: role groups are dashed outlines on the 224 × 142 grid; same-service icons that land adjacent get a badge box
     skill = SKILL_MD.read_text()
     style = (SKILL / "references" / "layout-and-style.md").read_text()
     brief = (SKILL / "references" / "architecture-brief.md").read_text()
     review = (SKILL / "references" / "review-checklist.md").read_text()
-    assert "fillColor=#F1F3F6" in style and "strokeColor=#AEB6C2" in style and "dashed=0" in style
+    assert "fillColor=none;strokeColor=#5A6C86;dashed=1" in style and "#F1F3F6" not in style
     assert "224" in style and "142" in style and "GROUP_BELOW_PAD" in style and "ROW_CLEAR" in style
     assert "17 characters" in style and "fontSize=15" in style and "fontSize=14" in style   # card titles; node labels and edge text
     assert "__title" in style and "LABEL_BORDER_SLACK_PX" in style
@@ -144,12 +144,12 @@ def test_filled_cards_and_service_boundaries_are_documented():
     assert "Service boundaries" in style and "BOUNDARY_ABOVE" in style and "awsBadge" in style
     assert "Boundary" in brief and "copies" in brief and "[edge]" not in brief
     assert "Boundary" in skill and "[kind]" not in skill and "[edge]" not in skill
-    assert "oundar" in review and "#F1F3F6" in review
+    assert "oundar" in review and "#F1F3F6" not in review and "No page furniture" in review
 
 
 def test_no_stale_grid_numbers_in_docs():
     style = (SKILL / "references" / "layout-and-style.md").read_text()
     tpl = (SKILL / "templates" / "README.md").read_text()
-    for stale in ("240 px", "170 px", "240 × 170", "fontSize=11;", "13 bold", "22 characters", "1.282", "1.513", "dashed=1;fontColor"):
+    for stale in ("240 px", "170 px", "240 × 170", "fontSize=11;", "13 bold", "22 characters", "1.282", "1.513", "236 +", "id=\"title\"", "id=\"lg1\"", "| Legend |", "#F1F3F6"):
         assert stale not in style, stale
     assert "240 × 170" not in tpl and "224 × 142" in tpl

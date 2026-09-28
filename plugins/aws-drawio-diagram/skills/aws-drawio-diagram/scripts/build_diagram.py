@@ -8,8 +8,7 @@ the label so no line crosses text), the AWS Cloud box, the canvas size, and the 
 
 Spec (JSON):
 {
-  "title": "Agentic RAG Chat — Serverless on AWS",
-  "subtitle": "team · 2026-09-12 · v1",           # optional
+  "title": "Agentic RAG Chat — Serverless on AWS",   # names the draw.io page only; the drawing carries no title
   "font": "Amazon Ember",                          # optional (default); e.g. "Noto Sans"
   "cloud": "AWS Cloud",                            # optional label; false → no cloud box
   "groups": [ {"id": "g_front", "label": "Frontend", "cols": [1], "lanes": [0, 1]} ],
@@ -24,7 +23,7 @@ Spec (JSON):
              {"from": "apigw", "to": "cognito", "dashed": true} ]
 }
 
-Grid: column i center x = 130 + 224·i; lane j center y = 236 + 142·j, plus a derived gap for every group row
+Grid: column i center x = 130 + 224·i; lane j center y = 160 + 142·j, plus a derived gap for every group row
 boundary above lane j (a lane where one group ends and another begins) that keeps the cards 36 px apart.
 Icons are 78 px. Groups are 160 px per column (64 px gaps), 46 px above the first icon (66 with a service
 boundary), one label height + 8 px below the last. Edges between cells in the same column/lane are straight (empty corridor). Any other pair is
@@ -79,7 +78,7 @@ EXTRA_ICONS = HERE.parent / "assets" / "extra-icons"
 
 ICON = 78
 COL0, COL_PITCH = 130, 224
-LANE0, LANE_PITCH = 236, 142
+LANE0, LANE_PITCH = 160, 142                             # lane 0 sits so the cloud box starts 27–47 px below the page top
 GROUP_HALF_W, GROUP_GAP = 80, 64
 GROUP_ABOVE_PAD = 14                                     # px between the title band and the first icon (no boundary in the group)
 GROUP_BELOW_PAD = 8                                      # px between the tallest last-lane label and the card's bottom border
@@ -96,21 +95,19 @@ EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 17, 3, 20
 LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
 TITLE_BAND = 32                                          # px: a container's title row (15 pt bold + spacingTop) — no edge label sits on it (validate_drawio)
 LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 20, 4, 17       # node label (15 pt bold): px per line, gap under the icon, chars per line (17 × ~7.7 px fits a 160 px card)
-TITLE_Y = 32
-LEGEND_W = 300
-MARGIN = 80
+MARGIN = 30                                              # px of white right of and below the drawing (the left/top margins come from the grid)
 
 PTS = ("points=[[0,0,0],[0.25,0,0],[0.5,0,0],[0.75,0,0],[1,0,0],[0,1,0],[0.25,1,0],[0.5,1,0],[0.75,1,0],"
        "[1,1,0],[0,0.25,0],[0,0.5,0],[0,0.75,0],[1,0.25,0],[1,0.5,0],[1,0.75,0]];")
 GROUP_PTS = ("points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[0,1],[0.25,1],[0.5,1],[0.75,1],[1,1],[0,0.25],"
              "[0,0.5],[0,0.75],[1,0.25],[1,0.5],[1,0.75]];")
 LABEL_STYLE = "verticalLabelPosition=bottom;verticalAlign=top;align=center;"
-# Role groups are one neutral light-grey card (1.9.0): #F1F3F6 fill, solid #AEB6C2 border, title in the text colour.
-# Dashed unfilled Generic groups (1.8.x) and per-role tints (1.7.x) were tried and dropped: the owner wants groups
-# that read as groups at a glance, with colour reserved for icons and service boundaries. GROUP_FILL is what a
-# label inside a group sits on — the card's fill.
-GROUP_FILL = "#F1F3F6"
-GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=#F1F3F6;strokeColor=#AEB6C2;dashed=0;fontColor=#232F3E;"
+# Role groups are the draw.io "Generic group": no fill, 1 px dashed grey border, grey title (15 bold since 1.9.0).
+# Per-role tints (1.7.x) and one light-grey filled card (1.9.0) were both tried and dropped — the owner prefers the
+# plain outline, with colour reserved for icons and service boundaries. GROUP_FILL is what a label inside a group
+# sits on: the canvas, since the group has no fill.
+GROUP_FILL = "#FFFFFF"
+GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A6C86;dashed=1;fontColor=#5A6C86;"
 # Service boundary box (nodes sharing `boundary` inside one role group), drawn the way the official AWS
 # architecture icons draw a group: a filled square badge in the top-left corner, a 1 px border and a bold title in the
 # service's own category colour. Official group badges (`group_*` stencils: Step Functions workflow, Auto Scaling
@@ -743,26 +740,13 @@ class Builder:
 
         right = max([x + ICON for x, _ in node_xy.values()] + ([cloud[0] + cloud[2]] if cloud else []) + [r[0] + r[2] for r in rects.values()])
         label_h = {nid: self.label_h(n) for nid, n in self.nodes.items()}
-        bottom = max([y + ICON + label_h[nid] + 30 for nid, (_, y) in node_xy.items()] + ([cloud[1] + cloud[3]] if cloud else []) + [r[1] + r[3] for r in rects.values()])
+        bottom = max([y + ICON + label_h[nid] for nid, (_, y) in node_xy.items()] + ([cloud[1] + cloud[3]] if cloud else []) + [r[1] + r[3] for r in rects.values()])
         W = int(-(-(right + MARGIN) // 10) * 10)
-        H = int(-(-(bottom + 45) // 10) * 10)
+        H = int(-(-(bottom + MARGIN) // 10) * 10)
 
+        # The drawing is the whole page: no title block, no legend (1.9.1). The spec's title names the draw.io page.
         self.vertex("bg", "", "rounded=0;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;", 0, 0, W, H)
-        title = f'<font style="font-size:24px"><b>{spec.get("title", "Architecture")}</b></font>'
-        if spec.get("subtitle"):
-            title += f'<br><font color="#5A6C86">{spec["subtitle"]}</font>'
-        self.vertex("title", title,
-                    f"text;html=1;align=left;verticalAlign=top;whiteSpace=wrap;rounded=0;fontFamily={font};fontSize=13;fontColor=#232F3E;spacing=0;",
-                    40, TITLE_Y, W - LEGEND_W - 80, 60)
-
         edges = spec.get("edges", [])
-        if any(e.get("dashed") for e in edges) and any(not e.get("dashed") for e in edges):
-            lx, ly = W - LEGEND_W, TITLE_Y + 12
-            text = f"text;html=1;align=left;verticalAlign=middle;fontFamily={font};fontSize=12;fontColor=#5A6C86;"
-            self.vertex("lg1", "", "shape=line;strokeWidth=2;strokeColor=#232F3E;html=1;", lx, ly, 40, 10)
-            self.vertex("lg1t", spec.get("legend_solid", "request / data flow"), text, lx + 48, ly - 6, 200, 22)
-            self.vertex("lg2", "", "shape=line;strokeWidth=2;strokeColor=#232F3E;dashed=1;html=1;", lx, ly + 24, 40, 10)
-            self.vertex("lg2t", spec.get("legend_dashed", "async / auxiliary"), text, lx + 48, ly + 18, 200, 22)
 
         if cloud:
             self.vertex("cloud", cloud_label,
@@ -783,8 +767,8 @@ class Builder:
 
         # A group's title never sits under a line. A vertical line through the title band (an edge into or out of the
         # first lane's icon) pushes the title to the right of it when the title still fits inside the card; when it
-        # does not (a one-column card with a long title), the title is drawn last, over the line, on a patch of the
-        # card's colour — legible, and noted so the author can rename the group or move the node.
+        # does not (a one-column card with a long title), the title is drawn last, over the line, on a white patch
+        # (the canvas colour) — legible, and noted so the author can rename the group or move the node.
         title_left: dict[str, int] = {}
         overlay_titles: list[tuple[str, str, int, int, int, int]] = []   # (gid, title, x, y, width, lines)
         title_extra: list[tuple] = []                                  # boxes of extra title lines: no edge text there
