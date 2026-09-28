@@ -117,9 +117,9 @@ bucket_text           at (tier_cx(i), 144)                # sublabel role, muted
 field_x               = tier_x(i) + 16                    # 16-px left inset for field text
 field_w               = 140                               # 172-px tier_w minus two 16-px insets
 field rows (absolute y):
-  tool_label  at 180,    tool_value  at 186 (single-line text)
-  format_label at 220,   format_value at 226 (single-line text)
-  writer_label at 260,   writer_value at 266 (single-line text)
+  tool_label  at 180,    tool_value  at 202 (single-line text)
+  format_label at 220,   format_value at 242 (single-line text)
+  writer_label at 260,   writer_value at 282 (single-line text)
   # gap (open whitespace below writer row, above the example section)
   example_label_text at 360,  example_line_0 at 374,  example_line_1 at 388
 ```

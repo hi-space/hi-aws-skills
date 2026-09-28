@@ -50,6 +50,7 @@ def test_skill_md_describes_svg_first():
     assert "template.svg" in text and "template-full" not in text
     assert "Always produce a single self-contained `.html` file" not in text
     assert "Full editorial" not in text
+    assert "html+png" not in text and "`html`" not in text.split("## 11.")[1].split("## 12.")[0]
 
 
 def test_python_generator_doc_uses_build_png():

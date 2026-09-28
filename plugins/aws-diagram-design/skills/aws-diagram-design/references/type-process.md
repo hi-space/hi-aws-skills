@@ -388,9 +388,9 @@ Above 6 lanes or 12 steps: split into two diagrams (overview + detail).
 
 ---
 
-## 12. Worked example — full YAML for `example-process-extended.svg`
+## 12. Worked example — full YAML for the extended pattern
 
-The extended example diagram is fully described by the following inputs. Every coordinate in the rendered SVG is derivable from this block via §2 + §3 + §4. This is the canonical proof that the parametric contract works end-to-end.
+This block is fully described by the following inputs; it doesn't ship as a file in `assets/`. Every coordinate in a rendered SVG is derivable from this block via §2 + §3 + §4. This is the canonical proof that the parametric contract works end-to-end.
 
 ```yaml
 # Quarterly survey — end-to-end workflow (extended variant)

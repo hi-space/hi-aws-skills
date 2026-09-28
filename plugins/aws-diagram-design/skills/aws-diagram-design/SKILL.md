@@ -517,7 +517,7 @@ Every imported diagram is shaped by four decisions. Full spec in [`references/ou
 
 | Dial | Options | Default |
 |---|---|---|
-| **Format** | `html` · `svg` · `png` · `html+png` | `html` |
+| **Format** | `svg+png` · `svg` · `png` | `svg+png` |
 | **Size** | `doc-inline` · `doc-wide` · `slide-16x9` · `slide-4x3` · `social-og` · `social-square` · `print-a4-landscape` · `print-letter-landscape` · `fit` | `doc-inline` |
 | **Detail** | `faithful` (≤24 nodes, zoned) · `balanced` (≤12) · `simplified` (≤7) | `balanced` |
 | **Audience** | `engineer` · `mixed` · `executive` — governs wording, not count | `mixed` |
