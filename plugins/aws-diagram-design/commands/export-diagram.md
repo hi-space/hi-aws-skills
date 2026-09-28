@@ -17,7 +17,7 @@ Full argument string: `$ARGUMENTS`
 
 - **`.svg`** (the normal deliverable) → run `python3 <skill-dir>/scripts/finalize.py <file> [--scale N] [--png-dir DIR]`. This re-checks the file, embeds the Amazon Ember faces it uses, and writes `<stem>.png` next to it.
 - **`.html` produced by aws-diagram-design 1.x** (static page with one diagram) → run `python3 <skill-dir>/scripts/html_to_svg.py <file>` to get `<stem>.svg`, then `finalize.py` on that. Report both new paths; leave the HTML in place unless the user asks to delete it.
-- **`.html` motion diagram** (has `data-motion-root`) → follow `export.md § PNG from a motion HTML` (static frame via `?motion=static`). No SVG is produced for motion files.
+- **`.html` motion diagram** (has `data-motion-root`) → follow `export.md § 3` (static frame via `?motion=static`). No SVG is produced for motion files.
 
 ## Flags
 
@@ -29,6 +29,7 @@ Full argument string: `$ARGUMENTS`
 1. **No path provided** → ask which file to export. Don't guess.
 2. **Source is `assets/index.html`** (gallery) → refuse and ask for a specific diagram file.
 3. **`finalize.py` exits 1** → show its FAIL lines verbatim and stop; the file was not modified.
-4. **Playwright missing** → `finalize.py` prints the install instruction; relay it verbatim, do **not** auto-install.
+4. **`--scale` outside 1–4** → `finalize.py` exits 2 with its own message; relay it and stop.
+5. **Playwright missing** → `finalize.py` prints the install instruction; relay it verbatim, do **not** auto-install.
 
 After producing the outputs, report the file paths and pixel sizes back to the user.
