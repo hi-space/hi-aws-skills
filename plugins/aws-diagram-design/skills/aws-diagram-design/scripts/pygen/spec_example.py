@@ -1,6 +1,6 @@
 """Example spec: a training pipeline on AWS, one layout rendered in Korean and English.
 
-    python3 build.py . --out /tmp/diag && python3 export.py /tmp/diag
+    python3 build.py . --out /tmp/diag --png
 
 Shows the house style: AWS Cloud zone with badge, icon-left nodes (16px name + 12px mono sublabel),
 one focal node, orthogonal r=8 connectors, masked arrow labels 8px above the line, bottom legend.

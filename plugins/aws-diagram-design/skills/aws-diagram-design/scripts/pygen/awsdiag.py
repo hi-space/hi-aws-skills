@@ -4,8 +4,8 @@ Encodes the skill's mandatory rules in code so a spec only supplies layout and t
 white paper, squid-ink text, smile-orange accent on 1-2 focal nodes, Amazon Ember type at the
 presentation ramp (16px names / 12px sublabels and arrow labels), official AWS Architecture Icons
 (icon-left nodes, group badges on zones), rounded orthogonal connectors (r=8), masked arrow labels,
-bottom legend strip, accessible <title>/<desc>. Korean text falls back to Noto Sans KR / NanumBarunGothic
-because Amazon Ember has no Hangul glyphs.
+bottom legend strip, accessible <title>/<desc>. Korean text uses the Noto Sans KR / NanumBarunGothic
+fallback in the font stack; finalize.py loads Noto Sans KR at PNG render time.
 
 Usage from a spec file (see spec_example.py):
 
@@ -28,13 +28,15 @@ ICONS = SKILL / "assets/aws-icons"
 FONTS = SKILL / "assets/fonts/woff2"
 GENERIC_MD = SKILL / "references/primitive-icons.md"
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))  # <skill>/scripts
+import finalize  # local() @font-face block shared with templates
+
 # ---- style-guide.md tokens (AWS skin) ---------------------------------------------------------
 PAPER = "#FFFFFF"; PAPER2 = "#F2F3F3"; INK = "#232F3E"; MUTED = "#545B64"; SOFT = "#7D8998"
 RULE = "rgba(35,47,62,0.12)"; ACCENT = "#EC7211"; ACCENT_TINT = "rgba(255,153,0,0.10)"; LINK = "#0972D3"
 
 SANS = "'Amazon Ember','Noto Sans KR','NanumBarunGothic','Helvetica Neue',Helvetica,Arial,sans-serif"
 MONO = "'Amazon Ember Mono','Noto Sans KR','NanumGothicCoding',ui-monospace,monospace"
-KR_FONTS = "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap"
 
 KIND = {  # node kind → (fill, stroke, dash)   [SKILL.md §5 node type → treatment]
     "step":     (PAPER, INK, None),
@@ -488,10 +490,14 @@ class Canvas:
                 legend.append(f'<text x="{lx+24}" y="{ly+3}" fill="{MUTED}" font-size="{LEGEND_SIZE}" font-family="{SANS}">{esc(text)}</text>')
                 lx += 24 + text_w(text, LEGEND_SIZE) * 1.1 + 32
         body = "\n".join(self.zones + self.arrows + self.labels + self.nodes + self.overlay + legend)
-        return f'''<svg viewBox="0 0 {self.w} {self.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="{self.slug}-title {self.slug}-desc">
+        return f'''<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 {self.w} {self.h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="{self.slug}-title {self.slug}-desc">
   <title id="{self.slug}-title">{esc(self.title)}</title>
   <desc id="{self.slug}-desc">{esc(self.desc)}</desc>
   <defs>
+    <style>
+{finalize.LOCAL_FONT_FACE_CSS}
+    </style>
     <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{MUTED}"/></marker>
     <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{ACCENT}"/></marker>
     <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="{LINK}"/></marker>
@@ -499,42 +505,8 @@ class Canvas:
   </defs>
   <rect width="100%" height="100%" fill="{PAPER}"/>
 {body}
-</svg>'''
-
-    def html(self, eyebrow: str = "AWS Diagram", kr_webfont: bool = True) -> str:
-        """Self-contained HTML: bundled Amazon Ember via file:// @font-face (local() first) plus the Noto Sans KR
-        webfont link, which also supplies glyphs Ember lacks (Hangul, →, ×). kr_webfont=False for offline builds
-        (falls back to NanumBarunGothic / NanumGothicCoding if installed; arrows render thinner)."""
-        f = f"file://{FONTS}"
-        faces = "\n".join(
-            f"@font-face{{font-family:'{fam}';font-weight:{wt};font-style:{st};src:local('{loc}'),url('{f}/{fn}') format('woff2');}}"
-            for fam, wt, st, loc, fn in [
-                ("Amazon Ember", 400, "normal", "Amazon Ember", "AmazonEmber_W_Rg.woff2"),
-                ("Amazon Ember", 400, "italic", "Amazon Ember Italic", "AmazonEmber_W_RgIt.woff2"),
-                ("Amazon Ember", 600, "normal", "Amazon Ember Medium", "AmazonEmber_W_SBd.woff2"),
-                ("Amazon Ember", 700, "normal", "Amazon Ember Bold", "AmazonEmber_W_Bd.woff2"),
-                ("Amazon Ember Mono", 400, "normal", "Amazon Ember Mono", "AmazonEmberMono_W_Rg.woff2"),
-                ("Amazon Ember Mono", 700, "normal", "Amazon Ember Mono Bold", "AmazonEmberMono_W_Bd.woff2")])
-        kr_link = f'<link href="{KR_FONTS}" rel="stylesheet">\n' if kr_webfont else ""
-        return f'''<!DOCTYPE html>
-<html lang="{self.lang}">
-<head>
-<meta charset="UTF-8">
-<title>{esc(self.title)}</title>
-{kr_link}<style>
-{faces}
-*{{box-sizing:border-box;margin:0;padding:0}}
-body{{font-family:{SANS};background:{PAPER};color:{INK};padding:2rem}}
-.frame{{max-width:1200px}}
-.eyebrow{{font-family:{MONO};font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:{MUTED};margin-bottom:.5rem}}
-h1{{font-family:{SANS};font-size:1.75rem;font-weight:700;margin-bottom:1.5rem}}
-svg{{width:100%;display:block}}
-</style></head>
-<body><div class="frame">
-<p class="eyebrow">{esc(eyebrow)}</p>
-<h1>{esc(self.title)}</h1>
-{self.svg()}
-</div></body></html>'''
+</svg>
+'''
 
 
 def T(lang: str, ko: str, en: str) -> str:
