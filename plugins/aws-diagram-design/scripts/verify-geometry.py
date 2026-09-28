@@ -24,7 +24,7 @@ Shape heuristics follow the shipped templates:
 
 Usage:
     python3 scripts/verify-geometry.py --all
-    python3 scripts/verify-geometry.py skills/aws-diagram-design/assets/example-x.html
+    python3 scripts/verify-geometry.py skills/aws-diagram-design/assets/example-x.svg
 """
 
 from __future__ import annotations
@@ -135,13 +135,13 @@ def check(path: Path) -> list[str]:
 
 def targets(args: argparse.Namespace) -> list[Path]:
     if args.all:
-        return sorted(ASSET_DIR.glob("*.html"))
+        return sorted([*ASSET_DIR.glob("*.svg"), *ASSET_DIR.glob("*.html")])
     return [Path(p) for p in args.files]
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("files", nargs="*", help="HTML diagrams to check")
+    parser.add_argument("files", nargs="*", help="SVG (or motion HTML) diagrams to check")
     parser.add_argument("--all", action="store_true", help="check every shipped asset")
     args = parser.parse_args()
 
