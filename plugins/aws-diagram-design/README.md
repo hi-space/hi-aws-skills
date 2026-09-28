@@ -10,7 +10,7 @@ draw.io 등을 사용하여 다양한 아키텍처 및 다이어그램을 작성
 
 > "ALB 뒤에 Fargate 서비스 두고, RDS Multi-AZ랑 ElastiCache 붙는 VPC 3-티어 구성도 그려줘"
 
-[공식 AWS Architecture Icons](https://aws.amazon.com/ko/architecture/icons/)와 Amazon Ember 타이포그래피, VPC/서브넷/계정 컨테이너 규약까지 적용된 다이어그램이 자체 완결형 HTML로 생성되고, 필요하면 SVG/PNG로 바로 내보낼 수 있습니다. 제안서, 위키, 발표 자료, 아키텍처 리뷰에 그대로 쓸 수 있는 품질을 목표로 합니다.
+[공식 AWS Architecture Icons](https://aws.amazon.com/ko/architecture/icons/)와 Amazon Ember 타이포그래피, VPC/서브넷/계정 컨테이너 규약까지 적용된 다이어그램이 폰트가 내장된 단독 SVG와 PNG 한 쌍으로 생성됩니다. 제안서, 위키, 발표 자료, 아키텍처 리뷰에 그대로 쓸 수 있는 품질을 목표로 합니다.
 
 ## 이런 걸 그려줍니다
 
@@ -22,39 +22,39 @@ AWS 서비스를 명명하는 노드에는 다이어그램 타입에 관계없�
 
 ## 미리보기
 
-아래는 모두 이 스킬로 생성한 결과물입니다. 원본 HTML은 [docs/samples/](docs/samples/)에 있습니다.
+아래는 모두 이 스킬로 생성한 결과물입니다. SVG 원본과 PNG는 [docs/samples/](docs/samples/)에 있습니다.
 
 ### Serverless Web Application
 
-가장 흔한 시작점. CloudFront가 S3 정적 자산과 API Gateway → Lambda → DynamoDB 동적 경로를 분기합니다. ([HTML](docs/samples/serverless-web-app.html))
+가장 흔한 시작점. CloudFront가 S3 정적 자산과 API Gateway → Lambda → DynamoDB 동적 경로를 분기합니다. ([SVG](docs/samples/serverless-web-app.svg) · [PNG](docs/samples/serverless-web-app.png))
 
 ![Serverless Web Application 아키텍처 다이어그램](docs/samples/serverless-web-app.svg)
 
 ### VPC Three-Tier Web Service
 
-퍼블릭 서브넷의 ALB → 프라이빗 서브넷의 ECS on Fargate → 데이터 서브넷의 RDS/ElastiCache. 서브넷 경계 색상과 배지가 공식 규약 그대로입니다. ([HTML](docs/samples/vpc-three-tier.html))
+퍼블릭 서브넷의 ALB → 프라이빗 서브넷의 ECS on Fargate → 데이터 서브넷의 RDS/ElastiCache. 서브넷 경계 색상과 배지가 공식 규약 그대로입니다. ([SVG](docs/samples/vpc-three-tier.svg) · [PNG](docs/samples/vpc-three-tier.png))
 
 ![VPC Three-Tier Web Service 아키텍처 다이어그램](docs/samples/vpc-three-tier.svg)
 
 ### Event-Driven Data Pipeline
 
-Kinesis → Lambda → S3 데이터 레이크 스트리밍 수집과, Glue 카탈로그를 거쳐 Athena가 S3를 직접 스캔하는 분석 경로. 교차하는 커넥터는 bridge/hop으로 처리됩니다. ([HTML](docs/samples/event-driven-pipeline.html))
+Kinesis → Lambda → S3 데이터 레이크 스트리밍 수집과, Glue 카탈로그를 거쳐 Athena가 S3를 직접 스캔하는 분석 경로. 교차하는 커넥터는 bridge/hop으로 처리됩니다. ([SVG](docs/samples/event-driven-pipeline.svg) · [PNG](docs/samples/event-driven-pipeline.png))
 
 ![Event-Driven Data Pipeline 아키텍처 다이어그램](docs/samples/event-driven-pipeline.svg)
 
 ### Multi-Region Network Backbone
 
-멀티 계정/멀티 리전 네트워크의 전형적인 모양. 리전별 Network account의 Transit Gateway가 AWS Cloud WAN 코어로 피어링되고, 온프레미스는 Direct Connect(BGP) + Site-to-Site VPN 백업으로 연결됩니다. ([HTML](docs/samples/multi-region-network.html))
+멀티 계정/멀티 리전 네트워크의 전형적인 모양. 리전별 Network account의 Transit Gateway가 AWS Cloud WAN 코어로 피어링되고, 온프레미스는 Direct Connect(BGP) + Site-to-Site VPN 백업으로 연결됩니다. ([SVG](docs/samples/multi-region-network.svg) · [PNG](docs/samples/multi-region-network.png))
 
 ![Multi-Region Network Backbone 아키텍처 다이어그램](docs/samples/multi-region-network.svg)
 
 ### AWS Data Pipeline Flow
 
-"누가 어느 단계에서 무엇을 하는가"를 보여주는 역할 스코프 데이터 플로. Data Admin이 Lake Formation 카탈로그 거버넌스와 IAM 접근 권한을 점선 트리거로 내려주고, 그 아래에서 Kinesis/DMS 수집 → S3 레이크 → Glue ETL → Redshift DW(포컬 핸드오프) → Quick Suite 대시보드로 이어집니다. 각 노드의 공식 서비스 아이콘과 하단 칩이 페이로드 타입 변환(스트림→데이터셋→테이블→리포트)을 추적합니다. ([HTML](docs/samples/data-pipeline-flow.html))
+"누가 어느 단계에서 무엇을 하는가"를 보여주는 역할 스코프 데이터 플로. Data Admin이 Lake Formation 카탈로그 거버넌스와 IAM 접근 권한을 점선 트리거로 내려주고, 그 아래에서 Kinesis/DMS 수집 → S3 레이크 → Glue ETL → Redshift DW(포컬 핸드오프) → Quick Suite 대시보드로 이어집니다. 각 노드의 공식 서비스 아이콘과 하단 칩이 페이로드 타입 변환(스트림→데이터셋→테이블→리포트)을 추적합니다. ([SVG](docs/samples/data-pipeline-flow.svg) · [PNG](docs/samples/data-pipeline-flow.png))
 
 ![AWS Data Pipeline Flow 다이어그램](docs/samples/data-pipeline-flow.svg)
 
-> GitHub은 이미지 렌더링 시 외부 폰트를 차단하므로 위 SVG는 시스템 폰트로 보입니다. Amazon Ember 폰트 그대로 보려면 HTML 원본을 브라우저에서 여세요.
+> 위 SVG는 Amazon Ember를 내장하고 있어 GitHub 밖 어디서나 같은 글꼴로 보입니다. GitHub의 이미지 샌드박스는 내장 폰트도 차단하므로 여기서는 시스템 폰트로 보일 수 있습니다.
 
 ## 시작하기
 
@@ -104,7 +104,7 @@ Amazon Ember는 [Amazon 공식 배포본](https://developer.amazon.com/en-US/ale
 ```
 /aws-diagram-design:import-drawio legacy-arch.drawio     # draw.io 파일을 다시 그리기
 /aws-diagram-design:import-mermaid pipeline.mmd          # Mermaid 파일을 다시 그리기
-/aws-diagram-design:export-diagram my-diagram.html       # 생성된 HTML을 SVG/PNG로 내보내기
+/aws-diagram-design:export-diagram my-diagram.svg       # SVG → PNG 다시 렌더 (1.x HTML도 받음)
 ```
 
 재작도 시 크기(문서 인라인/와이드/슬라이드 16:9/소셜 카드), 상세도(faithful/balanced/simplified), 독자(엔지니어/혼합/경영진)를 지정할 수 있고, 병합되거나 생략된 요소는 fidelity ledger로 보고됩니다.
@@ -115,8 +115,7 @@ Amazon Ember는 [Amazon 공식 배포본](https://developer.amazon.com/en-US/ale
 
 ```bash
 SKILL=plugins/aws-diagram-design/skills/aws-diagram-design
-python3 $SKILL/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out                 # spec_*.py → HTML (ko/en)
-python3 $SKILL/scripts/pygen/export.py docs/diagrams/out --png-dir static/images/diagrams   # PNG @2x
+python3 $SKILL/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out --png --png-dir static/images/diagrams   # spec_*.py → SVG (ko/en) + PNG @2x
 ```
 
 스펙 작성법과 API, 텍스트 예산(이름 1줄 + 부제 1줄, 16px/12px), 흔한 실수는 [`references/python-generator.md`](skills/aws-diagram-design/references/python-generator.md) 에, 동작하는 예시는 [`scripts/pygen/spec_example.py`](skills/aws-diagram-design/scripts/pygen/spec_example.py) 에 있습니다.
@@ -140,8 +139,8 @@ aws-diagram-design/
 │   ├── SKILL.md                    #   설계 시스템 + 27개 타입 라우팅
 │   ├── references/                 #   타입별 스펙 40개 (style-guide, type-*, primitive-aws-icons 등)
 │   ├── assets/                     #   템플릿·예제, aws-icons/ 812 SVG, fonts/ Amazon Ember
-│   └── scripts/                    #   자체 검증(self_check, verify-geometry), drawio/mermaid 추출기
-│       └── pygen/                  #   Python 생성기: awsdiag.py(라이브러리) · build.py · export.py · spec_example.py
+│   └── scripts/                    #   자체 검증(self_check, verify-geometry), finalize.py · html_to_svg.py, drawio/mermaid 추출기
+│       └── pygen/                  #   Python 생성기: awsdiag.py(라이브러리) · build.py · spec_example.py
 ├── scripts/                        # 저장소 수준 검증 스크립트 + 테스트 fixtures
 ├── docs/                           # 환경별 한글 가이드 + samples/ 예제 다이어그램
 └── install.sh                      # claude-code · kiro · fonts 설치

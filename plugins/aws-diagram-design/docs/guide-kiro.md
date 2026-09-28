@@ -40,7 +40,7 @@ Powers 패널 → Add Custom Power → Import power from a folder → `/path/to/
 
 - 기본 에이전트(IDE 채팅, `kiro-cli chat`)는 스킬을 자동 발견한다. "AWS 아키텍처 다이어그램 그려줘" 같은 요청이면 description 매칭으로 활성화된다.
 - 명시 호출: `/aws-diagram-design` (CLI 2.1 이상에서 스킬이 슬래시 커맨드로 노출된다).
-- Claude Code용 슬래시 커맨드(`commands/`)는 Kiro가 읽지 않는다. draw.io·Mermaid 임포트와 내보내기는 자연어로 요청하면 스킬 본문의 라우팅이 처리한다. 예: "이 diagram.drawio를 슬라이드용으로 다시 그려줘", "방금 만든 HTML을 PNG로 내보내줘".
+- Claude Code용 슬래시 커맨드(`commands/`)는 Kiro가 읽지 않는다. draw.io·Mermaid 임포트와 내보내기는 자연어로 요청하면 스킬 본문의 라우팅이 처리한다. 예: "이 diagram.drawio를 슬라이드용으로 다시 그려줘", "방금 만든 SVG를 PNG로 다시 뽑아줘".
 
 ### 커스텀 에이전트 주의
 
@@ -61,7 +61,7 @@ Kiro 에이전트는 셸 실행이 가능하므로 Claude Code와 동일하게 �
 
 ```bash
 pip install playwright && playwright install chromium   # PNG/SVG 내보내기 사전 준비 (1회)
-python3 <스킬 경로>/scripts/self_check.py <생성된.html>  # 산출물 자체 점검
+python3 <스킬 경로>/scripts/finalize.py <생성된.svg>  # 점검 + 폰트 내장 + PNG
 ```
 
 `drawio_extract.py`, `mermaid_extract.py`도 스킬 폴더에 함께 설치되므로 임포트 시 에이전트가 직접 실행한다.

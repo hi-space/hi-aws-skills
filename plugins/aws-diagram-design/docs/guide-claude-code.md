@@ -47,11 +47,11 @@ AWS 서비스를 지명하면 공식 아이콘이 자동으로 들어가고, VPC
 
 | 커맨드 | 역할 |
 |--------|------|
-| `/aws-diagram-design:export-diagram <html> [--svg-only\|--png-only] [--scale=N] [--output=<path>]` | 생성된 HTML을 .svg/.png로 내보내기 |
+| `/aws-diagram-design:export-diagram <svg\|html> [--scale=N] [--png-dir=<dir>]` | SVG를 PNG로 렌더, 1.x HTML은 SVG+PNG로 변환 |
 | `/aws-diagram-design:import-drawio <file.drawio>` | draw.io 원본을 에디토리얼 스타일로 다시 그리기 |
 | `/aws-diagram-design:import-mermaid <file.mmd>` | Mermaid 원본을 다시 그리기 |
 
-임포트 커맨드 둘은 `--format=html|svg|png|html+png`, `--size=<프리셋>`, `--detail=faithful|balanced|simplified`, `--audience=engineer|mixed|executive`, `--variant=light|dark|full`, `--output=<경로>`, 페이지 선택(`--page`/`--diagram`)까지 받는다. 전체 시그니처의 기준은 각 `commands/*.md`의 argument-hint다.
+임포트 커맨드 둘은 `--format=svg+png|svg|png`, `--size=<프리셋>`, `--detail=faithful|balanced|simplified`, `--audience=engineer|mixed|executive`, `--variant=light|dark|terminal`, `--output=<경로>`, 페이지 선택(`--page`/`--diagram`)까지 받는다. 전체 시그니처의 기준은 각 `commands/*.md`의 argument-hint다.
 
 ### PNG/SVG 내보내기 사전 준비
 
@@ -66,8 +66,7 @@ pip install playwright && playwright install chromium
 여러 장을 한 스타일로, 한국어·영어 판을 같은 레이아웃으로 뽑을 때는 `skills/aws-diagram-design/scripts/pygen/` 을 쓴다. "docs/diagrams 의 mermaid 를 이 스타일 PNG 로 바꿔줘", "모듈별 구성도를 ko/en 으로 만들어줘" 같은 요청에서 스킬이 §13 을 따라 이 경로를 택한다.
 
 ```bash
-python3 <skill-dir>/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out
-python3 <skill-dir>/scripts/pygen/export.py docs/diagrams/out --png-dir static/images/diagrams
+python3 <skill-dir>/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out --png --png-dir static/images/diagrams   # spec_*.py → SVG (ko/en) + PNG @2x
 ```
 
 ## 산출물 검증
@@ -75,12 +74,11 @@ python3 <skill-dir>/scripts/pygen/export.py docs/diagrams/out --png-dir static/i
 저장소를 체크아웃한 상태라면 생성된 다이어그램을 스크립트로 검증할 수 있다:
 
 ```bash
-python3 skills/aws-diagram-design/scripts/self_check.py <생성된.html>   # 접근성·단일 파일 계약
-python3 scripts/verify-geometry.py <생성된.html>                        # 라벨 마스크-노드 겹침
-python3 scripts/verify-motion.py <생성된.html>                          # 모션 사용 시
+python3 skills/aws-diagram-design/scripts/finalize.py <생성된.svg> --check-only   # 접근성·단일 파일·라벨 기하 계약
+python3 scripts/verify-motion.py <모션.html>                                    # 모션 사용 시
 ```
 
-설치된 스킬로 쓸 때도 `self_check.py`는 스킬 디렉터리에 함께 배포되므로 그대로 실행된다.
+설치된 스킬로 쓸 때도 `finalize.py`는 스킬 디렉터리에 함께 배포되므로 그대로 실행된다.
 
 ## 폰트
 

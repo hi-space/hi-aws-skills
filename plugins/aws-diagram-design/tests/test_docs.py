@@ -56,3 +56,29 @@ def test_skill_md_describes_svg_first():
 def test_python_generator_doc_uses_build_png():
     text = read(REFS / "python-generator.md")
     assert "--png" in text and "export.py" not in text and "html()" not in text
+
+
+import json
+
+
+def test_manifests_at_2_0_0():
+    for p in (PLUGIN / "plugin.json", PLUGIN / ".claude-plugin" / "plugin.json"):
+        data = json.loads(read(p))
+        assert data["version"] == "2.0.0", p
+        assert "HTML" not in data["description"], p
+
+
+def test_samples_are_svg_png_pairs():
+    samples = PLUGIN / "docs" / "samples"
+    assert not list(samples.glob("*.html"))
+    svgs = sorted(p.stem for p in samples.glob("*.svg"))
+    assert svgs == sorted(p.stem for p in samples.glob("*.png")) and len(svgs) == 5
+    for p in samples.glob("*.svg"):
+        assert "base64," in read(p), p.name  # README samples are deliverables: fonts embedded
+
+
+def test_readmes_do_not_point_at_html():
+    for name in ("README.md", "README.en.md"):
+        text = read(PLUGIN / name)
+        assert "samples/" in text and not re.search(r"samples/[\w-]+\.html", text), name
+        assert "export-diagram my-diagram.svg" in text, name
