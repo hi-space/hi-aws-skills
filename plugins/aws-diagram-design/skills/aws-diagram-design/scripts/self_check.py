@@ -290,6 +290,8 @@ def verify_svg(path: Path) -> list[str]:
     import xml.etree.ElementTree as ET
 
     source = path.read_text(encoding="utf-8")
+    if not source.lstrip().startswith("<?xml "):
+        return ['file must start with <?xml version="1.0" encoding="UTF-8"?>']
     if re.search(r"<!DOCTYPE|<!ENTITY", source, re.I):
         # stdlib expat would expand entities; a deliverable SVG has no reason to declare any
         return ["DOCTYPE/ENTITY declarations are not allowed in a deliverable SVG"]

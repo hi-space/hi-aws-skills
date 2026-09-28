@@ -73,6 +73,12 @@ def test_doctype_is_rejected_before_parsing(tmp_path):
     assert len(errors) == 1 and "DOCTYPE" in errors[0]
 
 
+def test_missing_xml_declaration_fails(tmp_path):
+    bad = GOOD_SVG.split("\n", 1)[1]  # drop the <?xml ...?> line
+    errors = sc.verify(write(tmp_path, bad))
+    assert errors == ['file must start with <?xml version="1.0" encoding="UTF-8"?>']
+
+
 def test_html_path_still_works(skill_dir):
     # motion template is HTML and must keep passing through the old parser
     assert sc.verify(skill_dir / "assets" / "template-motion.html") == []
