@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial HTML/SVG/PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders, plus the aws-blog-review pre-submission review skill), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills), plus demo-video-recorder (demo/LinkedIn videos of a web UI with Playwright and ffmpeg: in-page camera, story-scripted captions, highlight reels)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial SVG + PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders, plus the aws-blog-review pre-submission review skill), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills), plus demo-video-recorder (demo/LinkedIn videos of a web UI with Playwright and ffmpeg: in-page camera, story-scripted captions, highlight reels)."
   },
   "owner": {
     "name": "hi-space"
@@ -10,7 +10,7 @@
     {
       "name": "aws-diagram-design",
       "source": "./plugins/aws-diagram-design",
-      "description": "AWS-branded editorial diagrams (27 types) as HTML/SVG/PNG with official AWS Architecture Icons and Amazon Ember; draw.io and Mermaid import; Python generator for ko/en PNG sets."
+      "description": "AWS-branded editorial diagrams (27 types) as SVG + PNG with official AWS Architecture Icons and Amazon Ember; draw.io and Mermaid import; Python generator for ko/en PNG sets."
     },
     {
       "name": "aws-drawio-diagram",

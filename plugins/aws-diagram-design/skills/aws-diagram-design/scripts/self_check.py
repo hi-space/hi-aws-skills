@@ -269,6 +269,7 @@ def check_scripts(parser: DiagramParser, errors: list[str]) -> None:
 SVG_NS = "http://www.w3.org/2000/svg"
 XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
 URL_RE = re.compile(r"url\(\s*['\"]?([^'\")]+)")
+IMPORT_RE = re.compile(r"@import\s+['\"]([^'\"]+)", re.I)
 FORBIDDEN_SVG_ELEMENTS = {"script", "foreignObject", "iframe", "embed", "object"}
 
 
@@ -295,6 +296,9 @@ def verify_svg(path: Path) -> list[str]:
     if re.search(r"<!DOCTYPE|<!ENTITY", source, re.I):
         # stdlib expat would expand entities; a deliverable SVG has no reason to declare any
         return ["DOCTYPE/ENTITY declarations are not allowed in a deliverable SVG"]
+    if re.search(r"<\?xml-stylesheet", source, re.I):
+        # expat drops top-level processing instructions, so the parser never sees this
+        return ["<?xml-stylesheet processing instructions are not allowed in a deliverable SVG"]
     try:
         root = ET.fromstring(source)
     except ET.ParseError as exc:
@@ -332,14 +336,17 @@ def verify_svg(path: Path) -> list[str]:
                 finding = _svg_reference_error(f"<{name} href>", value)
                 if finding:
                     errors.append(finding)
-            if key == "style":
-                for url in URL_RE.findall(value):
-                    finding = _svg_reference_error(f"<{name} style>", url)
-                    if finding:
-                        errors.append(finding)
+            for url in URL_RE.findall(value):
+                finding = _svg_reference_error(f"<{name} {_local(key)}>", url)
+                if finding:
+                    errors.append(finding)
         if name == "style" and el.text:
             for url in URL_RE.findall(el.text):
                 finding = _svg_reference_error("<style>", url)
+                if finding:
+                    errors.append(finding)
+            for imported in IMPORT_RE.findall(el.text):
+                finding = _svg_reference_error("<style> @import", imported)
                 if finding:
                     errors.append(finding)
     return errors

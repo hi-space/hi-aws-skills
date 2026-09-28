@@ -190,14 +190,14 @@ Type-specific anti-patterns live in each `references/type-*.md`.
 
 ### Typography (summary — full spec in style-guide.md)
 
-- **Title** — Amazon Ember, 1.75rem, 700 — H1 only
+- **Title** — Amazon Ember, 1.75rem, 700
 - **Node name** — Amazon Ember, 12px, 600 — human-readable labels
 - **Sublabel** — Amazon Ember Mono, 9px — ports, URLs, field types
 - **Eyebrow / tag** — Amazon Ember Mono, 7–8px, uppercase, tracked — type tags, axis labels
 - **Arrow label** — Amazon Ember Mono, 8px — annotation on arrows
 - **Editorial aside** — Amazon Ember *italic*, 14px — callouts only
 
-**Mono is for technical content.** Names, titles, and callouts are Amazon Ember; sublabels, eyebrows, and arrow labels are **Amazon Ember Mono** — the entire type system is one brand family. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — include the `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) in generated HTML (`local()` first, so installed copies win), or install the TTFs once via `./install.sh fonts`. Always ship the fallback stacks; no external font CDN is referenced:
+**Mono is for technical content.** Names, titles, and callouts are Amazon Ember; sublabels, eyebrows, and arrow labels are **Amazon Ember Mono** — the entire type system is one brand family. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — templates already carry the `local()`-only `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) (installed copies win, no path to a font file), and `finalize.py` embeds the used faces as data URIs for the deliverable. Never add `url()` sources to an SVG — the self-check rejects any external reference. Always ship the fallback stacks; no external font CDN is referenced:
 
 ```html
 <!-- sans: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif -->
@@ -478,7 +478,7 @@ Every diagram ships in three variants (see `assets/`):
 
 | Variant | File pattern | When to use |
 |---|---|---|
-| **Minimal light** (default) | `template.svg`, `example-<type>.svg` | Screenshot-ready. Diagram + title. Warm paper. |
+| **Minimal light** (default) | `template.svg`, `example-<type>.svg` | Screenshot-ready. White paper, squid-ink type. |
 | **Minimal dark** | `template-dark.svg`, `example-<type>-dark.svg` | Dark mode sites, slides, high-contrast posts. |
 | **Consultant special** (quadrant only) | `example-quadrant-consultant.svg` | BCG/McKinsey-style 2×2 scenario matrix. Clinical sans-serif, white bg, bold blue double-ended axes, named scenario cells. See [type-quadrant.md](references/type-quadrant.md#consultant-special-2x2-scenario-matrix). |
 
@@ -546,13 +546,13 @@ Every diagram is an accessible figure by default:
 1. Its `<svg>` carries `role="img"` and `aria-labelledby` naming the diagram's `<title>` and `<desc>`.
 2. `<title>` is the first child of `<svg>`, before `<defs>`. Assistive technology may ignore a title placed later.
 3. The IDs are prefixed per diagram and variant: `<slug>-title` / `<slug>-desc`, where the slug matches the file (`loop`, `loop-dark`, `loop-terminal`). Bare `title` / `desc` IDs are banned because two inline diagrams would create duplicate IDs and the second could be announced with the first diagram's name.
-4. `<title>` is the short name of the subject — roughly the page `<h1>`, and about 60 characters or fewer.
+4. `<title>` is the diagram's short name, about 60 characters or fewer.
 5. `<desc>` is one sentence stating what the diagram shows in terms a reader needs without the image. Describe the content, not the geometry: “Org chart showing a command center routing work to specialist agents and escalation owners,” not “A box at the top with five boxes below it.” A shape-by-shape narration is worse than no useful description.
 6. Decorative-only SVG, such as the specimen glyphs in `assets/icons.html`, carries `aria-hidden="true"` instead. Giving decorative marks accessible names adds noise.
 
 ### Re-export — Re-running `finalize.py` on a finished `.svg` is idempotent and rewrites the PNG; `/aws-diagram-design:export-diagram` wraps it and also handles 1.x `.html` files via `html_to_svg.py` (see [export.md](references/export.md)).
 
-For an imported diagram, pixel dimensions come from the `viewBox` × scale factor, so its size decision belongs to §11, not to export. For any diagram that needs an exact frame (an OG card or a 1920×1080 slide image), see [`export.md` § Sizing the export](references/export.md).
+For an imported diagram, pixel dimensions come from the `viewBox` × scale factor, so its size decision belongs to §11, not to export. For any diagram that needs an exact frame (an OG card or a 1920×1080 slide image), see [`export.md` § Sizing](references/export.md).
 
 ---
 

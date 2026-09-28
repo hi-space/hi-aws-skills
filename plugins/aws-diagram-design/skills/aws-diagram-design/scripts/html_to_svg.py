@@ -12,6 +12,7 @@ embed fonts, and render PNG.
 from __future__ import annotations
 
 import argparse
+import html.entities
 import re
 import sys
 from pathlib import Path
@@ -26,6 +27,39 @@ FOREIGN_RE = re.compile(
     r'<div[^>]*class="(?P<cls>[^"]*)"[^>]*>(?P<text>.*?)</div>\s*</foreignObject>',
     re.S,
 )
+XML_ENTITY_NAMES = {"amp", "lt", "gt", "quot", "apos"}
+NAMED_ENTITY_RE = re.compile(r"&([A-Za-z][A-Za-z0-9]*);")
+BR_RE = re.compile(r"<br\s*/?>", re.I)
+TEXT_ELEMENT_RE = re.compile(r"(<text\b[^>]*>)(.*?)(</text>)", re.S)
+
+
+def _map_named_entities(svg: str) -> str:
+    """HTML named entities (&rarr;, &nbsp;, …) are not legal XML; map them to numeric refs.
+
+    The five XML-predefined names (amp lt gt quot apos) are left untouched. Unknown names are
+    left as-is — the downstream well-formedness check will flag them with a clear position.
+    """
+
+    def sub(m: re.Match) -> str:
+        name = m.group(1)
+        if name in XML_ENTITY_NAMES:
+            return m.group(0)
+        codepoint = html.entities.name2codepoint.get(name)
+        if codepoint is None:
+            return m.group(0)
+        return f"&#{codepoint};"
+
+    return NAMED_ENTITY_RE.sub(sub, svg)
+
+
+def _replace_br_in_text(svg: str) -> str:
+    """<br> has no meaning in SVG <text>; splitting into <tspan>s is out of scope, so join with a space."""
+
+    def sub(m: re.Match) -> str:
+        opening, body, closing = m.group(1), m.group(2), m.group(3)
+        return opening + BR_RE.sub(" ", body) + closing
+
+    return TEXT_ELEMENT_RE.sub(sub, svg)
 
 
 def extract_svg(html_text: str) -> str:
@@ -113,6 +147,8 @@ def replace_foreign_objects(svg: str) -> str:
 
 def convert(html_text: str, *, font_face: bool = True) -> str:
     svg = replace_foreign_objects(extract_svg(html_text))
+    svg = _replace_br_in_text(svg)
+    svg = _map_named_entities(svg)
     page_css = "\n".join(re.findall(r"<style[^>]*>(.*?)</style>", html_text, re.S))
     css = relevant_css(page_css, svg)
     block = "\n".join(part for part in ((finalize.LOCAL_FONT_FACE_CSS if font_face else ""), css) if part)

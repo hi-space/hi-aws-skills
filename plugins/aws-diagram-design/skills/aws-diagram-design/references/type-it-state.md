@@ -395,8 +395,6 @@ Before emitting SVG, verify **every** item:
 
 - `assets/example-it-state.svg` — minimal light (NatStat canonical: 3 zones, 9 components, 8 connectors, 0 footer bars, SQL Server tinted olive). Gallery default.
 - `assets/example-it-state-dark.svg` — same, dark skin.
-- `assets/example-it-state-extended.svg` — exercises §4 color override + footer bars: 2 footer bars (Identity Manager + Observability) below the zones, third custom color on Analyst Machines (slate-blue, data-quality concern).
-- `assets/example-it-state-extended-dark.svg` — extended pattern, dark skin.
 
 ---
 
@@ -465,5 +463,3 @@ dark: false
 - Entering a **BOTTOM edge going UP** (box above) → body below box, ~7 px visible. ✓
 
 When the source row matches the destination row's y range (e.g., Survey at y=108 with Shared Drive at y=80–148), prefer **side-edge** entry — a single horizontal path with a fully visible arrow. When the source row is offset, detour through the destination's nearest zone background to enter a side edge rather than approaching a top/bottom edge from the wrong side.
-
-The extended example (§9 line 4) demonstrates footer bars + a third custom color and proves `viewBox_h` grows correctly when `N_footer > 0`.

@@ -82,3 +82,12 @@ def test_readmes_do_not_point_at_html():
         text = read(PLUGIN / name)
         assert "samples/" in text and not re.search(r"samples/[\w-]+\.html", text), name
         assert "export-diagram my-diagram.svg" in text, name
+
+
+def test_every_example_named_in_references_exists():
+    assets = SKILL / "assets"
+    docs = list(REFS.glob("*.md")) + [SKILL / "SKILL.md"]
+    for p in docs:
+        text = read(p)
+        for name in re.findall(r"example-[\w-]+\.svg", text):
+            assert (assets / name).exists(), f"{p.name} names {name}, which does not exist under assets/"

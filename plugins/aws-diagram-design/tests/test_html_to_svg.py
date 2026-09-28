@@ -64,6 +64,26 @@ def test_convert_keeps_nested_svg_icons(tmp_path):
     assert out.read_text(encoding="utf-8").count("<svg") == 2
 
 
+def test_convert_maps_html_named_entities_to_numeric(tmp_path):
+    page = PAGE.replace(">Client<", ">Amazon S3 &rarr; Glue &amp; Athena<")
+    out = tmp_path / "x.svg"
+    out.write_text(h2s.convert(page), encoding="utf-8")
+    text = out.read_text(encoding="utf-8")
+    assert "&#8594;" in text
+    assert "&amp;" in text and "&rarr;" not in text
+    assert sc.verify(out) == []
+
+
+def test_convert_replaces_br_in_text(tmp_path):
+    page = PAGE.replace(">Client<", ">Amazon S3<br>Glue<br/>Athena<br />Redshift<")
+    out = tmp_path / "x.svg"
+    out.write_text(h2s.convert(page), encoding="utf-8")
+    text = out.read_text(encoding="utf-8")
+    assert "<br" not in text
+    assert "Amazon S3 Glue Athena Redshift" in text
+    assert sc.verify(out) == []
+
+
 def test_cli_writes_next_to_source_and_deletes(tmp_path):
     src = tmp_path / "page.html"
     src.write_text(PAGE, encoding="utf-8")

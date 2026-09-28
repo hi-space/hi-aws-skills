@@ -82,3 +82,41 @@ def test_missing_xml_declaration_fails(tmp_path):
 def test_html_path_still_works(skill_dir):
     # motion template is HTML and must keep passing through the old parser
     assert sc.verify(skill_dir / "assets" / "template-motion.html") == []
+
+
+def test_external_url_in_presentation_attribute_fails(tmp_path):
+    bad = GOOD_SVG.replace(
+        'marker-end="url(#arrow)"', 'fill="url(https://evil.example/p.svg#g)" marker-end="url(https://evil.example/m.svg#a)"'
+    )
+    errors = sc.verify(write(tmp_path, bad))
+    assert any("external" in e for e in errors)
+
+
+def test_css_import_without_url_fails(tmp_path):
+    bad = GOOD_SVG.replace("<defs>", "<defs><style>@import 'https://evil.example/x.css';</style>")
+    errors = sc.verify(write(tmp_path, bad))
+    assert any("external" in e for e in errors)
+
+
+def test_xml_stylesheet_pi_fails(tmp_path):
+    bad = GOOD_SVG.replace(
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<?xml version="1.0" encoding="UTF-8"?>\n<?xml-stylesheet href="https://evil.example/x.css"?>',
+    )
+    errors = sc.verify(write(tmp_path, bad))
+    assert len(errors) == 1 and "xml-stylesheet" in errors[0]
+
+
+def test_missing_viewbox_fails(tmp_path):
+    bad = GOOD_SVG.replace(' viewBox="0 0 400 200"', "")
+    assert any("viewBox" in e for e in sc.verify(write(tmp_path, bad)))
+
+
+def test_missing_role_fails(tmp_path):
+    bad = GOOD_SVG.replace(' role="img"', "")
+    assert any("role" in e for e in sc.verify(write(tmp_path, bad)))
+
+
+def test_aria_labelledby_order_fails(tmp_path):
+    bad = GOOD_SVG.replace('aria-labelledby="demo-title demo-desc"', 'aria-labelledby="demo-desc demo-title"')
+    assert any("aria-labelledby" in e for e in sc.verify(write(tmp_path, bad)))

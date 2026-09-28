@@ -131,9 +131,14 @@ def inject_style(svg_text: str, css: str, marker: str) -> str:
     return svg_text[: m.end()] + f"\n  <defs>\n    <style>\n{block}\n    </style>\n  </defs>" + svg_text[m.end() :]
 
 
+EMPTY_MARKER_PAIR_RE = re.compile(r"\s*/\* ([\w-]+) \*/\s*/\* /\1 \*/")
+
+
 def embed_fonts(svg_text: str) -> str:
     stripped = FONT_FACE_RULE_RE.sub("", svg_text)
-    stripped = re.sub(r"\s*/\* fonts \*/\s*/\* /fonts \*/", "", stripped)  # empty marker left by templates
+    # templates carry empty marker pairs (e.g. "/* page-css */\n\n/* /page-css */") once their
+    # content is stripped or was never filled in; drop any marker pair whose body is whitespace-only
+    stripped = EMPTY_MARKER_PAIR_RE.sub("", stripped)
     return inject_style(stripped, font_face_css(used_faces(stripped), embed=True), FONT_MARKER)
 
 
@@ -177,7 +182,14 @@ def render_png(svg_text: str, out: Path, scale: float) -> bool:
     w, h = viewbox(svg_text)
     out.parent.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as pw:
-        browser = pw.chromium.launch()
+        try:
+            browser = pw.chromium.launch()
+        except Exception as exc:
+            print(
+                f"Chromium is not available ({type(exc).__name__}); SVG is finished, PNG skipped. Run:\n  playwright install chromium",
+                file=sys.stderr,
+            )
+            return False
         page = browser.new_page(device_scale_factor=scale, viewport={"width": int(w) + 16, "height": int(h) + 16})
         page.set_content(html_shell(svg_text, w, h), wait_until="load")
         try:

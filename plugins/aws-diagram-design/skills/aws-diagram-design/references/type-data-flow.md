@@ -373,5 +373,3 @@ Above 4 lanes or 6 steps: split into two diagrams (e.g., ingestion pipeline / an
 
 - `assets/example-data-flow.svg` — minimal light (the platform, 4-role × 5-step: Admin, Engineers, Scientists, Consumers). Gallery default.
 - `assets/example-data-flow-dark.svg` — same, dark skin.
-- `assets/example-data-flow-extended.svg` — exercises §4 color override: Access Control node in rust-red (governance), Clean & Stage node in slate-blue (data quality). Focal accent on Analyze step + Explore & Model node + anon-data arrow unchanged.
-- `assets/example-data-flow-extended-dark.svg` — extended pattern, dark skin.

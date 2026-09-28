@@ -51,6 +51,7 @@ def test_embed_replaces_local_only_font_face():
     out = fz.embed_fonts(svg)
     assert out.count("font-family: 'Amazon Ember';") + out.count("font-family:'Amazon Ember';") == 2  # 400 + 600, nothing else
     assert "url(data:" in out and "/* fonts */" not in out
+    assert "/* page-css */" not in fz.embed_fonts(fz.inject_style(GOOD_SVG, fz.LOCAL_FONT_FACE_CSS, "page-css"))
 
 
 def test_embed_without_defs_creates_one_after_desc():
@@ -158,3 +159,27 @@ def test_missing_playwright_keeps_svg(good_svg, monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake)
     assert fz.render_png(GOOD_SVG, good_svg.with_suffix(".png"), 2.0) is False
     assert not good_svg.with_suffix(".png").exists()
+
+
+def test_missing_chromium_keeps_svg_and_exits_zero(good_svg, monkeypatch, capsys):
+    pytest.importorskip("playwright")
+
+    class FakeChromium:
+        def launch(self, *a, **k):
+            raise RuntimeError("Executable doesn't exist")
+
+    class FakePlaywright:
+        chromium = FakeChromium()
+
+    class FakeContext:
+        def __enter__(self):
+            return FakePlaywright()
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setattr("playwright.sync_api.sync_playwright", lambda: FakeContext())
+    assert fz.render_png(GOOD_SVG, good_svg.with_suffix(".png"), 2.0) is False
+    assert not good_svg.with_suffix(".png").exists()
+    err = capsys.readouterr().err
+    assert "playwright install chromium" in err
