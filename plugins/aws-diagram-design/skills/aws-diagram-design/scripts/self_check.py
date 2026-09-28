@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Self-check a generated diagram HTML file, with no third-party deps.
+"""Self-check a generated diagram file — standalone .svg (default deliverable) or motion .html — with no third-party deps.
 
 Ships inside the skill so an installed agent can verify its own output:
 
-    python3 <skill-dir>/scripts/self_check.py my-diagram.html
+    python3 <skill-dir>/scripts/self_check.py my-diagram.svg
 
 Checks the accessible-SVG contract, the single-file safety rules (no remote
 assets beyond the approved Google Fonts stylesheet, no executable attributes,
@@ -266,6 +266,83 @@ def check_scripts(parser: DiagramParser, errors: list[str]) -> None:
             errors.append(str(exc))
 
 
+SVG_NS = "http://www.w3.org/2000/svg"
+XLINK_HREF = "{http://www.w3.org/1999/xlink}href"
+URL_RE = re.compile(r"url\(\s*['\"]?([^'\")]+)")
+FORBIDDEN_SVG_ELEMENTS = {"script", "foreignObject", "iframe", "embed", "object"}
+
+
+def _local(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def _svg_reference_error(where: str, value: str) -> str | None:
+    stripped = value.strip()
+    if not stripped or stripped.startswith("#"):
+        return None
+    if stripped.casefold().startswith(("data:font/", "data:image/", "data:application/font")):
+        return None
+    return f"external reference in {where}: {stripped[:80]}"
+
+
+def verify_svg(path: Path) -> list[str]:
+    """Contract for a standalone deliverable SVG (spec §3.1, §4 step 1)."""
+    import xml.etree.ElementTree as ET
+
+    source = path.read_text(encoding="utf-8")
+    if re.search(r"<!DOCTYPE|<!ENTITY", source, re.I):
+        # stdlib expat would expand entities; a deliverable SVG has no reason to declare any
+        return ["DOCTYPE/ENTITY declarations are not allowed in a deliverable SVG"]
+    try:
+        root = ET.fromstring(source)
+    except ET.ParseError as exc:
+        return [f"not well-formed XML: {exc} (standalone SVG is strict — escape & as &amp;)"]
+    errors: list[str] = []
+    if root.tag != f"{{{SVG_NS}}}svg":
+        errors.append('root must be <svg xmlns="http://www.w3.org/2000/svg"> (missing xmlns or not an svg)')
+        return errors
+    if not root.get("viewBox"):
+        errors.append("svg needs a viewBox")
+    if root.get("role") != "img":
+        errors.append("svg needs role=img")
+    children = list(root)
+    first = _local(children[0].tag) if children else ""
+    if first != "title":
+        errors.append("svg title must be its first child")
+    title = next((c for c in children if _local(c.tag) == "title"), None)
+    desc = next((c for c in children if _local(c.tag) == "desc"), None)
+    if title is None or desc is None or not (title.text or "").strip() or not (desc.text or "").strip():
+        errors.append("svg needs non-empty title and desc")
+    title_id = title.get("id", "") if title is not None else ""
+    desc_id = desc.get("id", "") if desc is not None else ""
+    if title_id in {"", "title"} or desc_id in {"", "desc"}:
+        errors.append("svg title/desc IDs must be diagram-prefixed, never bare")
+    if root.get("aria-labelledby", "").split() != [title_id, desc_id]:
+        errors.append("svg aria-labelledby must name title then desc")
+    for el in root.iter():
+        name = _local(el.tag)
+        if name in FORBIDDEN_SVG_ELEMENTS:
+            errors.append(f"<{name}> is not allowed in a deliverable SVG")
+        for key, value in el.attrib.items():
+            if _local(key).casefold().startswith("on"):
+                errors.append(f"executable attribute {_local(key)} on <{name}>")
+            if key in {"href", XLINK_HREF}:
+                finding = _svg_reference_error(f"<{name} href>", value)
+                if finding:
+                    errors.append(finding)
+            if key == "style":
+                for url in URL_RE.findall(value):
+                    finding = _svg_reference_error(f"<{name} style>", url)
+                    if finding:
+                        errors.append(finding)
+        if name == "style" and el.text:
+            for url in URL_RE.findall(el.text):
+                finding = _svg_reference_error("<style>", url)
+                if finding:
+                    errors.append(finding)
+    return errors
+
+
 def check_motion(parser: DiagramParser, source: str, errors: list[str]) -> None:
     has_motion_markup = bool(parser.roots or parser.items or parser.scripts)
     if not has_motion_markup:
@@ -351,6 +428,8 @@ def check_motion(parser: DiagramParser, source: str, errors: list[str]) -> None:
 
 
 def verify(path: Path) -> list[str]:
+    if path.suffix.casefold() == ".svg":
+        return verify_svg(path)
     source = path.read_text(encoding="utf-8")
     parser = parsed_document(source)
     errors: list[str] = []
