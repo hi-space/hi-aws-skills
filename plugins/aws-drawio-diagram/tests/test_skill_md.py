@@ -138,7 +138,7 @@ def test_filled_cards_and_service_boundaries_are_documented():
     review = (SKILL / "references" / "review-checklist.md").read_text()
     assert "fillColor=#F1F3F6" in style and "strokeColor=#AEB6C2" in style and "dashed=0" in style
     assert "224" in style and "142" in style and "GROUP_BELOW_PAD" in style and "ROW_CLEAR" in style
-    assert "17 characters" in style and "fontSize=15" in style and "fontSize=13" in style   # node/group titles; edge text
+    assert "17 characters" in style and "fontSize=15" in style and "fontSize=14" in style   # card titles; node labels and edge text
     assert "__title" in style and "LABEL_BORDER_SLACK_PX" in style
     assert "bedrock_agentcore" in style and "sagemaker_2" in style and "bedrock_agentcore" in brief   # four distinct services
     assert "Service boundaries" in style and "BOUNDARY_ABOVE" in style and "awsBadge" in style
@@ -150,6 +150,6 @@ def test_filled_cards_and_service_boundaries_are_documented():
 def test_no_stale_grid_numbers_in_docs():
     style = (SKILL / "references" / "layout-and-style.md").read_text()
     tpl = (SKILL / "templates" / "README.md").read_text()
-    for stale in ("240 px", "170 px", "240 × 170", "fontSize=11;", "13 bold", "22 characters", "1.282", "1.513", "dashed=1;fontColor"):
+    for stale in ("240 px", "170 px", "240 × 170", "fontSize=11;", "13 bold", "22 characters", "1.308", "1.564", "dashed=1;fontColor"):
         assert stale not in style, stale
     assert "240 × 170" not in tpl and "224 × 142" in tpl

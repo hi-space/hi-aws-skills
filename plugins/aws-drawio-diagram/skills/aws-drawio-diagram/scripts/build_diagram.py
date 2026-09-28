@@ -85,15 +85,15 @@ ROW_CLEAR = 36                                           # px between two cards 
 CLOUD_PAD = 28
 OUTSIDE_GAP = 44                                         # px: users / on-prem sit this much further from the cloud than the grid says,
                                                          # so the edge into the cloud has a 121 px pocket for its text (14 characters)
-# Edge text (the brief's *What flows* phrase): 13 pt, 7.2 px per character + 2 × 6 px padding, EDGE_LINE_H px per
+# Edge text (the brief's *What flows* phrase): 14 pt, 7.2 px per character + 2 × 6 px padding, EDGE_LINE_H px per
 # line, at most LABEL_MAX_LINES lines of LABEL_MAX_LINE_CHARS characters; the builder slides it along the edge in
 # 1/20 steps and keeps LABEL_SLACK_PX / 2 from icons, other labels and lines, LABEL_BORDER_SLACK_PX / 2 from borders. Keep in step with validate_drawio.
 LABEL_CHAR_PX, LABEL_PAD_PX, LABEL_SLACK_PX = 7.2, 6, 4
 LABEL_BORDER_SLACK_PX = 8                                # px: an edge label keeps 4 px (half of this) from every card / cloud border and title band
-EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 16, 3, 20
+EDGE_LINE_H, LABEL_MAX_LINES, LABEL_MAX_LINE_CHARS = 17, 3, 20
 LABEL_SIDE_GAP = 4                                       # px between a vertical line and the text beside it (spacingRight/Left)
 TITLE_BAND = 32                                          # px: a container's title row (15 pt bold + spacingTop) — no edge label sits on it (validate_drawio)
-LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 20, 4, 17       # node label: px per line, gap under the icon, chars per line (17 × ~7.7 px fits a 160 px card)
+LABEL_LINE_H, LABEL_TOP_PAD, LABEL_WRAP = 18, 4, 17       # node label (14 pt bold): px per line, gap under the icon, chars per line (17 × ~7.3 px fits a 160 px card)
 TITLE_Y = 32
 LEGEND_W = 300
 MARGIN = 80
@@ -196,7 +196,7 @@ def text_px(text: str, size: int) -> float:
 
 
 def chars_that_fit(px: float) -> int:
-    """Characters of 13 pt edge text that fit in `px` pixels with the label's padding and the border slack."""
+    """Characters of 14 pt edge text that fit in `px` pixels with the label's padding and the border slack."""
     return max(0, int((px - 2 * LABEL_PAD_PX - LABEL_BORDER_SLACK_PX) // LABEL_CHAR_PX))
 
 
@@ -687,7 +687,7 @@ class Builder:
         # the label background matches what it sits on — the group's fill inside a group (a boundary has none), the
         # canvas outside — so it hides nothing unless a line strays under it (which the port ratios prevent)
         label = f"{LABEL_STYLE}labelBackgroundColor={GROUP_FILL if n.get('group') else '#FFFFFF'};"
-        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=15;fontStyle=1;"
+        base = (f"sketch=0;{PTS}outlineConnect=0;fontColor=#232F3E;dashed=0;html=1;fontSize=14;fontStyle=1;"
                 f"fontFamily={self.font};aspect=fixed;{label}")
         if "icon" in n:
             st = self.index[n["icon"]]
@@ -698,7 +698,7 @@ class Builder:
                 return base + f"fillColor={fill};strokeColor=none;shape=mxgraph.aws4.{n['icon']};"
             raise SpecError(f"node '{n['id']}': '{n['icon']}' is a group badge, not an icon")
         b64 = base64.b64encode((EXTRA_ICONS / n["image"]).read_bytes()).decode()
-        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=15;fontStyle=1;fontFamily={self.font};"
+        return (f"shape=image;aspect=fixed;imageAspect=0;html=1;fontColor=#232F3E;fontSize=14;fontStyle=1;fontFamily={self.font};"
                 f"{label}image=data:image/svg+xml,{b64};")
 
     def build(self) -> str:
@@ -869,7 +869,7 @@ class Builder:
         # junction (lines that touch a node side by side are separate edges — see side_offsets)
         base_edge = (f"edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;"
                      f"jumpStyle=arc;jumpSize={JUMP_SIZE};"
-                     f"fontFamily={font};fontSize=13;fontColor=#232F3E;endArrow=block;endFill=1;")
+                     f"fontFamily={font};fontSize=14;fontColor=#232F3E;endArrow=block;endFill=1;")
         icon_boxes = [(x, y, x + ICON, y + ICON + label_h[nid]) for nid, (x, y) in node_xy.items()] + title_extra
         # then the text — the brief's *What flows* phrase — solid (primary) edges first so they get the room
         placed: dict[str, tuple] = {}

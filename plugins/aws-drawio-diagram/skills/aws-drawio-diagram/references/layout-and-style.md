@@ -17,17 +17,17 @@ grouping and typography rules below replace its sparse 280 px layout.
 |---|---|---|
 | Icon | **78 × 78** | draw.io AWS4 palette default. Never scale icons; scale the canvas instead. |
 | Column pitch | **224 px** | Distance between icon centers on the same lane (146 px clear between icons). |
-| Lane pitch | **142 px** inside a group | 40 px clear between a one-line label and the icon below it. |
+| Lane pitch | **142 px** inside a group | 42 px clear between a one-line label and the icon below it. |
 | Group-row gap | **derived** so cards in adjacent rows are `ROW_CLEAR` = **36 px** apart | The builder adds `below(upper) + 36 + above(lower) − 64` px at every row break (`Builder._row_extra`); 36 px holds a one-line edge label with 4 px to each card. |
 | Group width | **160 px per column**, 64 px gap | Group x = first column center − 80; width = 160 × columns + 64 × (columns − 1). The 64 px seam is where a cross-group edge's text goes (6 characters per line). |
-| Group height | **46 px above** the first icon (**66** when the group draws a service boundary), **tallest last-lane label + 8 px below** | 46 = 32 px title band (`TITLE_BAND`) + `GROUP_ABOVE_PAD` 14; the boundary variant adds its own 32 px title row; below = 32 for one-line labels, 52 for two, 42 when a boundary ends on that lane (`GROUP_BELOW_PAD`, `Builder.group_above` / `group_below`). A node label background therefore never touches the card's bottom border. |
+| Group height | **46 px above** the first icon (**66** when the group draws a service boundary), **tallest last-lane label + 8 px below** | 46 = 32 px title band (`TITLE_BAND`) + `GROUP_ABOVE_PAD` 14; the boundary variant adds its own 32 px title row; below = 30 for one-line labels, 48 for two, 40 when a boundary ends on that lane (`GROUP_BELOW_PAD`, `Builder.group_above` / `group_below`). A node label background therefore never touches the card's bottom border. |
 | Cloud padding | 28 px around the outermost groups | AWS Cloud x = first group x − 28; title row inside it. |
 | Canvas | content + 40–80 px margin, white | Typical 4-column diagram: ~1240 × 960. **Never** a fixed 2400 × 1400 page. |
 
 Column *i* center `x = 130 + 224·i` (column 0 is the outside column for users/clients: `130, 354, 578, 802, …`).
 Lane *j* center `y = 236 + 142·j`, plus the derived row extra for every group-row break above lane *j*. A group-row
 break is a lane where one group ends and another begins (the builder derives it; by hand, compute
-`below + 36 + above − 64` yourself — 50 px for one-line labels and no boundary). Icon top-left = center − 39.
+`below + 36 + above − 64` yourself — 48 px for one-line labels and no boundary). Icon top-left = center − 39.
 
 Children of a group use coordinates **relative to the group**: `child.x = center.x − 39 − group.x`.
 
@@ -156,13 +156,13 @@ where Ember is not allowed — then write `fontFamily=Noto Sans;` instead.
 | Subtitle (author · date · version) | 13 | regular | `#5A6C86` |
 | AWS Cloud / badge group label | 16 | bold | group color |
 | Role group label | 15 | bold | `#232F3E` |
-| Node label | 15 | bold | `#232F3E` |
+| Node label | 14 | bold | `#232F3E` |
 | Service boundary title | 14 | bold | service colour |
-| Edge label | 13 | regular | `#232F3E` |
+| Edge label | 14 | regular | `#232F3E` |
 | Legend | 12 | regular | `#5A6C86` |
 
 Node labels: 1–3 words, sentence case, qualifier in parentheses (`S3 (static site)`, `Bedrock (Claude)`).
-Node labels are bold (`fontSize=15;fontStyle=1`) so the service name reads as fast as the icon; group
+Node labels are bold (`fontSize=14;fontStyle=1`) so the service name reads as fast as the icon; group
 titles share the size and weight, which keeps one visual level for "names" and one for the grey subtitle/legend.
 
 ## 4. Canvas, title, legend
@@ -194,7 +194,7 @@ Legend lines are `shape=line` **vertices**, not edges (edges without source/targ
 Base style for every edge:
 
 ```
-edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;fontFamily=Amazon Ember;fontSize=13;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;
+edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeWidth=2;strokeColor=#232F3E;fontFamily=Amazon Ember;fontSize=14;fontColor=#232F3E;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;
 ```
 
 then the ports for the direction, then `dashed=1;` for async/auxiliary, `dashed=1;strokeColor=#DD344C;` for
@@ -207,7 +207,7 @@ error paths.
 | ↑ up | `exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=B;entryDx=0;entryDy=0;entryPerimeter=0;` |
 | ↓ down | `exitX=0.5;exitY=B;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;` |
 
-`B` is the **under-the-label** port: `(78 + 4 + 20 × lines) / 78` → `1.308` for a one-line label, `1.564` for two
+`B` is the **under-the-label** port: `(78 + 4 + 18 × lines) / 78` → `1.282` for a one-line label, `1.513` for two
 lines. A vertical edge therefore starts or ends below the node's label instead of running through it; the
 arrowhead of an edge arriving from below sits just under the text. `exitPerimeter=0` / `entryPerimeter=0` are
 required, otherwise draw.io snaps the point back onto the icon.
@@ -249,7 +249,7 @@ required, otherwise draw.io snaps the point back onto the icon.
 
 **Edge text.** Every edge shows the brief's *What flows* phrase — what travels on that hop — so a reader follows
 the picture without the guide, and the guide's steps quote the same words. The builder draws the phrase as an
-html label (13 pt, 7.2 px per character + 12 px padding, 16 px per line), wrapped into at most **3 lines of
+html label (14 pt, 7.2 px per character + 12 px padding, 17 px per line), wrapped into at most **3 lines of
 ≤ 20 characters** and re-wrapped so the lines come out even (`Fetch dynamic` / `credentials (optional)`), and
 places it on the **longest leg** of the edge that has a clear spot — a bent edge carries its text on one of its
 legs, positioned along the polyline with the relative `mxGeometry x` (−1 source … 1 target, by length). On a
@@ -281,7 +281,7 @@ by situation (`chars_that_fit` in `build_diagram.py`):
 
 ## 6. Node labels — always below the icon
 
-Every node label sits under its icon, centred, 15 bold, on the card's colour inside a group and on white outside:
+Every node label sits under its icon, centred, 14 bold, on the card's colour inside a group and on white outside:
 
 ```
 verticalLabelPosition=bottom;verticalAlign=top;align=center;labelBackgroundColor=#F1F3F6;   (inside a role group — the card's fill, §2)
@@ -293,11 +293,11 @@ Edges keep out of the text by construction — anything that leaves or enters th
 (§5), which is under the label, so the line is continuous from the text down. The background colour is a
 safety net, not a routing tool: if a line still disappears behind a label, the layout is wrong (fix the spec).
 
-- **Length.** ≤ 17 characters on one line (~7.7 px per bold character; a card column is 160 px wide). A label
+- **Length.** ≤ 17 characters on one line (~7.3 px per bold character; a card column is 160 px wide). A label
   that would fill the column breaks into two lines at the space nearest the middle (`OpenSearch Serverless<br>(vector
   index)`, `S3 (order<br>archive)`); the builder does this. Never three lines — shorten instead.
-- **Room below.** One line needs 24 px under the icon, two lines 44 px; the card keeps the tallest last-lane label
-  + 8 px below the last icon (32 / 52) and lanes are 142 px apart, so labels never touch the next lane or the card
+- **Room below.** One line needs 22 px under the icon, two lines 40 px; the card keeps the tallest last-lane label
+  + 8 px below the last icon (30 / 48) and lanes are 142 px apart, so labels never touch the next lane or the card
   border.
 - **Delete the base style's later `align=center;`** when writing XML by hand — a later key wins in draw.io and
   the text lands on the icon.
