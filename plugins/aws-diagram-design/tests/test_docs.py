@@ -41,3 +41,17 @@ def test_no_reference_lists_html_examples():
         text = read(p)
         assert not re.search(r"example-[\w-]+\.html", text), p.name
         assert "-full" not in text, p.name
+
+
+def test_skill_md_describes_svg_first():
+    text = read(SKILL / "SKILL.md")
+    assert 'version: "2.0.0"' in text
+    assert "finalize.py" in text
+    assert "template.svg" in text and "template-full" not in text
+    assert "Always produce a single self-contained `.html` file" not in text
+    assert "Full editorial" not in text
+
+
+def test_python_generator_doc_uses_build_png():
+    text = read(REFS / "python-generator.md")
+    assert "--png" in text and "export.py" not in text and "html()" not in text

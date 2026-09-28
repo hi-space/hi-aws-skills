@@ -34,6 +34,5 @@
 
 ## Examples
 
-- `assets/example-scatter.html` — minimal light
-- `assets/example-scatter-dark.html` — minimal dark
-- `assets/example-scatter-full.html` — full editorial
+- `assets/example-scatter.svg` — minimal light
+- `assets/example-scatter-dark.svg` — minimal dark

@@ -73,6 +73,5 @@ Rules:
 - Legend floating inside the diagram area.
 
 ## Examples
-- `assets/example-architecture.html` — minimal light
-- `assets/example-architecture-dark.html` — minimal dark
-- `assets/example-architecture-full.html` — full editorial
+- `assets/example-architecture.svg` — minimal light
+- `assets/example-architecture-dark.svg` — minimal dark

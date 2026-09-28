@@ -4,7 +4,7 @@ Python generator that bakes the skill's mandatory rules into code. A spec suppli
 text; the library paints everything else the way SKILL.md §5–§7 prescribe. Load this file when the user
 wants **many diagrams in one house style**, a **ko/en pair from one layout**, **repeatable rebuilds** when
 content changes, or **PNG deliverables for docs** (Workshop Studio, Hugo, MkDocs, wikis) instead of a
-one-off HTML page.
+hand-drawn SVG.
 
 Hand-written SVG (SKILL.md §10) still wins for a single hero diagram or the types the library does not model
 (radar, Venn, Gantt, charts). The generator covers block-style types: architecture, data flow, process, flowchart
@@ -15,10 +15,8 @@ Hand-written SVG (SKILL.md §10) still wins for a single hero diagram or the typ
 ```
 python3 <skill>/scripts/pygen/awsdiag.py                                   # 1. catalogue: node/zone kinds, icon names
 cp <skill>/scripts/pygen/spec_example.py docs/diagrams/spec_<group>.py     # 2. start from the working example
-python3 <skill>/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out --strict          # 3. HTML; fails on overflow
-python3 <skill>/scripts/self_check.py docs/diagrams/out/<slug>-ko.html                        # 4. verify one language
-python3 <skill>/scripts/verify-geometry.py docs/diagrams/out/<slug>-ko.html
-python3 <skill>/scripts/pygen/export.py docs/diagrams/out --png-dir static/images/diagrams   # 5. PNG @2x
+python3 <skill>/scripts/pygen/build.py docs/diagrams --out docs/diagrams/out --strict --png --png-dir static/images/diagrams
+                                                                             # 3. SVG per slug/lang; finalize → check, fonts, PNG @2x
 ```
 
 `<skill>` is this skill's directory (plugin cache path, `~/.claude/skills/aws-diagram-design`, or a clone).
@@ -89,7 +87,7 @@ Every diagram is built the same way. Follow the steps in order; the numbers are 
 | `label(x,y,text,*,anchor="middle")` | Arrow label on an opaque mask | `y` is the baseline; `size=`/`color=` keyword-only; `\n` for two lines |
 | `note(x,y,text,anchor="middle")` | Mono annotation above nodes | |
 | `legend([(key,text), ...])` | Bottom strip | See step 8 |
-| `html()` / `svg()` | Output | `html(kr_webfont=False)` for offline builds (drops the Noto Sans KR link; arrows/Hangul use installed fallbacks) |
+| `svg()` | Output | Standalone SVG with `local()` @font-face; `build.py --png` finalizes it |
 
 Icon names: `icon=` accepts an alias from `awsdiag.AWS` (`S3`, `EKS`, `SageMaker`, `User`, …), any file stem from
 `assets/aws-icons/INDEX.md` (`Amazon-Route-53`, `Res_Amazon-EC2_Instance_48`), or a generic monochrome name from
@@ -102,7 +100,7 @@ nodes → overlay → legend), so spec statement order does not matter.
 Baked in (plus the layout checks listed under WARN policy): white paper, squid-ink `#232F3E`, smile-orange accent tint/stroke for `focal`, Amazon Ember with Noto Sans
 KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 12 · arrow label 12 · zone 14 ·
 tag 10), icon-left pattern (32px icon in a ≥64px node, 24px in ≥48px, 16px below), opaque node mask, four arrow
-markers, accessible `<title>`/`<desc>` with slug-prefixed ids, transparent-background PNG at 2x.
+markers, accessible `<title>`/`<desc>` with slug-prefixed ids, PNG at 2x with the paper rect as background.
 
 The spec owns the text budget: one name line (or two via a list) plus one short sublabel. Parameters, lists, and
 caveats go in the document prose or a table, not in the box. Keep AWS service names in English in both languages.
@@ -125,10 +123,9 @@ export. Two families:
 | Label text clipped to a fragment on a node border | Mask overlapped the node; move the label to the straight run outside the box or lengthen the arrow |
 | Arrow ends in empty space or starts inside a box | Endpoints were guessed; compute them from node geometry (step 5) |
 | AWS Cloud badge on a service box | `cloud` is the outer boundary only; a service or cluster is a `generic` zone with `icon=` or a node |
-| Korean renders as boxes / fallback serif | Offline build without Noto Sans KR and no Nanum font installed; install NanumBarunGothic or build with network |
+| Korean renders as boxes | PNG shell loads Noto Sans KR from Google Fonts; offline, install NanumBarunGothic or Noto Sans KR |
 | `KeyError: unknown AWS icon` | Run `python3 awsdiag.py` for the alias list, or use a stem from `assets/aws-icons/INDEX.md` |
 | `TypeError` on `label(...)` | `anchor`, `size`, `color` are keyword-only: `label(x, y, "TEXT", anchor="start")` |
 | Two arrows merge into one stroke | Different `mid=` for each `elbow_*`, or fan the attach points along the edge |
-| PNG looks like Helvetica | Amazon Ember woff2 not reachable; the `file://` path in the HTML must reach `<skill>/assets/fonts/woff2` |
 | Legend overlaps the diagram | Increase canvas `h`; the strip is anchored at `h - 40`, content must end by `h - 60` |
 | `WARN layout ... straddles zone` | Nodes are fully inside or fully outside a zone; an actor outside AWS goes left of the `cloud` zone, not on its border |

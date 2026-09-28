@@ -17,6 +17,5 @@
 - Coral on multiple levels — hierarchy collapses.
 
 ## Examples
-- `assets/example-nested.html` — minimal light
-- `assets/example-nested-dark.html` — minimal dark
-- `assets/example-nested-full.html` — full editorial
+- `assets/example-nested.svg` — minimal light
+- `assets/example-nested-dark.svg` — minimal dark

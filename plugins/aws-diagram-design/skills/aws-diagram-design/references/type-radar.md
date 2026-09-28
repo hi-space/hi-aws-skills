@@ -75,6 +75,5 @@ The skill's "1-focal" rule still holds: `accent` is reserved for the focal serie
 
 ## Examples
 
-- `assets/example-radar.html` — minimal light. 4 storage backends × 5 workload dimensions, MinIO focal.
-- `assets/example-radar-dark.html` — minimal dark, same data.
-- `assets/example-radar-full.html` — full editorial: container framing + 4 cards (one per backend) with varied widths + footer.
+- `assets/example-radar.svg` — minimal light. 4 storage backends × 5 workload dimensions, MinIO focal.
+- `assets/example-radar-dark.svg` — minimal dark, same data.

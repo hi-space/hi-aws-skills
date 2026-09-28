@@ -19,6 +19,5 @@
 - Coral on root AND a leaf.
 
 ## Examples
-- `assets/example-tree.html` — minimal light
-- `assets/example-tree-dark.html` — minimal dark
-- `assets/example-tree-full.html` — full editorial
+- `assets/example-tree.svg` — minimal light
+- `assets/example-tree-dark.svg` — minimal dark

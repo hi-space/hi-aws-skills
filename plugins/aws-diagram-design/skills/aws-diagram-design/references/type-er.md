@@ -18,6 +18,5 @@
 - Fields padded to equal-height boxes — natural height by content is fine.
 
 ## Examples
-- `assets/example-er.html` — minimal light
-- `assets/example-er-dark.html` — minimal dark
-- `assets/example-er-full.html` — full editorial
+- `assets/example-er.svg` — minimal light
+- `assets/example-er-dark.svg` — minimal dark

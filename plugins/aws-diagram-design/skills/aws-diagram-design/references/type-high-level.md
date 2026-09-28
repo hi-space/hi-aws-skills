@@ -450,9 +450,7 @@ Before emitting SVG, verify **every** item. If any fails, fix it — don't ship.
 
 ## 9. Examples
 
-- `assets/example-high-level.html` — horizontal-only, 5 phases, light skin.
-- `assets/example-high-level-dark.html` — same, dark skin.
-- `assets/example-high-level-full.html` — same, editorial-card frame.
-- `assets/example-high-level-vertical.html` — adds vertical Orchestration + Security chevrons, Airflow bar, Keycloak cross-cutting. **Reference render of the full parametric pattern.**
-- `assets/example-high-level-vertical-dark.html` — vertical pattern, dark skin.
-- `assets/example-high-level-vertical-full.html` — vertical pattern, editorial-card frame.
+- `assets/example-high-level.svg` — horizontal-only, 5 phases, light skin.
+- `assets/example-high-level-dark.svg` — same, dark skin.
+- `assets/example-high-level-vertical.svg` — adds vertical Orchestration + Security chevrons, Airflow bar, Keycloak cross-cutting. **Reference render of the full parametric pattern.**
+- `assets/example-high-level-vertical-dark.svg` — vertical pattern, dark skin.

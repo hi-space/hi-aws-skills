@@ -1,6 +1,6 @@
 # Optional animation
 
-Animation explains a complete static diagram; it never supplies missing meaning. Load this reference only when motion is explicitly requested or materially clarifies order, accumulation, evaluation, containment, or propagation. Otherwise use mode `none` and ship static HTML.
+Animation explains a complete static diagram; it never supplies missing meaning. Load this reference only when motion is explicitly requested or materially clarifies order, accumulation, evaluation, containment, or propagation. Otherwise ship the static `.svg` (SKILL.md §12); motion is the only reason a deliverable is `.html`.
 
 ## Modes
 

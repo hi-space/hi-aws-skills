@@ -43,6 +43,5 @@ Focal bar: replace fill with `rgba(255,153,0,0.12)`, stroke with `#EC7211`, labe
 
 ## Examples
 
-- `assets/example-bar.html` — minimal light
-- `assets/example-bar-dark.html` — minimal dark
-- `assets/example-bar-full.html` — full editorial
+- `assets/example-bar.svg` — minimal light
+- `assets/example-bar-dark.svg` — minimal dark

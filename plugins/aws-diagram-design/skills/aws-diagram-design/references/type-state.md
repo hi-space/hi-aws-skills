@@ -16,6 +16,5 @@
 - Unlabeled transitions (the whole point is *what triggers this*).
 
 ## Examples
-- `assets/example-state.html` — minimal light
-- `assets/example-state-dark.html` — minimal dark
-- `assets/example-state-full.html` — full editorial
+- `assets/example-state.svg` — minimal light
+- `assets/example-state-dark.svg` — minimal dark

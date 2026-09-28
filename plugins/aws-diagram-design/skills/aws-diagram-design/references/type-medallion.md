@@ -117,25 +117,14 @@ bucket_text           at (tier_cx(i), 144)                # sublabel role, muted
 field_x               = tier_x(i) + 16                    # 16-px left inset for field text
 field_w               = 140                               # 172-px tier_w minus two 16-px insets
 field rows (absolute y):
-  tool_label  at 180,    tool_value  at 186 (foreignObject, height 24)
-  format_label at 220,   format_value at 226 (foreignObject, height 24)
-  writer_label at 260,   writer_value at 266 (foreignObject, height 24)
+  tool_label  at 180,    tool_value  at 186 (single-line text)
+  format_label at 220,   format_value at 226 (single-line text)
+  writer_label at 260,   writer_value at 266 (single-line text)
   # gap (open whitespace below writer row, above the example section)
   example_label_text at 360,  example_line_0 at 374,  example_line_1 at 388
 ```
 
-**Field-value wrapping rule:** field values (tool / format / writer) render inside an SVG `<foreignObject>` with an HTML `<div>` so they auto-wrap when text exceeds 140 px. Each `foreignObject` is 140 wide × 24 tall (fits 2 lines in the `sublabel` role at 1.25 line-height). The 26-px gap to the next field's label absorbs the second line cleanly.
-
-```svg
-<foreignObject x="{field_x}" y="{value_top}" width="140" height="24">
-  <div xmlns="http://www.w3.org/1999/xhtml"
-       style="font-family: {sublabel}; color: {muted}; line-height: 1.25;">
-    {field_value}
-  </div>
-</foreignObject>
-```
-
-The HTML namespace declaration on the `<div>` is required for SVG to render the inline content. Browsers and Playwright/Chromium render this faithfully; if your export target doesn't support `<foreignObject>` (some older Inkscape builds), hand-split long values into two `<tspan>` lines instead.
+**Field-value rule:** field values (tool / format / writer) are single-line `<text class="field-value">` at `y = label_y + 22`. Keep each value ≤ 22 characters at the 9 px mono size so it fits the 140 px column; if it must wrap, use two `<tspan>` lines (`dy="12"`), never `<foreignObject>` — a deliverable SVG bans it because Figma, Illustrator and several viewers drop its content.
 
 Field labels use the `node-name` role at 11px in ink. Field values use the `sublabel` role in muted. Bucket and field values can be retinted by `color` override (§4).
 
@@ -345,12 +334,11 @@ Before emitting SVG, verify **every** item:
 
 ## 9. Examples
 
-- `assets/example-medallion.html` — minimal light (NatStat quarterly survey: 5 tiers, 2 path cards, Aggregated focal). Gallery default.
-- `assets/example-medallion-dark.html` — same, dark skin.
-- `assets/example-medallion-full.html` — same, editorial-card frame with subtitle + summary cards.
+- `assets/example-medallion.svg` — minimal light (NatStat quarterly survey: 5 tiers, 2 path cards, Aggregated focal). Gallery default.
+- `assets/example-medallion-dark.svg` — same, dark skin.
 
 ---
 
 ## 10. Worked YAML
 
-The YAML in §1 is the **complete** inputs definition for the shipped `example-medallion.html`. Every coordinate in that file's SVG is derivable from §2 applied to those inputs. The same YAML is embedded as a top-of-file HTML comment inside `example-medallion.html` so source view shows the parametric inputs immediately above the SVG.
+The YAML in §1 is the **complete** inputs definition for the shipped `example-medallion.svg`. Every coordinate in that file's SVG is derivable from §2 applied to those inputs. The same YAML is embedded as a top-of-file HTML comment inside `example-medallion.svg` so source view shows the parametric inputs immediately above the SVG.

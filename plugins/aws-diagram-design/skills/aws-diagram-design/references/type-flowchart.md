@@ -18,6 +18,5 @@
 - Unlabeled decision branches.
 
 ## Examples
-- `assets/example-flowchart.html` — minimal light
-- `assets/example-flowchart-dark.html` — minimal dark
-- `assets/example-flowchart-full.html` — full editorial
+- `assets/example-flowchart.svg` — minimal light
+- `assets/example-flowchart-dark.svg` — minimal dark

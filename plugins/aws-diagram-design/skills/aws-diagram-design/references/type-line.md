@@ -39,6 +39,5 @@
 
 ## Examples
 
-- `assets/example-line.html` — minimal light
-- `assets/example-line-dark.html` — minimal dark
-- `assets/example-line-full.html` — full editorial
+- `assets/example-line.svg` — minimal light
+- `assets/example-line-dark.svg` — minimal dark

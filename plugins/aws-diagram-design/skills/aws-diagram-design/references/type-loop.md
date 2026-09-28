@@ -218,6 +218,5 @@ The semantic relationship stays unchanged in dark mode: one `ink`-filled hub, on
 
 ## 8. Examples
 
-- `assets/example-loop.html` — minimal light: six-station self-improving operating loop.
-- `assets/example-loop-dark.html` — the same geometry under the dark token inversion.
-- `assets/example-loop-full.html` — editorial page with the flagship loop, three summary cards, and colophon.
+- `assets/example-loop.svg` — minimal light: six-station self-improving operating loop.
+- `assets/example-loop-dark.svg` — the same geometry under the dark token inversion.

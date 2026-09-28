@@ -1,16 +1,16 @@
 ---
 name: aws-diagram-design
-description: "Create finished, presentation-ready diagram images (HTML/SVG/PNG) to embed in docs and slides — the output is a rendered picture, not an editable draw.io file (for that, use the aws-drawio-diagram skill). Covers branded architecture, IT current-state, flowchart, sequence, state machine, ER/data model, timeline, swimlane, quadrant, radar/spider, loop/flywheel, nested, tree, org chart, layer stack, Venn, pyramid/funnel, bar, line, Gantt and scatter charts, high-level, process, medallion, data flow, DP integration, or DP security matrix diagrams. Default skin is the AWS brand (Amazon Ember, squid ink, smile orange) with the official AWS Architecture Icons (EC2, Lambda, S3, VPC zones, …) bundled. Redraw .drawio/.drawio.png/.drawio.svg or Mermaid .mmd sources at a chosen size/detail; onboard brand tokens from a website; add semantic patterns, callouts, accessible motion, or sketchy/hand-drawn styling. Batch/bilingual (ko+en) PNG sets for docs via the bundled Python generator. Korean triggers: AWS 아키텍처 다이어그램, 구성도, 아키텍처 그림, 흐름도, 순서도, 시퀀스 다이어그램, 다이어그램 그려줘/그리기, 이미지로 뽑아줘, mermaid 교체. 열어서 편집할 .drawio 파일이 필요하면 aws-drawio-diagram 스킬을 쓰세요."
+description: "Create finished, presentation-ready diagram images (SVG + PNG) to embed in docs and slides — the output is a rendered picture, not an editable draw.io file (for that, use the aws-drawio-diagram skill). Covers branded architecture, IT current-state, flowchart, sequence, state machine, ER/data model, timeline, swimlane, quadrant, radar/spider, loop/flywheel, nested, tree, org chart, layer stack, Venn, pyramid/funnel, bar, line, Gantt and scatter charts, high-level, process, medallion, data flow, DP integration, or DP security matrix diagrams. Default skin is the AWS brand (Amazon Ember, squid ink, smile orange) with the official AWS Architecture Icons (EC2, Lambda, S3, VPC zones, …) bundled. Redraw .drawio/.drawio.png/.drawio.svg or Mermaid .mmd sources at a chosen size/detail; onboard brand tokens from a website; add semantic patterns, callouts, accessible motion, or sketchy/hand-drawn styling. Batch/bilingual (ko+en) PNG sets for docs via the bundled Python generator. Korean triggers: AWS 아키텍처 다이어그램, 구성도, 아키텍처 그림, 흐름도, 순서도, 시퀀스 다이어그램, 다이어그램 그려줘/그리기, 이미지로 뽑아줘, mermaid 교체. 열어서 편집할 .drawio 파일이 필요하면 aws-drawio-diagram 스킬을 쓰세요."
 license: MIT
 metadata:
-  version: "1.3.0"
+  version: "2.0.0"
   base: "masangbeom/aws-diagram-design 1.2.0 (cathrynlavery/diagram-design 2.3.2 + AWS brand skin) + Python generator"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
 # Diagram Design
 
-Create visual diagrams as self-contained HTML files with inline SVG and CSS, following an opinionated editorial design system.
+Create visual diagrams as standalone SVG files (plus a PNG rendered from each), following an opinionated editorial design system.
 
 Twenty-seven visual types. Semantic patterns describe behavior independently; type references describe layout. Details load from `references/` only when selected.
 
@@ -396,37 +396,19 @@ Quick check: if a coordinate ends in 1, 2, 3, 5, 6, 7, 9 — fix it.
 
 If you exceed, split into two diagrams (overview + detail).
 
-### Page layout
+### Canvas layout
 
-1. **Header** — eyebrow (Amazon Ember Mono), title (Amazon Ember 700), optional subtitle (Amazon Ember muted).
-2. **Diagram container** — default: **clean, borderless**, no background — the SVG sits directly on the page paper. Optional *framed* variant (for card-heavy layouts or hero placements): `paper-2` bg + 1px `rule` border + 8px radius + `1.5rem` padding + `overflow-x: auto`.
-3. **Summary cards** — 2–3 col grid with *varied* widths (e.g., `1.1fr 1fr 0.9fr`).
-4. **Footer** — colophon in Amazon Ember Mono, muted, hairline top border.
+The SVG *is* the page. There is no header, card grid, or footer around it.
+
+1. **Paper** — a full-size `<rect>` in the paper colour is the first painted element.
+2. **Diagram** — zones → arrows → labels → nodes → overlay, 40 px outer margin.
+3. **Legend strip** — bottom 60 px, horizontal.
 
 ---
 
 ## 8. Summary Card Pattern
 
-Don't use 3 identical generic cards. Vary the treatment:
-
-```html
-<div class="card">
-  <p class="eyebrow">SECTION LABEL</p>
-  <div class="card-header">
-    <span class="card-dot coral"></span>
-    <h3>Card Title</h3>
-  </div>
-  <ul><li>Item</li></ul>
-</div>
-```
-
-Rules:
-
-- `background: #ffffff` on `paper-2` sections; on the white AWS paper, lift with the border alone
-- `border: 1px solid rgba(35,47,62,0.12)`
-- `border-radius: 6px`, `padding: 1.25rem`
-- **No `box-shadow`**
-- Card dots: 7px, `border-radius: 50%` — ink / muted / coral / link / soft variants
+Summary cards were part of the 1.x HTML page and no longer exist. Put explanatory text in the document that embeds the diagram.
 
 ---
 
@@ -468,15 +450,15 @@ Run before producing any diagram.
 - [ ] **No two connectors overlap, share a stroke path, or run on top of each other? Crossings use the bridge/hop primitive?**
 - [ ] **When several connectors enter or exit the same edge of a box, each has its own attach point (≥12px apart)? No connector hides another?**
 - [ ] **No connector passes behind a non-endpoint box, except the unavoidable-intervening-box case (§6 rule 5) — and in that case, the stroke is dashed and the label sits at the visible end?**
-- [ ] **No label mask overlaps a node drawn after it? (Node fill would clip the text — §6 rule 6. Run `python3 <skill-dir>/scripts/verify-geometry.py <file>` — ships with the skill.)**
+- [ ] **No label mask overlaps a node drawn after it? (Node fill would clip the text — §6 rule 6.)**
 - [ ] Every arrow label has an opaque `paper`-filled rect behind it (`#ffffff` in the AWS skin)?
 - [ ] Named AWS services use official icons from `assets/aws-icons/` — unmodified, uncolored, ≥16px ([primitive-aws-icons.md](references/primitive-aws-icons.md))?
 - [ ] Legend is a horizontal bottom strip, not floating?
 - [ ] No vertical `writing-mode` text?
 - [ ] `viewBox` expanded for the legend strip (~60px)?
 - [ ] Every font size, coord, width, height, gap divisible by 4?
-- [ ] Ran the packaged self-check — `python3 <skill-dir>/scripts/self_check.py <file>` — clean? (Accessible-SVG contract, single-file safety, motion basics; ships with the skill.)
-- [ ] If animated, does the complete static/no-JS frame work, does reduced motion hide/disable playback, and is the controller copied verbatim from `template-motion.html`? In this repository, also run `python3 scripts/verify-motion.py path/to/generated.html`; from an installed skill, manually check print and static-query states on top of the self-check.
+- [ ] Ran `python3 <skill-dir>/scripts/finalize.py <file>.svg` — check OK (well-formed XML, accessible contract, no script/foreignObject/external url, label-mask geometry), fonts embedded, PNG written?
+- [ ] If animated, does the complete static/no-JS frame work, does reduced motion hide/disable playback, and is the controller copied verbatim from `template-motion.html`? In this repository, also run `python3 scripts/verify-motion.py path/to/generated.html`; from an installed skill, manually check print and static-query states on top of `self_check.py <file>.html`.
 
 **Typography:**
 
@@ -496,24 +478,23 @@ Every diagram ships in three variants (see `assets/`):
 
 | Variant | File pattern | When to use |
 |---|---|---|
-| **Minimal light** (default) | `template.html`, `example-<type>.html` | Screenshot-ready. Diagram + title. Warm paper. |
-| **Minimal dark** | `template-dark.html`, `example-<type>-dark.html` | Dark mode sites, slides, high-contrast posts. |
-| **Full editorial** | `template-full.html`, `example-<type>-full.html` | Long-form posts where the diagram is the hero. |
-| **Consultant special** (quadrant only) | `example-quadrant-consultant.html` | BCG/McKinsey-style 2×2 scenario matrix. Clinical sans-serif, white bg, bold blue double-ended axes, named scenario cells. See [type-quadrant.md](references/type-quadrant.md#consultant-special-2x2-scenario-matrix). |
+| **Minimal light** (default) | `template.svg`, `example-<type>.svg` | Screenshot-ready. Diagram + title. Warm paper. |
+| **Minimal dark** | `template-dark.svg`, `example-<type>-dark.svg` | Dark mode sites, slides, high-contrast posts. |
+| **Consultant special** (quadrant only) | `example-quadrant-consultant.svg` | BCG/McKinsey-style 2×2 scenario matrix. Clinical sans-serif, white bg, bold blue double-ended axes, named scenario cells. See [type-quadrant.md](references/type-quadrant.md#consultant-special-2x2-scenario-matrix). |
 
 **Sketchy variant** (optional, applied to any of the above) — see [primitive-sketchy.md](references/primitive-sketchy.md). SVG turbulence filter wobbles strokes for a hand-drawn feel. Good for essays, not for technical docs.
 
-**Terminal variant** (optional, replaces any of the above) — see [primitive-terminal.md](references/primitive-terminal.md). `template-terminal.html`, `example-<type>-terminal.html`. Charcoal-black CLI-window chrome, monospace type, one red-orange accent. Good for dev-tool / CLI-product posts and technical social cards; not brand-tokenized, so skip it for onboarded/brand-matched output.
+**Terminal variant** (optional, replaces any of the above) — see [primitive-terminal.md](references/primitive-terminal.md). `template-terminal.svg`, `example-<type>-terminal.svg`. Charcoal-black CLI-window chrome, monospace type, one red-orange accent. Good for dev-tool / CLI-product posts and technical social cards; not brand-tokenized, so skip it for onboarded/brand-matched output. The 1.x CLI-window chrome was HTML and is gone; the charcoal canvas, mono type and red-orange accent live inside the SVG.
 
 **Animation** (optional presentation layer) — see [animation.md](references/animation.md). Modes are `none` (default), `reveal`, `step`, and `loop`; motion never changes the static meaning or raises the complexity budget.
 
 ### To create a new diagram
 
-1. Copy the variant closest to what you want (`template.html` for minimal, `template-full.html` for cards, `template-motion.html` only when motion is requested).
+1. Copy the skin you want: `template.svg` (light), `template-dark.svg`, or `template-terminal.svg`. Motion requested → `template-motion.html` and [animation.md](references/animation.md) instead (HTML path).
 2. If behavior is load-bearing, choose a semantic pattern; then load the matching `references/type-<name>.md`.
-3. Replace the eyebrow, h1, and SVG body. Replace `[diagram-slug]` with the file slug and fill `<title>` / `<desc>`.
-4. If motion is requested, load `animation.md`; otherwise keep mode `none` and no script.
-5. Run the §9 taste gate.
+3. Replace `[diagram-slug]` everywhere, fill `<title>` / `<desc>`, draw arrows before nodes. Standalone SVG is strict XML: `&` in text is `&amp;`.
+4. Run the §9 taste gate.
+5. `python3 <skill-dir>/scripts/finalize.py <file>.svg` — it refuses a file that fails the contract, embeds the used Amazon Ember faces, and writes `<file>.png`. Report both paths.
 
 ---
 
@@ -550,13 +531,13 @@ Two consequences worth remembering here:
 
 ## 12. Output
 
-Always produce a single self-contained `.html` file:
+Always produce a standalone `.svg` plus its `.png`:
 
-- Embedded CSS (no external except Google Fonts)
-- Inline SVG (no external images)
-- Static by default; minimal inline JavaScript only for explicit animation controls/state
+- `<?xml …?>` header, `xmlns`, `viewBox`; `<title>`/`<desc>` first; paper `<rect>` inside the SVG
+- Inline everything: icons as `<g>`/`<symbol>`, fonts embedded by `finalize.py` (never an external `url()`), no `<script>`, no `<foreignObject>`
+- `'Noto Sans KR'` stays in the fallback stacks for Hangul; the PNG renderer loads it, SVG viewers use an installed copy
 
-Renders correctly in any modern browser. Motion-enabled output must render its complete meaning without JavaScript; under `prefers-reduced-motion: reduce` it shows the complete static frame and hides/disables playback controls.
+**Animation is the one HTML case.** When motion is explicitly requested, follow [animation.md](references/animation.md): the deliverable is `.html` with the canonical controller, checked with `self_check.py` and `verify-motion.py`, and its static frame is exported per [export.md § 3](references/export.md). Static output never goes through HTML.
 
 ### Accessible SVG contract
 
@@ -564,14 +545,12 @@ Every diagram is an accessible figure by default:
 
 1. Its `<svg>` carries `role="img"` and `aria-labelledby` naming the diagram's `<title>` and `<desc>`.
 2. `<title>` is the first child of `<svg>`, before `<defs>`. Assistive technology may ignore a title placed later.
-3. The IDs are prefixed per diagram and variant: `<slug>-title` / `<slug>-desc`, where the slug matches the file (`loop`, `loop-dark`, `loop-full`). Bare `title` / `desc` IDs are banned because two inline diagrams would create duplicate IDs and the second could be announced with the first diagram's name.
+3. The IDs are prefixed per diagram and variant: `<slug>-title` / `<slug>-desc`, where the slug matches the file (`loop`, `loop-dark`, `loop-terminal`). Bare `title` / `desc` IDs are banned because two inline diagrams would create duplicate IDs and the second could be announced with the first diagram's name.
 4. `<title>` is the short name of the subject — roughly the page `<h1>`, and about 60 characters or fewer.
 5. `<desc>` is one sentence stating what the diagram shows in terms a reader needs without the image. Describe the content, not the geometry: “Org chart showing a command center routing work to specialist agents and escalation owners,” not “A box at the top with five boxes below it.” A shape-by-shape narration is worse than no useful description.
 6. Decorative-only SVG, such as the specimen glyphs in `assets/icons.html`, carries `aria-hidden="true"` instead. Giving decorative marks accessible names adds noise.
 
-### Exporting to PNG / SVG
-
-When the user asks to export, save, rasterize, or convert a generated diagram to `.png` or `.svg`, load [`references/export.md`](references/export.md) and follow the procedure there. Both formats deliver the diagram only (the `<svg>` node) — editorial wrappers like cards and headers are dropped by design. Export is **manual** — never produce export files unprompted.
+### Re-export — Re-running `finalize.py` on a finished `.svg` is idempotent and rewrites the PNG; `/aws-diagram-design:export-diagram` wraps it and also handles 1.x `.html` files via `html_to_svg.py` (see [export.md](references/export.md)).
 
 For an imported diagram, pixel dimensions come from the `viewBox` × scale factor, so its size decision belongs to §11, not to export. For any diagram that needs an exact frame (an OG card or a 1920×1080 slide image), see [`export.md` § Sizing the export](references/export.md).
 
@@ -587,8 +566,7 @@ library paints the skin, icon-left pattern, orthogonal `r=8` connectors, masked 
 `<title>`/`<desc>` exactly as §5–§7 and §12 require.
 
 ```
-python3 <skill-dir>/scripts/pygen/build.py <spec-dir> --out <spec-dir>/out          # HTML per slug and language
-python3 <skill-dir>/scripts/pygen/export.py <spec-dir>/out --png-dir <static-dir>   # PNG @2x, transparent
+python3 <skill-dir>/scripts/pygen/build.py <spec-dir> --out <spec-dir>/out --png --png-dir <static-dir>   # SVG per slug and language, finalized, PNG @2x
 ```
 
 House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names, 12px sublabels

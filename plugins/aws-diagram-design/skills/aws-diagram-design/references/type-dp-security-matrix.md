@@ -291,13 +291,12 @@ Before emitting SVG, verify **every** item:
 
 ## 9. Examples
 
-- `assets/example-dp-security-matrix.html` — minimal light (NatStat canonical: 4 roles × 8 components, focal at Data Consumers × Trino aggregated). Gallery default.
-- `assets/example-dp-security-matrix-dark.html` — same, dark skin.
-- `assets/example-dp-security-matrix-full.html` — same, editorial-card frame with subtitle + summary cards.
+- `assets/example-dp-security-matrix.svg` — minimal light (NatStat canonical: 4 roles × 8 components, focal at Data Consumers × Trino aggregated). Gallery default.
+- `assets/example-dp-security-matrix-dark.svg` — same, dark skin.
 
 ---
 
-## 10. Worked YAML — full inputs for `example-dp-security-matrix.html`
+## 10. Worked YAML — full inputs for `example-dp-security-matrix.svg`
 
 The complete inputs that map to the shipped canonical example. Every coordinate in that SVG is derivable from §2 applied to these inputs.
 
@@ -376,4 +375,4 @@ Run §2 with these inputs:
 - `role_col_x(j) = [232, 396, 560, 724]` ✓
 - Focal cell at `(row=5, col=3)` → rect `(724, 340, 148, 36)` with accent stroke 1.4 ✓
 
-A fresh generation from this YAML produces a diagram visually indistinguishable from the shipped `example-dp-security-matrix.html`.
+A fresh generation from this YAML produces a diagram visually indistinguishable from the shipped `example-dp-security-matrix.svg`.

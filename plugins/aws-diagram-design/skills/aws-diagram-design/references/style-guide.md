@@ -27,7 +27,7 @@ Every token is referred to by **semantic role**, not by its hex value. Type refe
 
 > **Brand palette source:** AWS brand — `squid ink #232F3E`, `smile orange #FF9900`, white. Pure `#FF9900` reads weakly as thin strokes/text on white, so light-mode `accent` uses the darker step `#EC7211` (the orange AWS itself uses on light UI); `#FF9900` is the accent on dark and the base of `accent-tint`. `muted`/`soft`/`rule-solid`/`link` come from the AWS/Cloudscape grey-blue ramp. Category identity colors (`#ED7100`, `#8C4FFF`, …) belong to the icons and zone borders — see [primitive-aws-icons.md](primitive-aws-icons.md) — and are **not** editorial accents.
 
-> **Note:** The pre-baked example HTML files in `assets/` were built under earlier skins and don't reflect the AWS skin. New diagrams the skill produces must use the tokens above.
+> **Note:** The pre-baked example SVG files in `assets/` were built under earlier skins and don't reflect the AWS skin. New diagrams the skill produces must use the tokens above.
 
 ### Inversion rule (light → dark)
 
@@ -83,7 +83,7 @@ A self-contained palette for the terminal-window primitive (see [primitive-termi
 Amazon Ember is **not on Google Fonts**, but this skill **bundles it** at [`assets/fonts/`](../assets/fonts/) (woff2 webfonts + desktop TTFs, from Amazon's public typography download). Load it in this order:
 
 1. **`local('Amazon Ember')`** — present on Amazon-managed machines, or after running `./install.sh fonts` (repo root), which installs the bundled TTFs into the OS font directory.
-2. **Bundled woff2 via `@font-face`** — paste the canonical block from [`assets/fonts/README.md`](../assets/fonts/README.md) into the generated HTML, pointing `FONTS` at `<skill-dir>/assets/fonts/woff2` (relative path when the output lives near the skill; or copy the woff2 files next to the deliverable and use `./fonts/`).
+2. **Bundled woff2 embedded by `finalize.py`** — templates declare `local()` only; the deliverable gets base64 data URIs for the faces it uses (spec §3.2). Never paste `url()` paths into an SVG.
 3. **Fallback stack** — always declared on `font-family`; sandboxed viewers (GitHub's SVG renderer, offline tools) fall back to Helvetica/Arial.
 
 Weight map for the bundled faces: Amazon Ember 300 Lt · 400 Rg (+italic) · 600 SBd · 700 Bd · 800 He; **Amazon Ember Mono 400/700** carries every mono role (sublabels, eyebrows, arrow labels — a 500/600 spec snaps to the nearest bundled weight, which is expected). **No font loads from an external CDN** — generated diagrams need no Google Fonts `<link>`.

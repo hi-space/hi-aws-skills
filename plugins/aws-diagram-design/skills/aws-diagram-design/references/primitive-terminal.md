@@ -2,48 +2,11 @@
 
 Optional full-page skin that wraps any diagram in a fake terminal window — titlebar with three dots, a `$` prompt line, monospace type throughout. Use for dev-tool announcements, CLI-product posts, and technical social cards where a screenshot needs to read as "terminal," not "editorial doc."
 
+> **2.0.0:** the terminal window chrome (title bar, dots, prompt line) was HTML around the diagram and no longer ships. The variant is the charcoal `#141414` canvas, mono type and `#ff5a36` accent inside the SVG (`template-terminal.svg`).
+
 This is a **second, fixed skin** — see [style-guide.md § Terminal skin](style-guide.md#terminal-skin-opt-in-alternate) for the token table. It does not inherit from `onboarding.md` brand tokens and isn't part of the light/dark inversion rule; every terminal example uses the same nine tokens regardless of the host site's brand.
 
 ## Grammar
-
-```html
-<div class="terminal">
-  <div class="titlebar">
-    <div class="dot accent"></div>
-    <div class="dot"></div>
-    <div class="dot"></div>
-    <div class="titlebar-name">loop.sh — self-improving-loop</div>
-  </div>
-  <main class="frame">
-    <p class="prompt">
-      <span class="sign">$</span> diagram-design render --type loop
-    </p>
-    <h1># The self-improving loop</h1>
-    <svg>...</svg>
-  </main>
-</div>
-```
-
-```css
-body {
-  background: var(--terminal-page);
-}
-.terminal {
-  background: var(--terminal-paper);
-  border: 1px solid var(--terminal-border);
-  border-radius: 12px;
-}
-.titlebar {
-  background: var(--terminal-bar);
-  border-bottom: 1px solid var(--terminal-border);
-}
-.dot {
-  background: var(--terminal-soft);
-}
-.dot.accent {
-  background: var(--terminal-accent);
-}
-```
 
 Inside the SVG, swap the default light/dark tokens 1:1 for their `terminal-*` equivalents: `paper` → `terminal-paper`, `ink` → `terminal-ink`, `muted`/`soft` → `terminal-muted`/`terminal-soft`, `accent`/`accent-tint` → `terminal-accent`/`terminal-accent-tint`. The hub/focal-node pattern (inverted fill for the one highlighted element) still applies.
 
@@ -71,6 +34,6 @@ Three 10px circles, macOS-style. The **1-accent rule caps the color use here too
 
 ## When not to use
 
-- Editorial / long-form posts — pair with the default light or full-editorial variant instead.
+- Editorial / long-form posts — pair with the default light or dark variant instead.
 - Brand-matched output from `onboarding.md` — terminal is a fixed skin, not brand-tokenized. Don't try to reconcile the two.
 - Any diagram where the audience isn't developer-coded to read `$`/`#`/titlebar-dots as chrome rather than content.
