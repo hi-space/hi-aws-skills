@@ -14,7 +14,7 @@ Don't mix orientations on one diagram.
 - Widths decrease linearly from base to apex (pyramid) or top to bottom (funnel). When showing real funnel data, widths must be honest (proportional to count/percentage).
 - Each layer has:
   - **Name label** centered inside the trapezoid — Amazon Ember 12–14px 600.
-  - **Sublabel** below or beside the name — Amazon Ember 12px 400, muted (same size as the name).
+  - **Sublabel** below or beside the name — Amazon Ember 11px 400, muted (one px under the name).
   - **Side annotation** (right or left) — optional. For funnels: drop-off percentage here (`−40%`).
 - Fill: subtle graded tints OR all paper-2 with hairline dividers (cleaner). Pick one.
 - Stroke: 1px hairline between layers; outer silhouette 1px muted or ink.

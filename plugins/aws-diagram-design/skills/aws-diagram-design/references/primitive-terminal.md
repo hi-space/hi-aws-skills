@@ -14,7 +14,7 @@ Inside the SVG, swap the default light/dark tokens 1:1 for their `terminal-*` eq
 
 **Everything is monospace** — this is the one variant where that's correct. Drop Amazon Ember entirely; set the page title in mono, bold, prefixed with `# ` (reads as a comment line). The eyebrow becomes a shell prompt: `$ ` in `terminal-accent`, the command in `terminal-muted`.
 
-Run every text role about **1–2px above** the default type scale in `style-guide.md` (e.g. `node-name` 12px → 14px, `sublabel` 12px → 14px, `arrow-label` 8px → 9–10px, hub label 16px → 18px). Monospace at the default sizes reads small next to the sans/serif mix it's replacing, and these cards are usually viewed at social-feed scale, not full-bleed.
+Run every text role about **1–2px above** the default type scale in `style-guide.md` (e.g. `node-name` 12px → 14px, `sublabel` 11px → 13px, `arrow-label` 8px → 9–10px, hub label 16px → 18px). Monospace at the default sizes reads small next to the sans/serif mix it's replacing, and these cards are usually viewed at social-feed scale, not full-bleed.
 
 ## Titlebar dots
 

@@ -49,13 +49,13 @@ def test_canvas_has_no_html_method():
 
 
 def test_no_legend_by_default_and_sublabel_in_ember_sans(tmp_path):
-    """2.1.0: the example spec draws no legend strip, and the node sublabel shares the name's Ember family and size (16px)."""
+    """2.1.0: the example spec draws no legend strip, and the node sublabel shares the name's Ember family one px smaller (15px)."""
     build(tmp_path)
     svg = (tmp_path / "training-pipeline-en.svg").read_text(encoding="utf-8")
     assert 'viewBox="0 0 960 416"' in svg
     assert "Focal step" not in svg and "Data flow" not in svg  # legend texts absent
     sub = [l for l in svg.splitlines() if "raw/ · checkpoints/" in l]
-    assert len(sub) == 1 and 'font-size="16"' in sub[0] and "'Amazon Ember','Noto Sans KR'" in sub[0]
+    assert len(sub) == 1 and 'font-size="15"' in sub[0] and "'Amazon Ember','Noto Sans KR'" in sub[0]
     assert "Amazon Ember Mono" not in sub[0]
 
 

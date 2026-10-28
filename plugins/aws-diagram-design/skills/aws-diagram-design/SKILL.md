@@ -192,7 +192,7 @@ Type-specific anti-patterns live in each `references/type-*.md`.
 
 - **Title** — Amazon Ember, 1.75rem, 700
 - **Node name** — Amazon Ember, 12px, 600 — human-readable labels
-- **Sublabel** — Amazon Ember, 12px, 400, muted — the second line under a node name (role, runtime, port). Same family **and the same size** as the name; weight (600 vs 400) and colour (ink vs muted) carry the hierarchy, never a smaller size
+- **Sublabel** — Amazon Ember, 11px, 400, muted — the second line under a node name (role, runtime, port). Same family as the name and **one px smaller** (90–95%: 11 under 12, 15 under 16); weight (600 vs 400) and colour (ink vs muted) do the rest of the hierarchy. Never drop further to make text fit — widen the box
 - **Eyebrow / tag** — Amazon Ember Mono, 7–8px, uppercase, tracked — type tags, axis labels
 - **Arrow label** — Amazon Ember Mono, 8px — annotation on arrows
 - **Editorial aside** — Amazon Ember *italic*, 14px — callouts only
@@ -303,8 +303,8 @@ These six rules are **non-negotiable**. Run the pre-output checklist (§9) to ve
 <!-- 4. Node name (Amazon Ember — human-readable) -->
 <text x="CX" y="CY+2" fill="#232F3E" font-size="12" font-weight="600"
       font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Node Name</text>
-<!-- 5. Sublabel (Amazon Ember 400, muted, same size as the name) -->
-<text x="CX" y="CY+18" fill="#545B64" font-size="12"
+<!-- 5. Sublabel (Amazon Ember 400, muted, one px smaller than the name) -->
+<text x="CX" y="CY+18" fill="#545B64" font-size="11"
       font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Lambda · python3.13</text>
 ```
 
@@ -359,7 +359,7 @@ When a key *is* requested: never inside the diagram area. Place it as a horizont
 | Padding inside boxes | 8, 12, 16 |
 | Border radius | 4, 6, 8 |
 
-Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–8px mono sizes fixed by style-guide.md (eyebrows, arrow labels).
+Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–8px mono sizes fixed by style-guide.md (eyebrows, arrow labels) plus the 11px / 15px sublabel.
 
 Quick check: if a coordinate ends in 1, 2, 3, 5, 6, 7, 9 — fix it.
 
@@ -463,7 +463,7 @@ Run before producing any diagram.
 
 - [ ] Brand match uses exact public families/weights, verified via `getComputedStyle`; fallbacks disclosed?
 - [ ] Human-readable names in Amazon Ember (sans), not mono?
-- [ ] Node sublabels in Amazon Ember 400, muted, at the same size as the name (12px under 12px, 16px under 16px) — not mono, not smaller?
+- [ ] Node sublabels in Amazon Ember 400, muted, one px under the name (11px under 12px, 15px under 16px) — not mono, not smaller?
 - [ ] Page title in Amazon Ember 700?
 - [ ] Annotation callouts (if any) in *italic* Amazon Ember? (see [primitive-annotation.md](references/primitive-annotation.md))
 - [ ] Amazon Ember declared with its full fallback stack (`'Helvetica Neue', Helvetica, Arial, sans-serif`) — it's not on Google Fonts?
@@ -568,7 +568,7 @@ library paints the skin, icon-left pattern, orthogonal `r=8` connectors, masked 
 python3 <skill-dir>/scripts/pygen/build.py <spec-dir> --out <spec-dir>/out --png --png-dir <static-dir>   # SVG per slug and language, finalized, PNG @2x
 ```
 
-House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names and sublabels,
+House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names, 15px sublabels,
 12px arrow labels) because docs are read at body width and projected; one name line plus one short sublabel per node,
 details in the prose; official icon on every node that names an AWS service; every `WARN` from `build.py` (text overflow
 or a layout rule: overlap, zone straddle, badge row, dangling arrow) is fixed before export, never ignored. Replacing a Mermaid block in Markdown counts as an import (§11): keep the content, redraw the

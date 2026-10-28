@@ -68,7 +68,7 @@
         </g>
       </g>
       <text x="80" y="130" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Producers</text>
-      <text x="80" y="146" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">apps · devices</text>
+      <text x="80" y="146" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">apps · devices</text>
 
       <!-- Kinesis -->
       <rect x="224" y="104" width="176" height="56" rx="6" fill="#ffffff"/>
@@ -80,7 +80,7 @@
         </g>
       </g>
       <text x="272" y="130" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Kinesis Streams</text>
-      <text x="272" y="146" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">data stream</text>
+      <text x="272" y="146" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">data stream</text>
 
       <!-- Lambda -->
       <rect x="464" y="104" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -92,7 +92,7 @@
         </g>
       </g>
       <text x="512" y="130" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Lambda</text>
-      <text x="512" y="146" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">transform</text>
+      <text x="512" y="146" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">transform</text>
 
       <!-- S3 Data Lake (focal) -->
       <rect x="688" y="104" width="176" height="56" rx="6" fill="#ffffff"/>
@@ -106,7 +106,7 @@
         </g>
       </g>
       <text x="736" y="130" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">S3 Data Lake</text>
-      <text x="736" y="146" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">parquet</text>
+      <text x="736" y="146" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">parquet</text>
 
       <!-- Athena -->
       <rect x="464" y="248" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -118,7 +118,7 @@
         </g>
       </g>
       <text x="512" y="274" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Athena</text>
-      <text x="512" y="290" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">SQL query</text>
+      <text x="512" y="290" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">SQL query</text>
 
       <!-- Glue -->
       <rect x="688" y="248" width="176" height="56" rx="6" fill="#ffffff"/>
@@ -130,5 +130,5 @@
         </g>
       </g>
       <text x="736" y="274" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Glue Catalog</text>
-      <text x="736" y="290" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">crawler · schema</text>
+      <text x="736" y="290" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">crawler · schema</text>
 </svg>

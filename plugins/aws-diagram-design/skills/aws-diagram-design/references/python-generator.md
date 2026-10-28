@@ -99,7 +99,7 @@ nodes → overlay → legend), so spec statement order does not matter.
 ## Rules the library enforces, and what the spec still decides
 
 Baked in (plus the layout checks listed under WARN policy): white paper, squid-ink `#232F3E`, smile-orange accent tint/stroke for `focal`, Amazon Ember with Noto Sans
-KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 16, same Ember face, weight 400 · arrow label 12 · zone 14 ·
+KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 15, same Ember face, weight 400 · arrow label 12 · zone 14 ·
 tag 10), icon-left pattern (32px icon in a ≥64px node, 24px in ≥48px, 16px below), opaque node mask, four arrow
 markers, accessible `<title>`/`<desc>` with slug-prefixed ids, PNG at 2x with the paper rect as background.
 

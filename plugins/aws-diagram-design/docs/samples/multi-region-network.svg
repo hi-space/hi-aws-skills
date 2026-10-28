@@ -162,7 +162,7 @@
         </g>
       </g>
       <text x="332" y="258" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">App A</text>
-      <text x="332" y="274" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web tier</text>
+      <text x="332" y="274" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web tier</text>
 
       <!-- Transit Gateway us-east-1 -->
       <rect x="488" y="232" width="152" height="56" rx="6" fill="#ffffff"/>
@@ -174,7 +174,7 @@
         </g>
       </g>
       <text x="532" y="258" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Transit Gateway</text>
-      <text x="532" y="274" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">tgw · use1</text>
+      <text x="532" y="274" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">tgw · use1</text>
 
       <!-- Transit Gateway ap-northeast-2 -->
       <rect x="736" y="232" width="152" height="56" rx="6" fill="#ffffff"/>
@@ -186,7 +186,7 @@
         </g>
       </g>
       <text x="780" y="258" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Transit Gateway</text>
-      <text x="780" y="274" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">tgw · apne2</text>
+      <text x="780" y="274" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">tgw · apne2</text>
 
       <!-- App B -->
       <rect x="944" y="232" width="136" height="56" rx="6" fill="#ffffff"/>
@@ -198,7 +198,7 @@
         </g>
       </g>
       <text x="988" y="258" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">App B</text>
-      <text x="988" y="274" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web tier</text>
+      <text x="988" y="274" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web tier</text>
 
       <!-- AWS Cloud WAN (focal) -->
       <rect x="536" y="392" width="304" height="64" rx="6" fill="#ffffff"/>
@@ -210,7 +210,7 @@
         </g>
       </g>
       <text x="584" y="418" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">AWS Cloud WAN</text>
-      <text x="584" y="434" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">core network · global</text>
+      <text x="584" y="434" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">core network · global</text>
 
       <!-- Direct Connect -->
       <rect x="232" y="396" width="152" height="56" rx="6" fill="#ffffff"/>
@@ -222,7 +222,7 @@
         </g>
       </g>
       <text x="276" y="422" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Direct Connect</text>
-      <text x="276" y="438" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">dx gateway</text>
+      <text x="276" y="438" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">dx gateway</text>
 
       <!-- On-prem servers (external) -->
       <rect x="44" y="396" width="112" height="56" rx="6" fill="#ffffff"/>
@@ -233,5 +233,5 @@
         </g>
       </g>
       <text x="92" y="422" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Servers</text>
-      <text x="92" y="438" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">10.9.0.0/16</text>
+      <text x="92" y="438" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">10.9.0.0/16</text>
 </svg>
