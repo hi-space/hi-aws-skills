@@ -8,7 +8,7 @@ Conditional late-stage authority for generating or validating the complete speak
 
 ## 1. Complete Speaker-notes Document
 
-Write the whole deck to `notes/total.md` in one batch: `# <number>_<page_title>` per page, `---` between pages. Write prose only — no list/bullet markup, stage markers, key-point labels, duration lines, or other metadata. Keep one language unless the confirmed contract is bilingual — then every page keeps the same segment order (first language, blank line, second language).
+Write the whole deck to `notes/total.md` in one batch: `# <number>_<page_title>` per page, `---` between pages. Write prose only — no list/bullet markup, stage markers, key-point labels, duration lines, or other metadata. The prose follows [`copy-voice.md`](./copy-voice.md) like any on-slide string: a named actor and an active verb, literal nouns, no evaluation words, no 번역투, no dashes; `pptx_qa_check.py --checks copy` reads the notes too and warns on each. Keep one language unless the confirmed contract is bilingual — then every page keeps the same segment order (first language, blank line, second language).
 
 **Pre-SVG script branch**: when `notes/total.md` already exists from a final/literal script, validate it instead of regenerating. Retain every word and segment of a final/literal script; agent-authored Quick notes may be repaired only for final-SVG inconsistency. A `# Slide <number>` heading remains valid until Generate Step 7.1 resolves the roster.
 

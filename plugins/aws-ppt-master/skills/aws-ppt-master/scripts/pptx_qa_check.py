@@ -52,10 +52,20 @@ Checks:
                     because both are occasionally the right call.
                   * an ASCII hyphen with a space on both sides doing a
                     colon's job.
+                  * Korean prose rules (copy-voice.md Rules 4, 4b, 4c, 4d,
+                    6): actor-less passives ("~처리됩니다", "~에 의해",
+                    "~할 수 있게 됩니다"), abstract nouns acting ("이 숫자들이
+                    기준선이 됩니다"), figurative words (여정, 축, 출발점,
+                    쥐다, 번지다), evaluation words (핵심, 중요한, 혁신적,
+                    원활한, 다양한, 이를 통해), translated constructions
+                    (~에 있어, ~를 가능하게 합니다, ~라고 볼 수 있습니다),
+                    and four or more lines on one slide all ending in ~니다.
+                  * the same prose rules, plus dashes and the contrastive
+                    reflex, in speaker notes. Notes never fail the build.
 
-                Judgment-level tells (번역투, tricolon reflex, monotone
-                endings) are NOT machine-checked. They live in the
-                copy-voice recipe and the Bedrock copy pass.
+                The tricolon reflex and English buzzwords are NOT
+                machine-checked. They live in the copy-voice recipe and the
+                copy pass.
 
 Usage: python3 scripts/pptx_qa_check.py <deck.pptx> [--checks ...] [--json] [--strict]
 
@@ -627,9 +637,10 @@ def check_zero_size(prs):
 
 # ── Check: AI-copy signature (space-padded dash) ──────────────────────
 
-# Detectors for the copy patterns in references/copy-voice.md. Kept in step
-# with the html-slide sibling's scripts/check_copy.py: if you change a pattern
-# here, change it there too, or the two skills disagree about what ships.
+# Detectors for the copy patterns in references/copy-voice.md. The upstream
+# ppt-master keeps an html-slide sibling (scripts/check_copy.py) with the same
+# dash / middot / meta-label patterns; this fork adds the Korean prose rules
+# below, which have no upstream counterpart.
 import re
 
 # BANNED. Em dash and en dash do not appear in slide copy at all, spaced or
@@ -693,6 +704,165 @@ _CONTRAST_MIN = 3
 
 # Meta narration: a sentence commenting on the previous sentence.
 _META_NARRATION = re.compile(r"(?:이는|이것은|이 결과는|이러한 변화는)\s*.{0,40}?(?:의미|뜻)합니")
+
+# ── Korean prose rules (copy-voice.md Rules 4, 4b, 4c, 4d, 6). All warnings. ──
+# Ported from the aws-tech-blog-writer lint (scripts/lint_blog.py) and trimmed
+# to what slide copy actually produces; the example strings in the tests are
+# verbatim from the 2026-10-28 baseline runs. Each pattern is a string match,
+# not a reading of the sentence, so a legitimate retention statement
+# ("로그는 30일 뒤 삭제됩니다") is kept OUT of the verb list rather than
+# special-cased, and the severity stays at warning for the copy pass to judge.
+
+# Rule 4b. An actor-less passive on a verb whose actor is always available
+# (someone configures, confirms, deploys, stores). "~에 의해" never appears.
+# "~할 수 있게 됩니다" is a doubled auxiliary. "되어집니다" is a stacked passive.
+_PASSIVE_AGENTIVE = re.compile(
+    r"(?:요구|정리|구성|확인|진행|수행|제공|사용|적용|처리|판단|예상|기대|고려|검토|"
+    r"결정|선택|도입|구축|설계|운영|관리|개발|작성|배포|호출|전달|저장|수집|분석|"
+    r"생성|등록|승인|검증|측정|평가)"
+    r"(?:됩니다|되었습니다|됐습니다|되며|되고|되어\s|될 예정|된 것)"
+    r"|에 의해"
+    r"|할 수 있게 (?:됩니다|됐습니다|되었습니다)"
+    r"|되어집니다|되어지"
+)
+
+# Rule 4b. An abstract noun doing something only a person or a system can do
+# (answer, remain, pile up, decide), or an abstract noun "becoming" something
+# ("이 숫자들이 ... 기준선이 됩니다"). Lookbehind keeps "실행 기록이" matching
+# while "실패 기록에서" (no subject particle) does not.
+_ABSTRACT_SUBJECTS = (
+    "문제|질문|과제|조건|선택|결정|구조|차이|필요|요구|한계|이유|고민|숙제|답|경계|"
+    "규칙|원칙|목표|부담|숫자들?|기록|결과|핵심|교훈|변화|의미"
+)
+_PERSONIFICATION = re.compile(
+    r"(?<![가-힣])(?:" + _ABSTRACT_SUBJECTS + r")(?:이|가|은|는|도)\s[^.]{0,30}?"
+    r"(?:남습니다|남는다|남았습니다|따라옵니다|쌓입니다|결정합니다|결정했습니다|"
+    r"뒷받침합니다|말해\s?줍니다|말합니다|보여\s?줍니다|답해\s?줍니다|답합니다|"
+    r"기다립니다|찾아옵니다|드러냅니다|등장합니다|자리\s?잡|요구합니다|가리킵니다|"
+    r"알려\s?줍니다|좌우합니다)"
+    r"|(?<![가-힣])(?:숫자들?|기록|결과|변화|차이|문제|조건)(?:이|가)\s[^.]{0,40}?"
+    r"(?:이|가) (?:됩니다|됐습니다|되었습니다)"
+)
+
+# Rule 4c. A word for a physical thing or motion used for a non-physical one.
+# "축" is literal in 시간축 / X축 / 좌표축 (preceded by a letter) and figurative
+# when it stands alone for a workstream. "묶음" (bundle) never matches 묶인/묶여.
+_FIGURATIVE_WORDS = [
+    "여정", "뼈대", "큰 그림", "전체 그림", "목표 그림", "열쇠", "발판", "무대",
+    "심장", "두뇌", "톱니바퀴", "퍼즐", "지렛대", "밑거름", "이정표", "청사진",
+    "나침반", "항해", "출발점", "씨앗", "열매", "울타리", "빙산", "등불", "레시피",
+    "다리 역할", "엔진 역할", "문을 열", "길을 열", "날개를",
+]
+_FIGURATIVE_RE = re.compile(
+    r"(?<![가-힣A-Za-z])축(?=[은는이가을를의로와과에으 ,.:)])"
+    r"|쥐고|쥐었|번지|묶인|묶여|떠받치|무기(?!한)"
+)
+
+# Rule 4d. Words that rate the fact instead of stating it. "핵심 시사점" and
+# "왜 중요한가" are already critical meta labels; these are the bare forms.
+_EVALUATION = [
+    "핵심은", "핵심적", "중요한", "중요합니다", "혁신적", "획기적", "강력한", "놀라운",
+    "탁월한", "최첨단", "차세대", "게임 체인저", "게임체인저", "패러다임", "원활",
+    "매끄러", "손쉽게", "시너지", "레버리지", "임팩트", "비즈니스 가치", "최적의",
+    "완벽한", "성공적으로", "필수적", "궁극적으로", "인사이트", "다양한", "효율적으로",
+    "이를 통해",
+]
+
+# Rule 4. Constructions carried over literally from English. "에 있어" is
+# scoped to the nouns it follows in translationese, so "DynamoDB에 있어 어느
+# 실행이..." (the verb 있다, "exists at") is not flagged.
+_TRANSLATED = [
+    (re.compile(r"(?:관리|운영|설계|도입|전환|구축|비용|성능|보안|측면|과정|단계|선택|"
+                r"판단|활용|적용|구현|개발|분석|확장)에 있어서?"),
+     "'~에 있어' (in terms of); use ~에서 / ~할 때"),
+    (re.compile(r"가능하게 (?:합니다|했습니다|하며|하고|함)"),
+     "'~를 가능하게 합니다' (enables); use ~할 수 있습니다 or the active verb"),
+    (re.compile(r"라고 (?:할|볼) 수 있습니다"),
+     "'~라고 볼 수 있습니다' (hedged assertion); assert or cut"),
+    (re.compile(r"에 (?:관한|대한) (?:것|이야기)입니다"),
+     "'~에 관한 것입니다' (is about); say the thing instead"),
+    (re.compile(r"(?:^|\s)(?:첫째|둘째|셋째),"),
+     "'첫째, 둘째, 셋째' formula; one item per line"),
+    (re.compile(r"^(?:이는|이것은)\s"),
+     "'이는/이것은' sentence subject (This ...); repeat the noun"),
+]
+
+# Rule 6. Four or more prose lines on one slide that all end in ~니다 read
+# as a column of identical endings. Lines without a Hangul verb ending (numbers,
+# noun phrases, labels) count toward the total, so a slide mixing them passes.
+_NIDA_ENDING = re.compile(r"니다[.!]?\s*$")
+_MONOTONE_MIN_LINES = 4
+_MONOTONE_RATIO = 0.8
+
+
+def _prose_findings(idx, lines, where):
+    """Warnings for the Korean prose rules on one list of lines.
+
+    `where` is "" for slide text and " (notes)" for speaker notes, so one
+    finding says which surface it came from. Every finding here is a
+    warning: each pattern is sometimes the right word, and the copy pass or a
+    human decides, never the regex.
+    """
+    out = []
+
+    def add(label, hits, advice):
+        out.append(
+            Issue(
+                "warning",
+                idx,
+                "ai_copy",
+                f"Slide {idx}{where}: {label} on {len(hits)} line(s). {advice}: "
+                + " | ".join(h[:70] for h in hits[:2]),
+                count=len(hits),
+            )
+        )
+
+    pv = [ln for ln in lines if _PASSIVE_AGENTIVE.search(ln)]
+    if pv:
+        add("actor-less passive", pv,
+            "Name who does it (팀/사람/서비스가 ~합니다); never '~에 의해'")
+
+    ab = [ln for ln in lines if _PERSONIFICATION.search(ln)]
+    if ab:
+        add("abstract noun as the subject", ab,
+            "Make the team, the person, or the service the subject")
+
+    fg = [ln for ln in lines
+          if _FIGURATIVE_RE.search(ln) or any(w in ln for w in _FIGURATIVE_WORDS)]
+    if fg:
+        add("figurative language", fg,
+            "Replace the metaphor with the literal noun or verb")
+
+    ev = [ln for ln in lines if any(w in ln for w in _EVALUATION)]
+    if ev:
+        add("evaluation word", ev,
+            "State the fact or the number; drop the rating")
+
+    tr = []
+    for ln in lines:
+        for rx, why in _TRANSLATED:
+            if rx.search(ln):
+                tr.append(f"{ln[:50]} [{why}]")
+                break
+    if tr:
+        add("translated construction", tr, "Rewrite in spoken Korean")
+
+    return out
+
+
+def _notes_lines(slide):
+    """Speaker-notes paragraphs as strings, or [] when the slide has none."""
+    if not getattr(slide, "has_notes_slide", False):
+        return []
+    tf = getattr(slide.notes_slide, "notes_text_frame", None)
+    if tf is None:
+        return []
+    lines = []
+    for para in tf.paragraphs:
+        line = "".join(r.text for r in para.runs).strip()
+        if line:
+            lines.append(line)
+    return lines
 
 
 # Code is not copy. A code sample legitimately contains arithmetic ("n - 1"),
@@ -905,6 +1075,56 @@ def check_ai_copy(prs):
                 )
             )
 
+        # ── warning: Korean prose rules on slide text ──
+        issues.extend(_prose_findings(idx, lines, ""))
+
+        # ── warning: monotone endings (Rule 6) ──
+        if len(lines) >= _MONOTONE_MIN_LINES:
+            nida = [ln for ln in lines if _NIDA_ENDING.search(ln)]
+            if len(nida) / len(lines) >= _MONOTONE_RATIO:
+                issues.append(
+                    Issue(
+                        "warning",
+                        idx,
+                        "ai_copy",
+                        f"Slide {idx}: {len(nida)} of {len(lines)} lines end in "
+                        f"~니다, a column of identical endings. Mix noun-phrase "
+                        f"endings (체언 종결) and numbers with the full sentences.",
+                        count=len(nida),
+                    )
+                )
+
+        # ── speaker notes: prose rules apply, nothing here fails the build ──
+        nlines = _notes_lines(slide)
+        if nlines:
+            nd = [ln for ln in nlines if _BANNED_DASH.search(ln)]
+            if nd:
+                issues.append(
+                    Issue(
+                        "warning",
+                        idx,
+                        "ai_copy",
+                        f"Slide {idx} (notes): {len(nd)} em/en dash(es) in speaker "
+                        f"notes. Use a period or a colon: "
+                        + " | ".join(x[:70] for x in nd[:2]),
+                        count=len(nd),
+                    )
+                )
+            ncl = [ln for ln in nlines if _CONTRAST.search(ln)]
+            if ncl:
+                issues.append(
+                    Issue(
+                        "warning",
+                        idx,
+                        "ai_copy",
+                        f"Slide {idx} (notes): contrastive reflex ('A가 아니라 B') "
+                        f"on {len(ncl)} line(s). Delete the foil: "
+                        + " | ".join(c[:70] for c in ncl[:2]),
+                        count=len(ncl),
+                    )
+                )
+            issues.extend(_prose_findings(idx, nlines, " (notes)"))
+
     if dash_total:
         issues.append(
             Issue(
@@ -912,7 +1132,7 @@ def check_ai_copy(prs):
                 0,
                 "ai_copy",
                 f"Deck-wide: {dash_total} banned em/en dash(es) across "
-                f"{len(dash_slides)} slide(s). Run the Opus 4.6 copy pass "
+                f"{len(dash_slides)} slide(s). Run the copy pass "
                 f"(references/copy-voice.md) and rebuild before delivery.",
                 count=dash_total,
                 slides=dash_slides,
@@ -947,7 +1167,7 @@ def check_ai_copy(prs):
                 f"(~{round(contrast_total / n, 2)}/slide). Budget is one per "
                 f"deck. At this density it is the default sentence shape rather "
                 f"than an argument, which is the most common reason Korean slide "
-                f"copy reads machine-drafted. Run the Opus 4.6 copy pass. "
+                f"copy reads machine-drafted. Run the copy pass. "
                 f"Examples: " + " | ".join(c[:60] for c in contrast_examples[:3]),
                 count=contrast_total,
                 slides=contrast_slides,

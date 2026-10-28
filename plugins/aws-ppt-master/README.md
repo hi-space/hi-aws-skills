@@ -10,7 +10,7 @@ Markdown·문서·URL·주제에서 **네이티브로 편집 가능한 PPTX**(�
 | AI 이미지 생성 | Amazon Bedrock 의 Stability AI Stable Image 만 사용 (API 키 없음, boto3 자격 증명 체인) |
 | 나레이션·TTS·영상 | 제외 |
 | 스톡 이미지 검색·워터마크 제거 | 제외 |
-| QA | `scripts/pptx_qa_check.py`: 슬라이드 경계, 본문 15pt 하한, 이미지 비율, 커넥터, 한국어·영어 카피 보이스(em dash·메타 라벨·번역투) |
+| QA | `scripts/pptx_qa_check.py`: 슬라이드 경계, 본문 15pt 하한, 이미지 비율, 커넥터, 한국어·영어 카피 보이스(em dash, 메타 라벨, 수동태, 은유, 평가어, 번역투, 단조 어미; 발표자 노트까지 검사) |
 | 아이콘 | `templates/icons/aws/` AWS 서비스 마크 304개 (AgentCore 변형 포함) |
 | 무결성 게이트·스폰서 자료 | 제거 (원저작자 고지는 LICENSE, THIRD_PARTY_LICENSES.md) |
 

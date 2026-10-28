@@ -1,7 +1,7 @@
 # Copy Voice: writing slide text a person would actually say
 
-> Load when authoring or rewriting on-slide text in Korean or English.
-> Machine check: `scripts/pptx_qa_check.py --checks copy`. Ported from myslide (jesamkim, MIT).
+> Load when authoring or rewriting on-slide text or speaker notes in Korean or English.
+> Machine check: `scripts/pptx_qa_check.py --checks copy` (reads slide text and notes). Ported from myslide (jesamkim, MIT).
 
 Design and words are separate crafts, and slide copy is the one users rewrite
 first. A deck can be laid out beautifully and still read as machine drafted,
@@ -65,6 +65,11 @@ knowing what to write beats knowing what to avoid:
 - **Concrete over generic.** Names, numbers, and verbs (`추론 비용 42% 절감`,
   `배포가 하루 단위로`) beat abstract virtue words (`혁신적인`, `차별화된`,
   `faster, cheaper, better`, `seamless`, `robust`).
+- **Someone does the thing.** The subject is a team, a person, or a service,
+  and the verb is active: `Step Functions가 단계 순서를 관리합니다`, not
+  `단계 순서가 관리됩니다`, and not `이 숫자들이 기준선이 됩니다`.
+- **Literal words.** A host does not 쥐다 a schedule, a failure does not 번지다,
+  a number is not an 출발점. Say what the thing is.
 - **Varied rhythm.** Do not end every Korean bullet in `~합니다`, and do not
   reach for a three item list every time. Mix noun phrase endings (체언 종결)
   with the occasional full sentence.
@@ -263,11 +268,100 @@ tech idiom the deck was drafted in.
 | `TCO 최적화` | `총 소유 비용 절감`, 또는 그 금액 | 규정 용어의 계산기식 번역. |
 | `~에 대한` 반복, `~를 통해` | 동사로 바꿉니다 | 한국어는 동사에 의미가 실립니다. 영어의 명사 습관을 옮기면 관공서 문체가 됩니다. |
 | slide A `재순위화`, slide B `리랭킹` | 하나만 골라 덱 전체에 고정 | 용어가 바뀌면 청중은 개념이 바뀐 줄 읽습니다. 차용어와 번역어 쌍(리랭킹/재순위, 청킹/분할, 임베딩/벡터화)마다 찾기 한 번 돌리세요. |
+| `~에 있어`, `~함에 있어` | `~에서`, `~할 때` | "in terms of" 직역. |
+| `~를 가능하게 합니다` | `~할 수 있습니다`, 또는 능동 동사 | "enables" 직역. |
+| `~라고 볼 수 있습니다`, `~라고 할 수 있습니다` | 그냥 단언합니다 | 영어 hedge의 번역. 슬라이드는 주장을 합니다. |
+| `~에 관한 것입니다`, `~에 대한 이야기입니다` | 내용을 직접 씁니다 | "is about" 직역. 슬라이드가 무엇에 관한 것인지 말하는 대신 그것을 말합니다. |
+| `이는`, `이것은` 으로 시작하는 문장 | 명사를 다시 씁니다 | "This ..." 직역. 대명사 주어는 앞 문장에 대한 논평으로 흐릅니다. |
+| `첫째, 둘째, 셋째` | 각 항목을 한 줄씩 | 열거 공식. 목록 구조가 이미 번호를 보여 줍니다. |
 | 모든 불릿이 `~합니다`로 끝남 | 체언 종결을 섞고 간간이 완전한 문장 | 같은 어미가 줄줄이 서면 기계가 쓴 것처럼 읽힙니다. |
 
 When a term is genuinely ambiguous (차용어와 번역어가 둘 다 자연스러울 때),
 prefer the form AWS Korean documentation and blog posts use, then keep it
 consistent deck wide.
+
+## Rule 4b: the subject can act, and the verb is active
+
+Korean slide copy drifts to two shapes when the writer does not want to name
+who did something: an abstract noun acting (`이 숫자들이 기준선이 됩니다`,
+`기록이 먼저 답해 줍니다`, `핵심은 ~에 있습니다`) and a passive ending with
+no actor (`~됩니다`, `~되었습니다`, `~이루어집니다`, `~확인된 것은`). Both read
+as drafted by a machine because a presenter never talks that way on stage. The
+presenter says who did it.
+
+The subject of a sentence is something that can be photographed or logged in:
+a team, a person, a role, an AWS service, a component. Abstract nouns (문제, 숫자,
+결과, 조건, 선택, 구조, 차이, 핵심, 교훈, 변화) do not act, remain, arrive, decide,
+answer, or support.
+
+| Generated | Written |
+|---|---|
+| `이 숫자들이 이후 설계를 비교하는 기준선이 됩니다` | `이후 설계는 이 숫자를 기준으로 비교합니다` |
+| `기록이 먼저 답해 줍니다` | `실행 기록에서 실패 지점을 먼저 확인합니다` |
+| `이번 전환의 핵심은 상태를 호스트 밖으로 뺀 데 있습니다` | `실행 상태를 호스트 밖 DynamoDB로 옮겼습니다` |
+| `이번 수치로 확인된 것은 재실행이 줄었다는 점입니다` | `3개월 동안 수동 재실행은 0회였습니다` |
+| `인증은 Cognito를 통해 처리됩니다` | `Amazon Cognito가 인증을 처리합니다` |
+| `스케줄이 실행 로직과 분리됩니다` | `EventBridge Scheduler가 스케줄을 맡고, Lambda가 실행합니다` |
+| `실패를 설명할 수 있게 됐습니다` | `실패 지점을 실행 기록에서 찾습니다` |
+
+Passive is acceptable when the actor is unknown or genuinely irrelevant
+(`로그는 30일 뒤 삭제됩니다` as a retention fact), and never in two consecutive
+lines. `~에 의해` does not appear at all. `~할 수 있게 됩니다` is a doubled
+auxiliary; write `~할 수 있습니다` or the plain active verb.
+
+The checker warns on the agentive passives (`요구/정리/구성/확인/처리/제공/적용/
+사용/운영/관리/구축/배포/저장/수집/검증 + 됩니다/되었습니다/되며`), on `에 의해`,
+and on `할 수 있게 됩니다`. It does not read the sentence, so a legitimate
+retention statement will warn too; that is a judgement call for the pass, not a
+build failure.
+
+## Rule 4c: literal nouns and verbs, no figurative language
+
+A word for a physical thing or motion used for a non-physical one is a
+metaphor, and it goes. Metaphor is the second most reliable tell after the
+dash: it sounds like insight while saying nothing a number could not say
+better. Frequent offenders in this skill's own output: 여정, 축 (for a
+workstream), 뼈대, 큰 그림, 열쇠, 다리, 발판, 무대, 심장, 두뇌, 엔진, 톱니바퀴,
+퍼즐, 지렛대, 밑거름, 이정표, 청사진, 나침반, 항해, 출발점, 씨앗, 열매, 울타리,
+무기, 문을 열다, 길을 열다, 날개를 달다, and the verbs 쥐다, 번지다, 묶이다,
+떠받치다, 이끌다 applied to systems or numbers.
+
+| Generated | Written |
+|---|---|
+| `그 호스트가 전체 일정을 쥐고 있었습니다` | `호스트 한 대가 멈추면 정산 전체가 멈췄습니다` |
+| `단계로 나눌수록 실패가 번지는 범위가 좁아집니다` | `단계로 나누면 실패한 단계만 다시 실행합니다` |
+| `cron 한 대에 묶인 정산` | `EC2 한 대의 cron으로 돌던 정산` |
+| `이 숫자들이 전환의 출발점입니다` | `전환 전 기준값: 6시간, 월 2회 실패, 월 5회 온콜` |
+| `서버리스 여정을 시작하세요` | `작은 서비스 하나부터 옮겨 보세요` |
+| `세 가지 축으로 비용을 낮췄습니다` | `세 가지 방법으로 비용을 낮췄습니다` |
+
+Services doing their job is literal and stays: `Gateway가 인증을 처리합니다`,
+`Runtime이 세션을 격리합니다`. `축` is literal in `시간축`, `X축`, `좌표축`.
+Fixed technical terms that happen to be metaphors in origin (`파이프라인`, `버킷`,
+`스트림`, `큐`, `브리지` in a product name) are vocabulary, not figures of speech,
+and are never flagged.
+
+## Rule 4d: state, do not rate
+
+The line says what happened, what is true, or what follows. It does not say
+that it matters, and it does not decorate the fact with an adjective of
+approval. Evaluation words are filler that a reader skips and a sceptic
+counts: 핵심(은/적인), 중요한, 혁신적, 획기적, 강력한, 놀라운, 탁월한, 최첨단,
+차세대, 게임 체인저, 패러다임, 원활한, 매끄러운, 손쉽게, 시너지, 레버리지,
+임팩트, 비즈니스 가치, 최적의, 완벽한, 성공적으로, 필수적, 궁극적으로,
+인사이트, 다양한 (name the items instead), 효율적으로 (without a number),
+이를 통해.
+
+| Generated | Written |
+|---|---|
+| `숫자보다 중요한 변화는 새벽에 호출을 받지 않는 운영입니다` | `배치 온콜 호출: 월 5회에서 0회` |
+| `이번 전환의 핵심은 기록을 밖으로 뺀 것입니다` | `실행 상태는 DynamoDB에, 중간 데이터는 S3에 둡니다` |
+| `다양한 배치 작업에 적용할 수 있습니다` | `정산, 재고 집계, 정산 검증 배치에 같은 구조를 씁니다` |
+| `성공적으로 전환을 완료했습니다` | `3개월 운영, 수동 재실행 0회` |
+| `이를 통해 운영 효율이 개선됩니다` | `운영자가 새벽에 호출받는 일이 없어졌습니다` |
+
+A consequence or a constraint is not evaluation and stays: `이 차이 때문에 cron
+서버를 유지할 이유가 없습니다`.
 
 ## Rule 5: English anti AI tone
 
@@ -284,9 +378,21 @@ consistent deck wide.
 ## Rule 6: rhythm
 
 Sameness of shape reads as machine generated even when every line is fine
-alone. Vary sentence length. Do not end every Korean bullet the same way. Do
-not reach for three parallel items every time. Mix noun-phrase endings
-(체언 종결) with the occasional full sentence.
+alone. This is the tell that survives every other rule (measured 2026-10-28:
+three runs that passed Rules 1 to 5 still ended four or more lines per slide in
+`~니다`), so it is a shape requirement, not advice:
+
+- **A slide with four or more lines has at least two lines that end in a noun
+  or a number**, written as a label or a figure (`수동 재실행 0회`, `전환 전
+  기준값: 6시간, 월 2회 실패`, `DynamoDB에 실행 상태 기록`), and the rest as
+  full sentences. The title counts as a line.
+- **Consecutive bullets do not share an ending.** `~했습니다` after `~했습니다`
+  becomes a noun phrase or a `~합니다` / `~입니다` sentence.
+- Vary sentence length, and do not reach for three parallel items every time.
+
+The checker warns when 80% or more of four or more lines on one slide end in
+`~니다`. Four lines ending in `0회`, `48분`, `옮겼습니다`, `DynamoDB 기록` do
+not trip it.
 
 ## The test that decides
 
@@ -360,11 +466,27 @@ Fix, in priority order:
    leading list bullet is fine.
 4. Korean 번역투: 여정 / 오버헤드 / 내재화 / 노브 / 상주, Latin-script product
    and pricing terms on a Korean slide (Pay-per-use, TCO), noun piles and
-   stacked ~에 대한 / ~를 통해 where a verb is natural. Default 존댓말. One
-   rendering per concept deck wide.
-5. English AI tone: "X, not Y" reflexes, reflexive tricolons,
+   stacked ~에 대한 / ~를 통해 where a verb is natural, ~에 있어, ~를 가능하게
+   합니다, ~라고 볼 수 있습니다, ~에 관한 것입니다, sentences opening with
+   이는/이것은. Default 존댓말. One rendering per concept deck wide.
+5. Subject and voice (Korean): the subject is a team, a person, or a service
+   and the verb is active. Rewrite abstract nouns that act ("이 숫자들이
+   기준선이 됩니다", "핵심은 ~에 있습니다") and actor-less passives ("~됩니다",
+   "~확인된 것은", "~할 수 있게 됐습니다") so the actor is named. Never "~에 의해".
+6. Figurative language (Korean): replace every metaphor with the literal noun
+   or verb. 여정, 축, 뼈대, 큰 그림, 열쇠, 발판, 출발점, 이정표, 지렛대, and
+   systems or numbers that 쥐다 / 번지다 / 묶이다 / 이끌다 / 답하다.
+7. Evaluation words (Korean): 핵심, 중요한, 혁신적, 강력한, 원활한, 최적의,
+   성공적으로, 필수적, 인사이트, 다양한, 이를 통해. State the fact; drop the
+   rating.
+8. English AI tone: "X, not Y" reflexes, reflexive tricolons,
    journey/unlock/empower/leverage/seamless/robust, unsupported hedges.
-6. Monotone rhythm: a column of identical endings. Vary them.
+9. Monotone rhythm: on any slide with four or more lines, at least two lines
+   end in a noun or a number (`수동 재실행 0회`, `실행 상태: DynamoDB`), and no
+   two consecutive bullets share an ending.
+
+Speaker notes are prose and follow rules 4 to 9 like any other string; include
+them in the table with slot "notes".
 
 Never invent a number, name, date, or outcome. Write
 [확인 필요: ...] in its place and list those at the end.
