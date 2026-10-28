@@ -111,7 +111,10 @@ to respect the following, or the Drawer will run out of cells:
   `group_ec2_instance_contents`, `group_elastic_beanstalk`; see aws-icons-groups.md), else the service icon (`bedrock`,
   `glue`, `ecs`) — optionally `bedrock: Amazon Bedrock` for the title. The box is drawn the way the official icon deck
   draws groups: filled badge, border and title in the service's colour. Members must share a group; the box is drawn only when the
-  layout puts them side by side (the Drawer sees `hint: boundary … not drawn` otherwise). **Not for copies of the
+  layout puts them side by side (the Drawer sees `hint: boundary … not drawn` otherwise). A **host box** — an official
+  `group_*` badge such as `group_ec2_instance_contents: EC2 edge device` — may hold a single resource: it separates the
+  service-level icon (IoT Greengrass, the deployment) from the runtime installed on the machine (`iot_greengrass_component_nucleus`,
+  resource) — one row for the service, one row for the resource with the Boundary. **Not for copies of the
   same stencil** — three Lambdas are three roles or one node "Lambda (3 functions)", never a "Lambda" box; the
   scaffold warns when a boundary's rows all use the same stencil.
 - **No abstract nodes.** A node is one AWS service/resource or one user/external system, drawn with its own

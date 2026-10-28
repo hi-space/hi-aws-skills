@@ -23,7 +23,7 @@ On top of that, stencil names don't track service renames (OpenSearch is still `
 
 ## Sample
 
-> 1.9.1 drops the page title, subtitle and legend (the drawing is the whole page) and returns role groups to the dashed grey outline; `subtitle`, `legend_solid` and `legend_dashed` in a spec are ignored. 1.9.0 tightened the grid to 224 × 142 and enlarged the type. A hand-placed spec (`.json`) from before 1.9 may hit `ERROR label` when rebuilt because a *What flows* phrase lost its room; condense the phrase in both the brief and the spec — text beside vertical lines is the first to go.
+> 1.9.2 draws a host boundary (an official `group_*` badge such as `group_ec2_instance_contents`) around a single member, so the service icon (IoT Greengrass) and the runtime installed on the device (Greengrass Nucleus) stay apart. 1.9.1 drops the page title, subtitle and legend (the drawing is the whole page) and returns role groups to the dashed grey outline; `subtitle`, `legend_solid` and `legend_dashed` in a spec are ignored. 1.9.0 tightened the grid to 224 × 142 and enlarged the type. A hand-placed spec (`.json`) from before 1.9 may hit `ERROR label` when rebuilt because a *What flows* phrase lost its room; condense the phrase in both the brief and the spec — text beside vertical lines is the first to go.
 
 Role groups are dashed grey outlines on a 224 × 142 grid with 15 px names and 14 px edge text, and two or more resources of one platform service that land side by side (AgentCore Runtime + Memory, Glue crawler + catalog) are boxed the way the official icon deck draws a group — filled badge, border and title in the service's colour — only when adjacent; otherwise a hint, never a forced layout.
 

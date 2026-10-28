@@ -65,6 +65,7 @@ Usage: build_diagram.py SPEC.json OUT.drawio [--brief BRIEF.md | --no-brief] [--
 from __future__ import annotations
 
 import base64
+import functools
 import json
 import sys
 from pathlib import Path
@@ -113,9 +114,10 @@ GENERIC_GROUP = "rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#5A
 # service's own category colour. Official group badges (`group_*` stencils: Step Functions workflow, Auto Scaling
 # group, EC2 instance contents, …) are the aws4 group shape with the catalog's colour; any other stencil becomes a
 # BADGE_PX filled square (resourceIcon) on a plain rectangle. Inset from the group's sides, title row under the
-# group's own (TITLE_BAND) and above the first icon, closing under a one-line node label.
+# group's own (TITLE_BAND) and above the first icon, closing under a one-line node label. A service badge needs two or
+# more members; an official `group_*` badge is a host box and may hold one (host_badge, 1.9.2).
 BOUNDARY_INSET, BOUNDARY_ABOVE, BOUNDARY_BELOW, BADGE_PX = 10, 32, 8, 24
-BOUNDARY_TITLE_CHAR_PX = 7.7                             # 14 pt bold Ember, average; the title is one line and never wraps
+BOUNDARY_TITLE_CHAR_PX = 7.7                             # 14 pt bold Ember, Latin average (text_px measures the title; CJK is 0.92 em)
 # Stencils that exist in the catalog (generated from draw.io's dev branch) but render as a blank square in the draw.io
 # builds most people run today: the boundary badge for them is the bundled official SVG instead (assets/extra-icons,
 # allow-listed in extra-icons.txt). The spec still names the stencil, so the brief stays canonical. These are
@@ -125,6 +127,19 @@ BADGE_IMAGE = {
     "bedrock_agentcore": "Arch_Amazon-Bedrock-AgentCore_48.svg",
     "sagemaker_2": "Arch_Amazon-SageMaker_48.svg",
 }
+
+
+@functools.lru_cache(maxsize=1)
+def _stencils() -> dict:
+    return json.loads(INDEX.read_text())["stencils"]
+
+
+def host_badge(name: str, index: dict | None = None) -> bool:
+    """An official AWS group badge (a `group_*` stencil: EC2 instance contents, Auto Scaling group, …) marks a *host*
+    boundary — the box says what runs inside one machine or fleet — so one resource inside it is a complete picture
+    (1.9.2: the Greengrass nucleus installed on an EC2 edge device). A service badge (`bedrock`, `glue`) is a box for
+    several resources of that service and still needs two or more members."""
+    return ((index if index is not None else _stencils()).get(name) or {}).get("kind") == "group"
 
 
 # {B} is the bottom port ratio of the node whose bottom the edge touches: (icon + label height) / icon, so a
@@ -239,7 +254,8 @@ def label_box_size(lines: list[str]) -> tuple[float, float]:
 
 def boundary_plan(spec: dict, index: dict | None = None) -> tuple[dict[str, dict], list[str]]:
     """Which service boundaries get a box. Nodes sharing `boundary` inside one group are a candidate; it is drawn
-    when there are at least two of them and their cells form a clean rectangle (every cell a member or empty) —
+    when there are at least two of them (one is enough under a `group_*` host badge — host_badge) and their cells
+    form a clean rectangle (every cell a member or empty) —
     the layout planner nudges members together (layout.py BOUNDARY_SPLIT_COST) but never forces it. Returns
     ({box id: {gid, name, members, c0, c1, l0, l1}}, [hint lines for the ones not drawn])."""
     nodes = {n["id"]: n for n in spec.get("nodes", [])}
@@ -250,9 +266,10 @@ def boundary_plan(spec: dict, index: dict | None = None) -> tuple[dict[str, dict
             sets.setdefault((n["group"], n["boundary"]), []).append(nid)
     drawn, skipped = {}, []
     for (gid, name), members in sets.items():
-        if len(members) < 2:
+        if len(members) < 2 and not host_badge(name, index):
             skipped.append(f"hint: boundary '{name}' in group '{gid}' has one member ('{members[0]}') — not drawn; a service box "
-                           "needs two or more resources of the service")
+                           "needs two or more resources of the service (a host box — an official `group_*` badge such as "
+                           "`group_ec2_instance_contents` — may hold one)")
             continue
         cells = [(nodes[m]["col"], nodes[m]["lane"]) for m in members]
         c0, c1 = min(c for c, _ in cells), max(c for c, _ in cells)
@@ -279,12 +296,14 @@ class Builder:
         self.nodes = {n["id"]: n for n in spec.get("nodes", [])}
         self.groups = {g["id"]: g for g in spec.get("groups", [])}
         self._check()
-        drawn_boundaries = boundary_plan(spec, index)[0]
+        drawn_boundaries = boundary_plan(spec, self.index)[0]          # the stencil catalog, so host_badge can see `kind`
         self._boundary_gids = {b["gid"] for b in drawn_boundaries.values()}
         self._boundary_last_lane = {}                          # gid -> lowest lane a drawn boundary in it reaches
         self._boundary_first_lane = {}                         # gid -> highest lane a drawn boundary in it starts on
+        self._boundary_last_lines = {}                          # gid -> label lines of the members on that lowest lane
         for b in drawn_boundaries.values():
             self._boundary_last_lane[b["gid"]] = max(self._boundary_last_lane.get(b["gid"], -1), b["l1"])
+            self._boundary_last_lines[b["gid"]] = max(self._boundary_last_lines.get(b["gid"], 1), self.boundary_label_lines(b))
             self._boundary_first_lane[b["gid"]] = min(self._boundary_first_lane.get(b["gid"], 10 ** 6), b["l0"])
         self.row_breaks = self._row_breaks()
         self.row_extra = self._row_extra()
@@ -334,6 +353,12 @@ class Builder:
         lines.append(cur)
         return lines
 
+    def boundary_label_lines(self, b: dict) -> int:
+        """Label lines of the members on a boundary's lowest lane: one under a service badge (the check refuses more —
+        the box title already names the service), one or two under a host badge (`Greengrass Nucleus` on an EC2
+        device wraps like any node label; the box and the card grow for it)."""
+        return max(self.wrap(self.nodes[m]["label"]).count("<br>") + 1 for m in b["members"] if self.nodes[m]["lane"] == b["l1"])
+
     def group_above(self, gid: str) -> int:
         """Padding above the first icon: the title band (one line per extra title line), plus a boundary's own title
         row when the group draws one."""
@@ -349,7 +374,7 @@ class Builder:
         heights = [self.label_h(n) for n in self.nodes.values() if n.get("group") == gid and n["lane"] == last]
         below = (max(heights) if heights else LABEL_TOP_PAD + LABEL_LINE_H) + GROUP_BELOW_PAD
         if self._boundary_last_lane.get(gid) == last:          # a boundary box ends here: keep it BOUNDARY_INSET off the card border
-            below = max(below, LABEL_TOP_PAD + LABEL_LINE_H + BOUNDARY_BELOW + BOUNDARY_INSET)
+            below = max(below, LABEL_TOP_PAD + LABEL_LINE_H * self._boundary_last_lines.get(gid, 1) + BOUNDARY_BELOW + BOUNDARY_INSET)
         return below
 
     def _row_extra(self) -> dict[int, int]:
@@ -811,20 +836,22 @@ class Builder:
         parent_of: dict[str, str] = {}
         for bid, b in boundaries.items():
             for m in b["members"]:
-                if "<br>" in self.wrap(self.nodes[m]["label"]) or len(self.nodes[m]["label"]) > LABEL_WRAP:
+                if not host_badge(b["name"], self.index) and ("<br>" in self.wrap(self.nodes[m]["label"])
+                                                              or len(self.nodes[m]["label"]) > LABEL_WRAP):
                     raise SpecError(f"node '{m}': label '{self.nodes[m]['label']}' inside boundary '{b['name']}' must fit one line "
                                     f"(≤ {LABEL_WRAP} characters) — the boundary title already names the service, drop it from the label")
                 parent_of[m] = bid
             bx = self.cx(b["c0"]) - GROUP_HALF_W + BOUNDARY_INSET
             bw = self.cx(b["c1"]) - self.cx(b["c0"]) + 2 * GROUP_HALF_W - 2 * BOUNDARY_INSET
             by = self.ly(b["l0"]) - ICON // 2 - BOUNDARY_ABOVE
-            bh = self.ly(b["l1"]) - self.ly(b["l0"]) + ICON + BOUNDARY_ABOVE + LABEL_TOP_PAD + LABEL_LINE_H + BOUNDARY_BELOW
+            bh = (self.ly(b["l1"]) - self.ly(b["l0"]) + ICON + BOUNDARY_ABOVE + LABEL_TOP_PAD
+                  + LABEL_LINE_H * self.boundary_label_lines(b) + BOUNDARY_BELOW)
             st = self.index[b["name"]]
             title = (spec.get("boundaries") or {}).get(b["name"]) or st.get("label") or b["name"]
             gx, gy, gw, _ = rects[b["gid"]]
             # the title never wraps (it would land on the first icon); a title wider than the cells is given room to
             # the right — inside the group and only where the neighbouring cells on these lanes hold no node — else a note
-            title_px = int(len(title) * BOUNDARY_TITLE_CHAR_PX) + 30 + 10
+            title_px = int(text_px(title, 14)) + 30 + 10                # text_px knows CJK widths; the old len() × 7.7 undercounted Korean titles
             if title_px > bw:
                 limit = gx + gw - BOUNDARY_INSET                       # inside the group …
                 if any(n["col"] == b["c1"] + 1 and b["l0"] <= n["lane"] <= b["l1"] for n in self.nodes.values()):

@@ -26,7 +26,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from build_diagram import (BOUNDARY_INSET, CLOUD_PAD, COL0, COL_PITCH, GROUP_HALF_W, ICON, LABEL_MAX_LINES,  # noqa: E402
-                           LABEL_MAX_LINE_CHARS, MAX_PER_SIDE, OUTSIDE_GAP, chars_that_fit, label_lines)
+                           LABEL_MAX_LINE_CHARS, MAX_PER_SIDE, OUTSIDE_GAP, chars_that_fit, host_badge, label_lines)
 
 HARD = 1000.0
 # A service boundary (nodes sharing `boundary` inside one group — AgentCore Runtime + Memory, Glue crawler + catalog) is
@@ -34,7 +34,8 @@ HARD = 1000.0
 # with a soft cost, never a hard one: keeping two members together typically costs two bends instead of two straight
 # edges (2 × 3 − 2 × 1) plus a shared side (3) and a step of distance (1) — about 10 — so the price of a split boundary
 # sits above that and a little above a split group (12). Nudged, not forced: when only a sprawl would join them, the
-# search still prefers the compact picture and the builder prints a hint instead of a box.
+# search still prefers the compact picture and the builder prints a hint instead of a box. A host boundary (an official
+# `group_*` badge — EC2 instance contents around the runtime installed on it) is drawn around a single member (1.9.2).
 BOUNDARY_SPLIT_COST = 14.0
 
 # Edge text is the brief's *What flows* phrase; the builder wraps it (≤ 3 lines) and puts it on the longest leg
@@ -295,8 +296,8 @@ class Placement:
         # service boundaries: members together in a clean rectangle inside one group box (see module comment)
         bcuts: list[tuple[int, int, float, float]] = []                 # (l0, l1, x_left, x_right) of drawn boundaries
         drawn_members: list[set[str]] = []                              # members of every boundary the builder will draw
-        for (gid, _), members in self.boundaries.items():
-            if len(members) < 2:
+        for (gid, bname), members in self.boundaries.items():
+            if len(members) < 2 and not host_badge(bname):      # a `group_*` host badge draws around one member (1.9.2)
                 continue
             c0, c1 = min(col[m] for m in members), max(col[m] for m in members)
             l0, l1 = min(lane[m] for m in members), max(lane[m] for m in members)

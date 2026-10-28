@@ -108,13 +108,18 @@ AgentCore resource is filed under `bedrock` or a Unified Studio one under `sagem
 - **Opportunistic, never forced.** `layout.py` pays a soft cost (`BOUNDARY_SPLIT_COST`) to keep members in a
   clean rectangle; the builder draws the box only when ≥ 2 members fill a rectangle with no other node inside
   and inside one group box, otherwise `hint: boundary … not drawn` and the icons stay plain children of the group.
-  Move a node in the `.layout.json` if the box matters.
+  Move a node in the `.layout.json` if the box matters. **Host boundaries hold one member** (1.9.2): when the badge
+  is an official `group_*` stencil (`group_ec2_instance_contents`, `group_auto_scaling_group`, …) the box stands for
+  a machine or fleet and is drawn around a single resource — the Greengrass nucleus installed on an EC2 edge device,
+  the one service in an Auto Scaling group. The service icon (IoT Greengrass, EC2) stays a separate node at
+  service level; the box shows what is installed. A service badge (`bedrock`, `glue`) still needs two members.
 - Geometry: inset `BOUNDARY_INSET` = 10 px from the group's sides, top `BOUNDARY_ABOVE` = 32 px above the first
   icon (so its 14 pt title row sits under the group's 32 px title band — the group grows to 66 px above its first
   icon to make room), bottom `BOUNDARY_BELOW` = 8 px under a one-line node label; when the boundary ends on the
-  card's last lane the card keeps another 10 px below it. **Labels inside a boundary are one line** (≤ 17
+  card's last lane the card keeps another 10 px below it. **Labels inside a service boundary are one line** (≤ 17
   characters) — the box title already says
-  the service; a two-line label is a builder error. A boundary border cuts edge-text room like a group border.
+  the service; a two-line label is a builder error. Under a host badge (`group_*`) a label may wrap to two lines like any
+  node label (`Greengrass Nucleus`); the box and the card grow for it (1.9.2). A boundary border cuts edge-text room like a group border.
 - **Look: the official AWS group.** Exactly how the AWS Architecture Icons deck draws a group — a filled square
   badge in the top-left corner, a 1 px border and a bold 14 pt title, all in the **service's own category colour**
   (the icon's `fillColor` in the catalog: Bedrock `#01A88D`, Glue `#8C4FFF`, ECS `#ED7100`). `fillColor=none`. Two

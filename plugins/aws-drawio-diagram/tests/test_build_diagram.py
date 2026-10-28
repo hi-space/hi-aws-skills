@@ -532,7 +532,7 @@ def test_boundary_title_never_wraps_and_widens_the_box_when_there_is_room():
     st, geo = styles(xml), geometry(xml)
     assert "whiteSpace" not in st["g__bedrock"]                    # one line, never wraps onto the icon
     one_col = 2 * bd.GROUP_HALF_W - 2 * bd.BOUNDARY_INSET
-    assert geo["g__bedrock"][3] >= int(len("Amazon Bedrock Knowledge Bases") * bd.BOUNDARY_TITLE_CHAR_PX) + 40 > one_col
+    assert geo["g__bedrock"][3] >= int(bd.text_px("Amazon Bedrock Knowledge Bases", 14)) + 40 > one_col   # measured, 1.9.2
     # with a node in the next column on those lanes the box may grow only up to that icon's left edge; a title that
     # still does not fit is noted
     blocked = bspec(cells=((1, 0), (1, 1), (2, 0)), boundaries={"bedrock": "Amazon Bedrock Knowledge Bases and Guardrails"})
@@ -569,6 +569,29 @@ def test_boundary_skipped_when_not_adjacent_or_single():
     xml = bd.build(single)
     assert "g__bedrock" not in xml
     assert any("bedrock" in h and "one member" in h for h in bd.hints(single))
+
+
+def test_host_boundary_is_drawn_around_a_single_member():
+    # 1.9.2: an official group badge marks a host; one resource inside it is the whole point (the Greengrass nucleus
+    # installed on an EC2 edge device, kept apart from the IoT Greengrass service icon). A service badge still needs two.
+    s = bspec(labels=("Greengrass Nucleus", "IoT Greengrass"), boundaries={"group_ec2_instance_contents": "EC2 edge device"})
+    s["nodes"][1].pop("image")
+    s["nodes"][1].update({"icon": "iot_greengrass_component_nucleus", "boundary": "group_ec2_instance_contents"})
+    s["nodes"][2].pop("boundary")
+    s["nodes"][2]["icon"] = "greengrass"
+    xml = bd.build(s)
+    st, geo = styles(xml), geometry(xml)
+    b = st["g__group_ec2_instance_contents"]
+    assert b["grIcon"] == "mxgraph.aws4.group_ec2_instance_contents" and b["strokeColor"] == "#D86613" and b["awsBoundary"] == "1"
+    assert geo["m1"][0] == "g__group_ec2_instance_contents" and geo["m2"][0] == "g"
+    assert 'value="EC2 edge device"' in xml
+    assert "Greengrass&lt;br&gt;Nucleus" in xml                                 # a host box allows the two-line label …
+    one_line = bd.ICON + bd.BOUNDARY_ABOVE + bd.LABEL_TOP_PAD + bd.LABEL_LINE_H + bd.BOUNDARY_BELOW
+    assert geo["g__group_ec2_instance_contents"][4] == one_line + bd.LABEL_LINE_H  # … and grows one line for it
+    assert not any("one member" in h for h in bd.hints(s)), bd.hints(s)
+    assert bd.host_badge("group_ec2_instance_contents") and not bd.host_badge("bedrock") and not bd.host_badge("nope")
+    errors, warnings = vd.validate_text(xml, INDEX)
+    assert errors == [] and not [w for w in warnings if w[:2] in vd.LAYOUT_DEFECTS], warnings
 
 
 def test_boundary_errors():

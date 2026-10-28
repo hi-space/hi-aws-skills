@@ -55,7 +55,9 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    validation`, `—` only when the pair says it all; architecture-brief.md § Edge text — sync/async), numbered
    flow, 2–7 role groups (drawn as dashed grey outlines), an optional `Boundary` column for resources of
    one platform service that should share a badge box (AgentCore Runtime + Memory, Glue crawler + catalog — never N
-   copies of one stencil, never two services in one box: Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ Unified Studio), the AWS sanity checklist, decisions.
+   copies of one stencil, never two services in one box: Bedrock ≠ Bedrock AgentCore, SageMaker AI ≠ Unified Studio; a
+   `group_*` host badge such as `group_ec2_instance_contents` may hold one resource — the runtime installed on that
+   machine, kept apart from the service icon), the AWS sanity checklist, decisions.
 3. **Look up every stencil name** (see *Icon lookup*) and write it into the Components table. Never guess.
 4. **Respect the diagram budget** (architecture-brief.md § Diagram budget): hubs keep their own column free
    above/below so their neighbours can stack beside them (up to three bent edges per side, drawn as separate
@@ -127,7 +129,8 @@ subagent, or at minimum write `<name>.review.md` with the § A counts before tou
    check; a build log without `brief check … ✓` is an unfinished build.
    `hint: boundary … not drawn` means the members of a service boundary did not land side by side — move one in the
    `.layout.json` if the box matters, otherwise leave it (the planner prefers, never forces). A member label of two
-   lines inside a boundary is a spec error: shorten it, the box title already names the service.
+   lines inside a service boundary is a spec error: shorten it, the box title already names the service (a host badge
+   box — `group_*` — allows two lines).
 5. `W9 icon has no edge` means the brief lists a component with no relationship: either the Architect forgot the
    relationship (add the row) or the component does not belong in the picture (mark its row "not drawn" — VPC,
    NAT, ECR, IAM roles usually). The Drawer never solves it by deleting the node from the spec.
