@@ -15,59 +15,55 @@
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 700; font-style: normal; src: local('Amazon Ember Mono Bold'), local('Amazon Ember Mono'); }
 /* /page-css */
     </style>
-          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/>
-          </pattern>
         </defs>
 
-        <rect width="100%" height="100%" fill="#f5f5f5"/>
-        <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+        <rect width="100%" height="100%" fill="#FFFFFF"/>
 
         <!-- Quadrant backgrounds (very subtle, only coral on DO FIRST) -->
-        <rect x="120" y="80" width="380" height="170" fill="rgba(235,108,54,0.03)"/>
+        <rect x="120" y="80" width="380" height="170" fill="rgba(255,153,0,0.03)"/>
 
         <!-- Axis cross -->
-        <line x1="120" y1="250" x2="880" y2="250" stroke="rgba(45,49,66,0.45)" stroke-width="1"/>
-        <line x1="500" y1="80" x2="500" y2="420" stroke="rgba(45,49,66,0.45)" stroke-width="1"/>
+        <line x1="120" y1="250" x2="880" y2="250" stroke="rgba(35,47,62,0.45)" stroke-width="1"/>
+        <line x1="500" y1="80" x2="500" y2="420" stroke="rgba(35,47,62,0.45)" stroke-width="1"/>
 
         <!-- Axis end labels -->
-        <text x="880" y="266" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.14em">HIGH EFFORT →</text>
-        <text x="120" y="266" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">← LOW EFFORT</text>
-        <text x="512" y="80" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">↑ HIGH IMPACT</text>
-        <text x="512" y="432" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.14em">↓ LOW IMPACT</text>
+        <text x="880" y="266" fill="#545B64" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.14em">HIGH EFFORT →</text>
+        <text x="120" y="266" fill="#545B64" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" letter-spacing="0.14em">← LOW EFFORT</text>
+        <text x="512" y="80" fill="#545B64" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" letter-spacing="0.14em">↑ HIGH IMPACT</text>
+        <text x="512" y="432" fill="#545B64" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" letter-spacing="0.14em">↓ LOW IMPACT</text>
 
         <!-- Quadrant corner labels -->
-        <text x="140" y="104" fill="#eb6c36" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.18em" font-weight="600">DO FIRST</text>
-        <text x="860" y="104" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.18em">MAJOR PROJECTS</text>
-        <text x="140" y="412" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" letter-spacing="0.18em">QUICK WINS</text>
-        <text x="860" y="412" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="end" letter-spacing="0.18em">AVOID</text>
+        <text x="140" y="104" fill="#EC7211" font-size="9" font-family="'Amazon Ember Mono', ui-monospace, monospace" letter-spacing="0.18em" font-weight="600">DO FIRST</text>
+        <text x="860" y="104" fill="#545B64" font-size="9" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.18em">MAJOR PROJECTS</text>
+        <text x="140" y="412" fill="#545B64" font-size="9" font-family="'Amazon Ember Mono', ui-monospace, monospace" letter-spacing="0.18em">QUICK WINS</text>
+        <text x="860" y="412" fill="#545B64" font-size="9" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="end" letter-spacing="0.18em">AVOID</text>
 
         <!-- Items: TL (Do First) -->
         <!-- coral focal -->
-        <circle cx="220" cy="140" r="6" fill="#eb6c36"/>
-        <text x="232" y="144" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif">Schematic skill v4</text>
+        <circle cx="220" cy="140" r="6" fill="#EC7211"/>
+        <text x="232" y="144" fill="#232F3E" font-size="11" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Schematic skill v4</text>
 
-        <circle cx="320" cy="200" r="4" fill="#2d3142"/>
-        <text x="332" y="204" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Update changelog</text>
+        <circle cx="320" cy="200" r="4" fill="#232F3E"/>
+        <text x="332" y="204" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Update changelog</text>
 
         <!-- Items: TR (Major Projects) -->
-        <circle cx="620" cy="140" r="4" fill="#2d3142"/>
-        <text x="632" y="144" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Design v4 refresh</text>
+        <circle cx="620" cy="140" r="4" fill="#232F3E"/>
+        <text x="632" y="144" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Design v4 refresh</text>
 
-        <circle cx="760" cy="180" r="4" fill="#2d3142"/>
-        <text x="772" y="184" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">New publication</text>
+        <circle cx="760" cy="180" r="4" fill="#232F3E"/>
+        <text x="772" y="184" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">New publication</text>
 
         <!-- Items: BL (Quick Wins) -->
-        <circle cx="260" cy="320" r="4" fill="#2d3142"/>
-        <text x="272" y="324" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Fix footer link</text>
+        <circle cx="260" cy="320" r="4" fill="#232F3E"/>
+        <text x="272" y="324" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Fix footer link</text>
 
-        <circle cx="360" cy="380" r="4" fill="#2d3142"/>
-        <text x="372" y="384" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Update OG tags</text>
+        <circle cx="360" cy="380" r="4" fill="#232F3E"/>
+        <text x="372" y="384" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Update OG tags</text>
 
         <!-- Items: BR (Avoid) -->
-        <circle cx="640" cy="380" r="4" fill="#2d3142"/>
-        <text x="652" y="384" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Rewrite build pipeline</text>
+        <circle cx="640" cy="380" r="4" fill="#232F3E"/>
+        <text x="652" y="384" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Rewrite build pipeline</text>
 
-        <circle cx="780" cy="320" r="4" fill="#2d3142"/>
-        <text x="792" y="324" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif">Port to Nuxt</text>
+        <circle cx="780" cy="320" r="4" fill="#232F3E"/>
+        <text x="792" y="324" fill="#545B64" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Port to Nuxt</text>
 </svg>

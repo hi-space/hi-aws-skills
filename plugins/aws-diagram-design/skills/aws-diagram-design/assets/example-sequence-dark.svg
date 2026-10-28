@@ -16,43 +16,39 @@
 /* /page-css */
     </style>
           <!-- Dot grid background -->
-          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.9" fill="rgba(245,245,245,0.10)"/>
-          </pattern>
 
           <!-- Arrow markers -->
           <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill="#bfc0c0"/>
+            <polygon points="0 0, 8 3, 0 6" fill="#B6BEC9"/>
           </marker>
           <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill="#f08a59"/>
+            <polygon points="0 0, 8 3, 0 6" fill="#FF9900"/>
           </marker>
           <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
-            <polygon points="0 0, 8 3, 0 6" fill="#6a95d8"/>
+            <polygon points="0 0, 8 3, 0 6" fill="#539FE5"/>
           </marker>
         </defs>
 
         <!-- Background: paper + dot grid -->
-        <rect width="100%" height="100%" fill="#2d3142"/>
-        <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+        <rect width="100%" height="100%" fill="#161E2D"/>
 
         <!-- =================================================================
              LIFELINES — dashed vertical lines from each actor, behind everything.
              Actor lifeline x-coords: 128, 352, 584, 800
              ================================================================= -->
-        <line x1="128" y1="128" x2="128" y2="488" stroke="rgba(245,245,245,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
-        <line x1="352" y1="128" x2="352" y2="488" stroke="rgba(245,245,245,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
-        <line x1="584" y1="128" x2="584" y2="488" stroke="rgba(245,245,245,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
-        <line x1="800" y1="128" x2="800" y2="488" stroke="rgba(245,245,245,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="128" y1="128" x2="128" y2="488" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="352" y1="128" x2="352" y2="488" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="584" y1="128" x2="584" y2="488" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
+        <line x1="800" y1="128" x2="800" y2="488" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="3,3"/>
 
         <!-- =================================================================
              ACTIVATION BARS — w=8 rects on lifelines showing control duration.
              Drawn before message arrows so arrows land on their edges.
              ================================================================= -->
         <!-- Cloudflare activation: receives at y=176, responds at y=408 -->
-        <rect x="348" y="180" width="8" height="232" fill="rgba(245,245,245,0.06)" stroke="#bfc0c0" stroke-width="0.8"/>
+        <rect x="348" y="180" width="8" height="232" fill="rgba(255,255,255,0.06)" stroke="#B6BEC9" stroke-width="0.8"/>
         <!-- Astro activation: called at y=232, returns at y=352 -->
-        <rect x="580" y="236" width="8" height="120" fill="rgba(245,245,245,0.06)" stroke="#bfc0c0" stroke-width="0.8"/>
+        <rect x="580" y="236" width="8" height="120" fill="rgba(255,255,255,0.06)" stroke="#B6BEC9" stroke-width="0.8"/>
 
         <!-- =================================================================
              MESSAGE ARROWS — time flows top→down.
@@ -60,50 +56,50 @@
              ================================================================= -->
 
         <!-- M1: Reader → Cloudflare  (HTTPS request · link-blue) -->
-        <line x1="128" y1="176" x2="352" y2="176" stroke="#6a95d8" stroke-width="1.2" marker-end="url(#arrow-link)"/>
+        <line x1="128" y1="176" x2="352" y2="176" stroke="#539FE5" stroke-width="1.2" marker-end="url(#arrow-link)"/>
 
         <!-- M2: Cloudflare → Astro  (cache miss · muted) -->
-        <line x1="352" y1="232" x2="580" y2="232" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <line x1="352" y1="232" x2="580" y2="232" stroke="#B6BEC9" stroke-width="1.2" marker-end="url(#arrow)"/>
 
         <!-- M3: Astro self-message  (render MDX · muted U-loop) -->
-        <path d="M 588 284 L 624 284 L 624 316 L 588 316" fill="none" stroke="#bfc0c0" stroke-width="1.2" marker-end="url(#arrow)"/>
+        <path d="M 588 284 L 624 284 L 624 316 L 588 316" fill="none" stroke="#B6BEC9" stroke-width="1.2" marker-end="url(#arrow)"/>
 
         <!-- M4: Astro → Cloudflare  (return HTML · muted dashed) -->
-        <line x1="580" y1="352" x2="356" y2="352" stroke="#bfc0c0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <line x1="580" y1="352" x2="356" y2="352" stroke="#B6BEC9" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
 
         <!-- M5: Cloudflare → Reader  (primary success · coral) -->
-        <line x1="348" y1="408" x2="128" y2="408" stroke="#f08a59" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+        <line x1="348" y1="408" x2="128" y2="408" stroke="#FF9900" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
 
         <!-- M6: Reader → Analytics  (async beacon · muted dashed) -->
-        <line x1="128" y1="464" x2="800" y2="464" stroke="#bfc0c0" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+        <line x1="128" y1="464" x2="800" y2="464" stroke="#B6BEC9" stroke-width="1.2" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
 
         <!-- =================================================================
              MESSAGE LABELS — each with an opaque paper-colored mask.
              ================================================================= -->
 
         <!-- M1 label -->
-        <rect x="188" y="160" width="104" height="12" rx="2" fill="#2d3142"/>
-        <text x="240" y="170" fill="#6a95d8" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">GET /ARTICLES/SLUG</text>
+        <rect x="188" y="160" width="104" height="12" rx="2" fill="#161E2D"/>
+        <text x="240" y="170" fill="#539FE5" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">GET /ARTICLES/SLUG</text>
 
         <!-- M2 label -->
-        <rect x="416" y="216" width="100" height="12" rx="2" fill="#2d3142"/>
-        <text x="466" y="226" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">CACHE MISS · ORIGIN</text>
+        <rect x="416" y="216" width="100" height="12" rx="2" fill="#161E2D"/>
+        <text x="466" y="226" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">CACHE MISS · ORIGIN</text>
 
         <!-- M3 label (to the right of the self-loop) -->
-        <rect x="632" y="292" width="72" height="12" rx="2" fill="#2d3142"/>
-        <text x="668" y="302" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">RENDER MDX</text>
+        <rect x="632" y="292" width="72" height="12" rx="2" fill="#161E2D"/>
+        <text x="668" y="302" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">RENDER MDX</text>
 
         <!-- M4 label -->
-        <rect x="420" y="336" width="96" height="12" rx="2" fill="#2d3142"/>
-        <text x="468" y="346" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">200 · HTML + MAX-AGE</text>
+        <rect x="420" y="336" width="96" height="12" rx="2" fill="#161E2D"/>
+        <text x="468" y="346" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">200 · HTML + MAX-AGE</text>
 
         <!-- M5 label (coral · primary response) -->
-        <rect x="192" y="392" width="96" height="12" rx="2" fill="#2d3142"/>
-        <text x="240" y="402" fill="#f08a59" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">200 · EDGE-CACHED</text>
+        <rect x="192" y="392" width="96" height="12" rx="2" fill="#161E2D"/>
+        <text x="240" y="402" fill="#FF9900" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">200 · EDGE-CACHED</text>
 
         <!-- M6 label (placed between Astro and Analytics lifelines, a clear gap) -->
-        <rect x="648" y="448" width="96" height="12" rx="2" fill="#2d3142"/>
-        <text x="696" y="458" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">PAGEVIEW BEACON</text>
+        <rect x="648" y="448" width="96" height="12" rx="2" fill="#161E2D"/>
+        <text x="696" y="458" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">PAGEVIEW BEACON</text>
 
         <!-- =================================================================
              ACTOR BOXES — drawn after arrows/labels.
@@ -111,36 +107,36 @@
              ================================================================= -->
 
         <!-- Actor 1: Reader (external / soft) -->
-        <rect x="56" y="72" width="144" height="56" rx="6" fill="#2d3142"/>
-        <rect x="56" y="72" width="144" height="56" rx="6" fill="rgba(191,192,192,0.10)" stroke="#8e98ac" stroke-width="1"/>
+        <rect x="56" y="72" width="144" height="56" rx="6" fill="#161E2D"/>
+        <rect x="56" y="72" width="144" height="56" rx="6" fill="rgba(182,190,201,0.10)" stroke="#8D99A8" stroke-width="1"/>
         <rect x="64" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(142,140,131,0.40)" stroke-width="0.8"/>
-        <text x="78" y="89" fill="#8e98ac" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
-        <text x="128" y="104" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Reader</text>
-        <text x="128" y="119" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">Browser</text>
+        <text x="78" y="89" fill="#8D99A8" font-size="7" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">EXT</text>
+        <text x="128" y="104" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Reader</text>
+        <text x="128" y="119" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Browser</text>
 
         <!-- Actor 2: Cloudflare (cloud / muted) -->
-        <rect x="280" y="72" width="144" height="56" rx="6" fill="#2d3142"/>
-        <rect x="280" y="72" width="144" height="56" rx="6" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
-        <rect x="288" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.22)" stroke-width="0.8"/>
-        <text x="304" y="89" fill="#8e98ac" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">EDGE</text>
-        <text x="352" y="104" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Cloudflare</text>
-        <text x="352" y="119" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">Pages · cache</text>
+        <rect x="280" y="72" width="144" height="56" rx="6" fill="#161E2D"/>
+        <rect x="280" y="72" width="144" height="56" rx="6" fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <rect x="288" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="304" y="89" fill="#8D99A8" font-size="7" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">EDGE</text>
+        <text x="352" y="104" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Cloudflare</text>
+        <text x="352" y="119" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Pages · cache</text>
 
         <!-- Actor 3: Astro Origin (focal / coral) -->
-        <rect x="504" y="72" width="160" height="56" rx="6" fill="#2d3142"/>
-        <rect x="504" y="72" width="160" height="56" rx="6" fill="rgba(240,138,89,0.08)" stroke="#f08a59" stroke-width="1"/>
-        <rect x="512" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(240,138,89,0.50)" stroke-width="0.8"/>
-        <text x="528" y="89" fill="#f08a59" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ORIG</text>
-        <text x="584" y="104" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Astro Origin</text>
-        <text x="584" y="119" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">SSR + MDX</text>
+        <rect x="504" y="72" width="160" height="56" rx="6" fill="#161E2D"/>
+        <rect x="504" y="72" width="160" height="56" rx="6" fill="rgba(255,153,0,0.08)" stroke="#FF9900" stroke-width="1"/>
+        <rect x="512" y="80" width="32" height="12" rx="2" fill="transparent" stroke="rgba(255,153,0,0.50)" stroke-width="0.8"/>
+        <text x="528" y="89" fill="#FF9900" font-size="7" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">ORIG</text>
+        <text x="584" y="104" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Astro Origin</text>
+        <text x="584" y="119" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">SSR + MDX</text>
 
         <!-- Actor 4: Analytics (optional / dashed) -->
-        <rect x="728" y="72" width="144" height="56" rx="6" fill="#2d3142"/>
-        <rect x="728" y="72" width="144" height="56" rx="6" fill="rgba(245,245,245,0.02)" stroke="rgba(245,245,245,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
-        <rect x="736" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.22)" stroke-width="0.8"/>
-        <text x="750" y="89" fill="#8e98ac" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">ASY</text>
-        <text x="800" y="104" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Analytics</text>
-        <text x="800" y="119" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">Beacon · async</text>
+        <rect x="728" y="72" width="144" height="56" rx="6" fill="#161E2D"/>
+        <rect x="728" y="72" width="144" height="56" rx="6" fill="rgba(255,255,255,0.02)" stroke="rgba(255,255,255,0.22)" stroke-width="1" stroke-dasharray="4,3"/>
+        <rect x="736" y="80" width="28" height="12" rx="2" fill="transparent" stroke="rgba(255,255,255,0.22)" stroke-width="0.8"/>
+        <text x="750" y="89" fill="#8D99A8" font-size="7" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.08em">ASY</text>
+        <text x="800" y="104" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Analytics</text>
+        <text x="800" y="119" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Beacon · async</text>
 
         <!-- =================================================================
              LEGEND — horizontal strip at the bottom.

@@ -1,4 +1,5 @@
 """Every shipped SVG asset parses, passes the contract, and no HTML wrapper file survives."""
+import re
 from pathlib import Path
 
 import pytest
@@ -29,3 +30,12 @@ def test_templates_declare_local_fonts_only(path: Path):
 def test_no_stray_html_in_assets():
     stray = {p.name for p in ASSETS.glob("*.html")} - ALLOWED_HTML
     assert stray == set()
+
+
+def test_examples_carry_the_aws_skin():
+    """2.2.0: no editorial-skin tokens (Geist, coral, #f5f5f5 paper) or dot pattern in the examples; terminal variant exempt."""
+    old = re.compile(r"Geist|Instrument Serif|#eb6c36|#f08a59|#2d3142|#f5f5f5|url\(#dots\)", re.I)
+    for p in sorted(ASSETS.glob("example-*.svg")):
+        if p.name == "example-loop-terminal.svg":
+            continue
+        assert not old.search(p.read_text(encoding="utf-8")), p.name

@@ -15,59 +15,55 @@
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 700; font-style: normal; src: local('Amazon Ember Mono Bold'), local('Amazon Ember Mono'); }
 /* /page-css */
     </style>
-          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
-            <circle cx="1" cy="1" r="0.9" fill="rgba(245,245,245,0.10)"/>
-          </pattern>
         </defs>
 
-        <rect width="100%" height="100%" fill="#2d3142"/>
-        <rect width="100%" height="100%" fill="url(#dots)" opacity="0.55"/>
+        <rect width="100%" height="100%" fill="#161E2D"/>
 
         <!-- Year markers (background) -->
-        <text x="60" y="340" fill="rgba(245,245,245,0.06)" font-size="72" font-weight="600" font-family="'Geist Mono', monospace">2025</text>
-        <text x="700" y="340" fill="rgba(245,245,245,0.06)" font-size="72" font-weight="600" font-family="'Geist Mono', monospace">2026</text>
+        <text x="60" y="340" fill="rgba(255,255,255,0.06)" font-size="72" font-weight="600" font-family="'Amazon Ember Mono', ui-monospace, monospace">2025</text>
+        <text x="700" y="340" fill="rgba(255,255,255,0.06)" font-size="72" font-weight="600" font-family="'Amazon Ember Mono', ui-monospace, monospace">2026</text>
 
         <!-- Baseline -->
         <line x1="80" y1="240" x2="920" y2="240" stroke="rgba(150,146,138,0.45)" stroke-width="1"/>
 
         <!-- Year boundary tick (between 2025 and 2026) -->
-        <line x1="680" y1="232" x2="680" y2="248" stroke="rgba(245,245,245,0.20)" stroke-width="1"/>
-        <text x="680" y="260" fill="#8e98ac" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">JAN '26</text>
+        <line x1="680" y1="232" x2="680" y2="248" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <text x="680" y="260" fill="#8D99A8" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">JAN '26</text>
 
         <!-- Start / end caps -->
-        <line x1="80" y1="232" x2="80" y2="248" stroke="rgba(245,245,245,0.20)" stroke-width="1"/>
-        <line x1="920" y1="232" x2="920" y2="248" stroke="rgba(245,245,245,0.20)" stroke-width="1"/>
+        <line x1="80" y1="232" x2="80" y2="248" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
+        <line x1="920" y1="232" x2="920" y2="248" stroke="rgba(255,255,255,0.20)" stroke-width="1"/>
 
         <!-- Event 1: FEB 2025 · First post (below) -->
-        <line x1="100" y1="240" x2="100" y2="296" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
-        <circle cx="100" cy="240" r="4" fill="#f5f5f5"/>
-        <text x="100" y="312" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">FEB 2025</text>
-        <text x="100" y="328" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">First post</text>
+        <line x1="100" y1="240" x2="100" y2="296" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <circle cx="100" cy="240" r="4" fill="#FFFFFF"/>
+        <text x="100" y="312" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">FEB 2025</text>
+        <text x="100" y="328" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">First post</text>
 
         <!-- Event 2: APR 2025 · Design v1 (above) -->
-        <line x1="240" y1="184" x2="240" y2="240" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
-        <circle cx="240" cy="240" r="4" fill="#f5f5f5"/>
-        <text x="240" y="156" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">APR 2025</text>
-        <text x="240" y="172" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Design v1</text>
+        <line x1="240" y1="184" x2="240" y2="240" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <circle cx="240" cy="240" r="4" fill="#FFFFFF"/>
+        <text x="240" y="156" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">APR 2025</text>
+        <text x="240" y="172" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Design v1</text>
 
         <!-- Event 3: SEP 2025 · Design v2 (below) -->
-        <line x1="500" y1="240" x2="500" y2="296" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
-        <circle cx="500" cy="240" r="4" fill="#f5f5f5"/>
-        <text x="500" y="312" fill="#bfc0c0" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SEP 2025</text>
-        <text x="500" y="328" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Design v2</text>
-        <text x="500" y="344" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">typography pass</text>
+        <line x1="500" y1="240" x2="500" y2="296" stroke="rgba(255,255,255,0.30)" stroke-width="1"/>
+        <circle cx="500" cy="240" r="4" fill="#FFFFFF"/>
+        <text x="500" y="312" fill="#B6BEC9" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">SEP 2025</text>
+        <text x="500" y="328" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Design v2</text>
+        <text x="500" y="344" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">typography pass</text>
 
         <!-- Event 4: JAN 2026 · Design v3 (above, coral major) -->
-        <line x1="740" y1="160" x2="740" y2="240" stroke="#f08a59" stroke-width="1"/>
-        <circle cx="740" cy="240" r="6" fill="#f08a59"/>
-        <text x="740" y="128" fill="#f08a59" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">JAN 2026</text>
-        <text x="740" y="148" fill="#f5f5f5" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Design v3</text>
-        <text x="740" y="164" fill="#bfc0c0" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">complexity budget</text>
+        <line x1="740" y1="160" x2="740" y2="240" stroke="#FF9900" stroke-width="1"/>
+        <circle cx="740" cy="240" r="6" fill="#FF9900"/>
+        <text x="740" y="128" fill="#FF9900" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">JAN 2026</text>
+        <text x="740" y="148" fill="#FFFFFF" font-size="14" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Design v3</text>
+        <text x="740" y="164" fill="#B6BEC9" font-size="13" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">complexity budget</text>
 
         <!-- Event 5: APR 2026 · now · Diagram Design skill (below, coral) -->
-        <line x1="900" y1="240" x2="900" y2="296" stroke="#f08a59" stroke-width="1"/>
-        <circle cx="900" cy="240" r="6" fill="#f08a59"/>
-        <text x="900" y="312" fill="#f08a59" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">APR 2026 · NOW</text>
-        <text x="900" y="328" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Schematic skill</text>
-        <text x="900" y="344" fill="#bfc0c0" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">eight diagram types</text>
+        <line x1="900" y1="240" x2="900" y2="296" stroke="#FF9900" stroke-width="1"/>
+        <circle cx="900" cy="240" r="6" fill="#FF9900"/>
+        <text x="900" y="312" fill="#FF9900" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.14em">APR 2026 · NOW</text>
+        <text x="900" y="328" fill="#FFFFFF" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Schematic skill</text>
+        <text x="900" y="344" fill="#B6BEC9" font-size="11" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">eight diagram types</text>
 </svg>

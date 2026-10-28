@@ -13,7 +13,7 @@
 @font-face { font-family: 'Amazon Ember'; font-weight: 800; font-style: normal; src: local('Amazon Ember Heavy'), local('Amazon Ember'); }
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 400; font-style: normal; src: local('Amazon Ember Mono'); }
 @font-face { font-family: 'Amazon Ember Mono'; font-weight: 700; font-style: normal; src: local('Amazon Ember Mono Bold'), local('Amazon Ember Mono'); }
-:root { --paper:#f5f5f5;--ink:#2d3142;--muted:#4f5d75;--soft:#7a8399;--accent:#eb6c36;--accent-tint:rgba(235,108,54,.08);--rule:rgba(45,49,66,.12);--label-rule:rgba(45,49,66,.20);--lane:rgba(45,49,66,.018);--node:#fff;--node-stroke:rgba(45,49,66,.25);--chip:rgba(45,49,66,.12);--dot:rgba(45,49,66,.10);--db:#5e7a9b;--ls:#7c8f6f;--fl:#9c6b50;--tb:#b8915a;--wb:#6e6479;--sans:'Geist',system-ui,sans-serif;--serif:'Instrument Serif',serif;--mono:'Geist Mono',ui-monospace,monospace }
+:root { --paper:#FFFFFF;--ink:#232F3E;--muted:#545B64;--soft:#7D8998;--accent:#EC7211;--accent-tint:rgba(255,153,0,.08);--rule:rgba(35,47,62,.12);--label-rule:rgba(35,47,62,.20);--lane:rgba(35,47,62,.018);--node:#fff;--node-stroke:rgba(35,47,62,.25);--chip:rgba(35,47,62,.12);--dot:rgba(35,47,62,.10);--db:#5e7a9b;--ls:#7c8f6f;--fl:#9c6b50;--tb:#b8915a;--wb:#6e6479;--sans:'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;--serif:'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;--mono:'Amazon Ember Mono', ui-monospace, monospace}
 svg text { font-family:var(--sans) }
 .mono { font-family:var(--mono) }
 .lane { fill:var(--lane) }
@@ -28,8 +28,8 @@ svg text { font-family:var(--sans) }
 .node-mask { fill:var(--paper) }
 .node { fill:var(--node);stroke:var(--node-stroke) }
 .node.focal { fill:var(--accent-tint);stroke:var(--accent);stroke-width:1.2 }
-.role { fill:rgba(45,49,66,.10) }
-.role.focal { fill:rgba(235,108,54,.25) }
+.role { fill:rgba(35,47,62,.10) }
+.role.focal { fill:rgba(255,153,0,.25) }
 .role-text { fill:var(--ink);font:600 6px var(--mono) }
 .role-text.focal { fill:var(--accent) }
 .node-title { fill:var(--ink);font:600 9px var(--sans) }
@@ -38,12 +38,11 @@ svg text { font-family:var(--sans) }
 .data-text { fill:white;font:700 5px var(--mono) }
 /* /page-css */
     </style>
-        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="11" cy="11" r="0.8" fill="var(--dot)"/></pattern>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="var(--muted)"/></marker>
         <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="var(--accent)"/></marker>
         <marker id="arrow-sm" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto"><polygon points="0 0,6 2.5,0 5" fill="var(--muted)"/></marker>
       </defs>
-      <rect width="1064" height="436" fill="var(--paper)"/><rect width="1064" height="436" fill="url(#dots)" opacity=".55"/>
+      <rect width="1064" height="436" fill="var(--paper)"/>
       <rect class="lane" x="140" y="36" width="924" height="80"/><rect class="lane" x="140" y="196" width="924" height="80"/>
       <g class="rule" stroke-width=".8"><line x1="0" y1="36" x2="1064" y2="36"/><line x1="0" y1="116" x2="1064" y2="116"/><line x1="0" y1="196" x2="1064" y2="196"/><line x1="0" y1="276" x2="1064" y2="276"/><line x1="0" y1="356" x2="1064" y2="356"/></g>
       <line class="label-rule" x1="140" y1="36" x2="140" y2="356"/>
@@ -51,7 +50,7 @@ svg text { font-family:var(--sans) }
       <g text-anchor="middle">
         <rect class="step-chip" x="190" y="8" width="16" height="16" rx="8"/><text class="step-num" x="198" y="19">1</text><text class="step-label" x="198" y="32">ORDER</text>
         <rect class="step-chip" x="302" y="8" width="16" height="16" rx="8"/><text class="step-num" x="310" y="19">2</text><text class="step-label" x="310" y="32">VERIFY</text>
-        <rect x="414" y="8" width="16" height="16" rx="8" fill="rgba(235,108,54,.20)"/><text x="422" y="19" fill="var(--accent)" font-size="7" font-weight="600" class="mono">3</text><text x="422" y="32" fill="var(--accent)" font-size="6" font-weight="500" letter-spacing=".12em" class="mono">ALLOCATE</text>
+        <rect x="414" y="8" width="16" height="16" rx="8" fill="rgba(255,153,0,.20)"/><text x="422" y="19" fill="var(--accent)" font-size="7" font-weight="600" class="mono">3</text><text x="422" y="32" fill="var(--accent)" font-size="6" font-weight="500" letter-spacing=".12em" class="mono">ALLOCATE</text>
         <rect class="step-chip" x="526" y="8" width="16" height="16" rx="8"/><text class="step-num" x="534" y="19">4</text><text class="step-label" x="534" y="32">PICK</text>
         <rect class="step-chip" x="638" y="8" width="16" height="16" rx="8"/><text class="step-num" x="646" y="19">5</text><text class="step-label" x="646" y="32">PACK</text>
         <rect class="step-chip" x="750" y="8" width="16" height="16" rx="8"/><text class="step-num" x="758" y="19">6</text><text class="step-label" x="758" y="32">PAY</text>
