@@ -2,9 +2,9 @@
 
 Encodes the skill's mandatory rules in code so a spec only supplies layout and text:
 white paper, squid-ink text, smile-orange accent on 1-2 focal nodes, Amazon Ember type at the
-presentation ramp (16px names / 12px sublabels and arrow labels), official AWS Architecture Icons
+presentation ramp (16px names / 14px sublabels / 12px arrow labels), official AWS Architecture Icons
 (icon-left nodes, group badges on zones), rounded orthogonal connectors (r=8), masked arrow labels,
-bottom legend strip, accessible <title>/<desc>. Korean text uses the Noto Sans KR / NanumBarunGothic
+optional bottom legend strip (only when the spec calls legend()), accessible <title>/<desc>. Korean text uses the Noto Sans KR / NanumBarunGothic
 fallback in the font stack; finalize.py loads Noto Sans KR at PNG render time.
 
 Usage from a spec file (see spec_example.py):
@@ -48,7 +48,7 @@ KIND = {  # node kind → (fill, stroke, dash)   [SKILL.md §5 node type → tre
     "security": ("rgba(236,114,17,0.05)", "rgba(236,114,17,0.50)", "4,4"),
 }
 # presentation ramp (output-spec.md §2): readable at doc width and when projected
-NAME_SIZE = 16; SUB_SIZE = 12; LABEL_SIZE = 12; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
+NAME_SIZE = 16; SUB_SIZE = 14; LABEL_SIZE = 12; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
 ARROW = {"default": (MUTED, "arrow"), "accent": (ACCENT, "arrow-accent"), "link": (LINK, "arrow-link"), "soft": (SOFT, "arrow-soft")}
 
 # Friendly aliases → icon file. Anything not listed here resolves by file stem (see resolve_icon).
@@ -156,7 +156,7 @@ def _warn(msg: str) -> None:
 def min_node_w(name: str, sub: str | None = None, icon: bool = True, h: int = 64, name_size: int = NAME_SIZE, sub_size: int = SUB_SIZE) -> int:
     """Smallest node width (4px grid) that fits `name` and `sub` with the icon-left pattern at height `h`."""
     names = name if isinstance(name, list) else [name]
-    tw = max([text_w(n, name_size) for n in names] + ([text_w(sub, sub_size, mono=True)] if sub else [0]))
+    tw = max([text_w(n, name_size) for n in names] + ([text_w(sub, sub_size)] if sub else [0]))
     isz = (32 if h >= 64 else (24 if h >= 48 else 16)) if icon else 0
     pad = (12 + isz + 12 + 8) if icon else 16
     return int(-(-(tw + pad) // 4) * 4)
@@ -332,7 +332,7 @@ class Canvas:
     # ---- nodes -----------------------------------------------------------
     def node(self, x, y, w, h, name, sub: str | None = None, icon: str | None = None, kind: str = "step",
              tag: str | None = None, name_size: int = NAME_SIZE, sub_size: int | None = None, icon_color: str = INK):
-        """Block node: name (1 line, or list for 2) + optional one-line sublabel. icon: AWS alias/stem or generic name."""
+        """Block node: name (1 line, or list for 2) + optional one-line sublabel (same Ember family, 14px, muted). icon: AWS alias/stem or generic name."""
         fill, stroke, dash = KIND[kind]
         self._rects.append((x, y, w, h, name if isinstance(name, str) else " / ".join(name)))
         dsh = f' stroke-dasharray="{dash}"' if dash else ""
@@ -353,11 +353,11 @@ class Canvas:
             by += TAG_SIZE + 4
         for l in names:
             if text_w(l, name_size) > avail: _warn(f"name [{self.slug}-{self.lang}] '{l}' needs w>={min_node_w(l, None, bool(icon), h, name_size)} (box {w}, text {text_w(l, name_size):.0f} > {avail:.0f} avail)")
-        if sub and text_w(sub, ss, mono=True) > avail: _warn(f"sub  [{self.slug}-{self.lang}] '{sub}' needs w>={min_node_w('', sub, bool(icon), h, name_size, ss)} (box {w}, text {text_w(sub, ss, mono=True):.0f} > {avail:.0f} avail)")
+        if sub and text_w(sub, ss) > avail: _warn(f"sub  [{self.slug}-{self.lang}] '{sub}' needs w>={min_node_w('', sub, bool(icon), h, name_size, ss)} (box {w}, text {text_w(sub, ss):.0f} > {avail:.0f} avail)")
         for i, l in enumerate(names):
             p.append(f'<text x="{tx:.0f}" y="{by + i*(name_size+4):.0f}" fill="{INK}" font-size="{name_size}" font-weight="600" font-family="{SANS}" text-anchor="{anchor}">{esc(l)}</text>')
         if sub:
-            p.append(f'<text x="{tx:.0f}" y="{by + (len(names)-1)*(name_size+4) + ss + 5:.0f}" fill="{MUTED}" font-size="{ss}" font-family="{MONO}" text-anchor="{anchor}">{esc(sub)}</text>')
+            p.append(f'<text x="{tx:.0f}" y="{by + (len(names)-1)*(name_size+4) + ss + 5:.0f}" fill="{MUTED}" font-size="{ss}" font-family="{SANS}" text-anchor="{anchor}">{esc(sub)}</text>')
         self.nodes.append("\n".join(p))
 
     def stack(self, x, y, w, h, *args, depth: int = 2, **kw):
@@ -386,8 +386,9 @@ class Canvas:
             self.overlay.append(f'<text x="{x}" y="{y + i*(size+4)}" fill="{color}" font-size="{size}" font-family="{MONO}" text-anchor="{anchor}">{esc(l)}</text>')
 
     def legend(self, items):
-        """Bottom strip. items: [(key, text)] where key is a KIND name, 'arrow', 'arrow:accent', 'arrow-dashed',
-        'arrow:link-dashed', an AWS icon alias, or a generic icon name. Reserve ~56px of canvas height."""
+        """Optional bottom strip, drawn only when a spec calls this (default: no legend; icons and sublabels
+        carry the meaning). items: [(key, text)] where key is a KIND name, 'arrow', 'arrow:accent', 'arrow-dashed',
+        'arrow:link-dashed', an AWS icon alias, or a generic icon name. Reserve ~56px of extra canvas height."""
         self.legend_items = items
 
     # ---- connectors (all orthogonal, r=8 quarter arcs) -------------------
@@ -519,7 +520,7 @@ if __name__ == "__main__":  # python3 awsdiag.py → catalogue of names a spec m
     print("node kinds :", " ".join(KIND))
     print("zone kinds :", " ".join(GROUP), "generic")
     print("arrow style:", " ".join(ARROW))
-    print("legend keys: <node kind> | arrow | arrow:<style> | arrow-dashed | arrow:<style>-dashed | <icon name>")
+    print("legend keys (opt-in, only when the reader asks for a key): <node kind> | arrow | arrow:<style> | arrow-dashed | arrow:<style>-dashed | <icon name>")
     print("AWS aliases:", " ".join(sorted(AWS)))
     print("generic icons:", " ".join(sorted(_generic)))
     print("any other AWS icon: file stem from assets/aws-icons/INDEX.md, e.g. Amazon-Route-53, Res_Amazon-EC2_Instance_48")

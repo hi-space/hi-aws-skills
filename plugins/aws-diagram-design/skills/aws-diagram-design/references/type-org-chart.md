@@ -36,7 +36,7 @@ Use **Org Chart** instead of **Tree** when the nodes are people, agents, teams, 
 - Cramming full job descriptions into nodes. Keep scope phrases short and move detail to summary cards below.
 - Showing unavailable / not-yet-wired agents as normal active owners. Use dashed optional styling so gaps are visible.
 - Repeating Slack handles in body paragraphs when a node sublabel can carry the invocation path.
-- Floating legends in the org area. Use the standard bottom legend strip.
+- Legends, floating or as a strip. Dashed optional styling and sublabels carry the meaning; add a bottom strip only when the user asks for a key.
 
 ## Examples
 - `assets/example-org-chart.svg` — minimal light

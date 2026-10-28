@@ -52,7 +52,7 @@ footer:                       # 0..3 optional full-canvas-width bars (cross-cutt
   - { name: "Identity Manager", sub: "Active Directory · LDAP · SSO", icon: active-directory }
   - { name: "Observability",    sub: "logs · metrics · alerts",       icon: monitoring }
 
-legend:                       # auto-generated from styles used; user can override labels
+legend:                       # optional — omit for no strip (default). When given: auto-generated from styles used; user can override labels
   - { swatch: link,    label: "data flow" }
   - { swatch: accent,  label: "pain-point" }
   - { swatch: dashed,  label: "external" }
@@ -77,7 +77,7 @@ dark: false
 - `connectors[k].style` — `neutral | link | accent`. Drives stroke color + marker.
 - `connectors[k].dashed` — `true | false`.
 - `footer[k]` — optional cross-cutting bar. Spans full canvas width minus margins. No connectors drawn from a footer.
-- `legend[k].swatch` — `link | accent | dashed | focal | neutral`. Auto-curated based on what the diagram actually uses; user can re-order or rename.
+- `legend[k].swatch` — `link | accent | dashed | focal | neutral`. The whole `legend:` block is optional and off by default; when present it is auto-curated from what the diagram actually uses, and the user can re-order or rename.
 
 ---
 
@@ -118,7 +118,7 @@ footer_y(k)     = footer_top + k * (footer_bar_h + footer_gap)
 footer_bottom   = footer_top + N_footer * (footer_bar_h + footer_gap) - footer_gap
 
 # Total canvas height
-legend_block_h  = 40
+legend_block_h  = 40 if legend else 0        # no legend strip by default
 content_bottom  = N_footer > 0 ? footer_bottom : zone_y + zone_h
 viewBox_h       = content_bottom + legend_block_h + 24
 ```
@@ -198,9 +198,9 @@ corridor_x = dst_cx                            # land arrow on dst horizontal ce
 
 Footer bars are layer-wide services. **No connectors emerge from them.** They sit visually below the zones and let the reader see the cross-cutting concerns at a glance.
 
-### 2.5 Legend strip
+### 2.5 Legend strip (opt-in)
 
-Hairline divider at `y = content_bottom + 16`, then a row of swatches + labels at `y = content_bottom + 36`. Only the styles actually used by `connectors[]` (plus `focal` and `external` if those component kinds are present) appear in the legend.
+Only when the input declares `legend:`. Hairline divider at `y = content_bottom + 16`, then a row of swatches + labels at `y = content_bottom + 36`. Only the styles actually used by `connectors[]` (plus `focal` and `external` if those component kinds are present) appear in the legend.
 
 ---
 
@@ -369,7 +369,7 @@ Before emitting SVG, verify **every** item:
 6. Connector labels sit at the **start** of the connector (not mid-segment) and are offset **perpendicular** to the line (5 px gap above for horizontal segments, 6 px gap to the right for vertical segments) — never overlapping the stroke. Paper-fill mask kept behind text; icon (when `icon:` is set) sits left of text inside the same mask.
 7. ≤ 3 custom-colored components; none on focal.
 8. ≤ 3 footer bars; each spans `viewBox_w − 2*left_pad`; no connectors emerge from any footer.
-9. Legend at bottom: hairline separator + one swatch per style actually used.
+9. No legend unless `legend:` is given; then a bottom strip with hairline separator + one swatch per style actually used.
 10. `arrow-label` for connector labels, `eyebrow` for the page eyebrow and zone labels, `title` for the page title, `node-name` for the subtitle and component names, and `sublabel` for technical sub-labels.
 11. Markers `#arrow` / `#arrow-link` / `#arrow-accent` defined once in `<defs>`; no inline marker definitions.
 12. Dark variant: resolve every semantic token through its dark-mode value; custom colors are lightened ~15 %.

@@ -54,7 +54,7 @@ The preset sets the SVG `viewBox`. Every value below is divisible by 4, so the g
 
 ### Deriving `fit`
 
-Round the content bounding box **up** to the next multiple of 4, then add the fixed chrome: 40px outer margin on every side, plus 60px at the bottom for the legend strip. Never let the content touch the viewBox edge.
+Round the content bounding box **up** to the next multiple of 4, then add the fixed chrome: 40px outer margin on every side, plus 60px at the bottom only when the user asked for a legend. Never let the content touch the viewBox edge.
 
 ### Type ramp per size class
 
@@ -64,7 +64,7 @@ Node names shrink relative to the canvas as it grows — resist that. Scale the 
 |---|---|---|---|
 | Title (Amazon Ember 700) | 28 | 40 | 32 |
 | Node name (Amazon Ember 600) | 12 | 16 | 12 |
-| Sublabel (Amazon Ember Mono) | 9 | 12 | 9 |
+| Sublabel (Amazon Ember 400) | 10 | 14 | 10 |
 | Arrow label (Amazon Ember Mono) | 8 | 12 | 8 |
 | Eyebrow / tag (Amazon Ember Mono) | 8 | 8 | 8 |
 | Node box min height | 48 | 64 | 48 |
@@ -74,7 +74,7 @@ Presentation ramp implies fewer nodes — 16px names in 64px boxes eat the canva
 
 ### Safe areas
 
-- **All presets:** 40px outer margin; legend strip is the bottom 60px and nothing else lives there.
+- **All presets:** 40px outer margin; no legend strip unless requested — when it is, it owns an extra 60px at the bottom and nothing else lives there.
 - **`social-og`:** keep the outer 64px clear on every side — link-card crops are unpredictable across platforms.
 - **`slide-*`:** keep the bottom 80px clear if the deck template has a footer bar; ask if unsure.
 
@@ -143,7 +143,7 @@ Amazon Ember has no CJK coverage. When labels contain Japanese, Chinese, or Kore
 <text font-family="'Amazon Ember', 'Hiragino Sans', 'Noto Sans JP', 'Yu Gothic', sans-serif">認証サービス</text>
 ```
 
-For mono sublabels use `'Amazon Ember Mono', 'Noto Sans Mono CJK JP', monospace`. CJK glyphs render ~10% wider than Latin at the same size — budget box width accordingly, and prefer 12px names over 8px sublabels for CJK, which goes muddy below 10px.
+For mono roles (eyebrows, arrow labels) use `'Amazon Ember Mono', 'Noto Sans Mono CJK JP', monospace`. CJK glyphs render ~10% wider than Latin at the same size — budget box width accordingly; CJK goes muddy below 10px, which is why the sublabel floor is 10px.
 
 ---
 

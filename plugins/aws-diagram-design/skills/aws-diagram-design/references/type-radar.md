@@ -12,7 +12,7 @@
 - **Series polygon:** stroke 1.5px at the series color, fill the same color at `0.18` opacity (`0.22` in dark). Stroke 1.8px on the focal series — a subtle weight bump.
 - **Vertex dots:** **only on the focal series**, `r=4` filled with the series color. Non-focal series are stroke-and-fill only. This is the load-bearing rule that keeps the chart readable at 4–5 series.
 - **Drawing order:** dots-pattern bg → grid rings → axis spokes → axis labels → scale ticks → non-focal series (smallest area first) → focal series → focal vertex dots → legend.
-- **Legend:** horizontal strip at the bottom (per the global rule). Swatch is a 16×8 rectangle (matches the polygon stroke+fill, not a circle), then the entity name. ~140px between entries. Optional italic tail on the right with the rationale (`"One coral. Position is the signal — color reserved for the recommended option."`).
+- **Legend:** a series key is data, so it stays even though type legends are off by default — horizontal strip at the bottom. Swatch is a 16×8 rectangle (matches the polygon stroke+fill, not a circle), then the entity name. ~140px between entries. Optional italic tail on the right with the rationale (`"One coral. Position is the signal — color reserved for the recommended option."`).
 
 ## Math
 
@@ -70,7 +70,7 @@ The skill's "1-focal" rule still holds: `accent` is reserved for the focal serie
 - **Dots on every series.** Only the focal carries dots. Adding them to all 4–5 series turns the chart into a bead curtain.
 - **Radar with 2 series** — a comparison bar chart or a 2-row table is clearer.
 - **Non-quantitative axes.** All axes must be measurable on the same normalized scale. "Speed" + "color" + "year" mixes don't belong on a radar.
-- **Mono-font axis labels.** Names go in Amazon Ember (the global rule). Mono is for technical sublabels only.
+- **Mono-font axis labels.** Names go in Amazon Ember (the global rule). Mono is for eyebrows and arrow labels only.
 - **Rainbow palette.** Even with the new `series-*` tokens, you don't need all 5 in one chart — use only as many as you have non-focal entities.
 
 ## Examples

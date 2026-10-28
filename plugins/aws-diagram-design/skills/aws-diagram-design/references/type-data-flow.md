@@ -83,8 +83,8 @@ viewBox_w        = label_col_w + n_steps * step_slot_w + right_pad   # 5 steps �
 header_h         = 36
 lane_h           = 80
 has_color_row    = any(node.color or step.color or lane.color in inputs)
-legend_h         = 100 if has_color_row else 80                      # 4 rows when colors are present
-viewBox_h        = header_h + n_lanes * lane_h + legend_h            # 4 lanes, no colors → 436; with colors → 456
+legend_h         = 0                                                 # default: no legend strip. Only when the user asks for a key: 80, or 100 with a CONCERN row
+viewBox_h        = header_h + n_lanes * lane_h + legend_h            # 4 lanes → 356; with the optional legend 436 / 456
 
 # Header strip (top)
 header_y         = 0                                                  # ends at header_h = 36
@@ -105,7 +105,7 @@ node_h           = 64
 node_x(j)        = step_cx(j) - node_w/2                              # 146, 258, 370, 482, 594
 node_y(k)        = lane_y_top(k) + 8                                  # 44, 124, 204, 284
 
-# Legend strip (bottom)
+# Legend strip (bottom) — only when requested
 legend_y_top     = header_h + n_lanes * lane_h                        # 356
 legend_row_y     = [legend_y_top + 16, legend_y_top + 37, legend_y_top + 59]
                                                                       # 372, 393, 415
@@ -288,7 +288,7 @@ If zero or >1 of any focal slot are declared, halt and ask the user.
 Before emitting SVG, verify **every** item:
 
 1. `viewBox = "0 0 {viewBox_w} {viewBox_h}"` derived from `n_steps` and `n_lanes` via §2.
-2. Header strip at `y=0..36`; legend strip at `y=legend_y_top..viewBox_h` (`legend_y_top = 36 + n_lanes * 80`).
+2. Header strip at `y=0..36`; no legend strip unless the user asked for one (then `y=legend_y_top..viewBox_h`, `legend_y_top = 36 + n_lanes * 80`).
 3. Every node at `(step_cx(j) - 50, lane_y_top(k) + 8)` size `100×64`.
 4. Empty cells render nothing — no placeholder rect, no text.
 5. Exactly **one** focal step (`steps[j].focal: true`).
@@ -327,7 +327,9 @@ Data-type chip colors are a **separate semantic axis** from the per-node color o
 
 ---
 
-## 9. Legend (3- or 4-row strip)
+## 9. Legend (opt-in, 3- or 4-row strip)
+
+**Off by default** — `legend_h = 0` and the canvas ends at the last lane; the header chips already name the steps. Draw this strip only when the user asks for a key.
 
 Each row introduced by a category label at `x=144`. The default legend has **3 rows** (`STEPS` / `DATA TYPE` / `FLOW`); when one or more nodes carry a `color` override (§4), add a 4th `CONCERN` row and grow `legend_h` to 100 (so `viewBox_h = header_h + n_lanes·80 + 100`).
 

@@ -42,7 +42,7 @@ A **layout variant** of the standard quadrant — same house skin (warm paper, d
 
 Both variants use the same Jobs-minimal axis labels: one word at each arrow tip, no glyphs, no parentheticals. The only axis difference is that the consultant variant uses double-ended arrows instead of single-ended.
 
-Everything else — paper, dot pattern, typography, legend strip, 4px grid, complexity budget — is the house default. Don't invent new colors or fonts for this variant.
+Everything else — paper, dot pattern, typography, 4px grid, complexity budget — is the house default. Don't invent new colors or fonts for this variant.
 
 ### Style tokens (in-house)
 
@@ -66,7 +66,7 @@ Everything else — paper, dot pattern, typography, legend strip, 4px grid, comp
 - Axis cross passes *between* the cells, not through them.
 - Arrow tips live ~20–40px outside the outermost cell edge; single-word axis labels sit ~12px beyond each tip (see Axis labels above).
 - Exactly one focal cell. Picking none makes it a placeholder template; picking two erases the signal.
-- Keep the legend strip + horizontal rule at the bottom — same as the standard quadrant. Legend swatches should show both "headline bet" (coral) and "candidate future" (neutral).
+- No legend strip by default — same as the standard quadrant. If the user asks for one, its swatches show both "headline bet" (coral) and "candidate future" (neutral).
 
 ### Anti-patterns (variant-specific)
 

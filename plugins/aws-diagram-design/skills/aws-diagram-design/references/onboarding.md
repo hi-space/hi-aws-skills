@@ -73,7 +73,7 @@ Read the rendered `font-family` stack of:
 
 - `<h1>` → `title` family
 - `<body>` → `node-name` family  
-- `<code>`, `<pre>`, or any mono-styled element → `sublabel` family
+- `<code>`, `<pre>`, or any mono-styled element → `eyebrow` / `arrow-label` (mono) family
 
 If the site has only one family, keep the schematic defaults for the missing roles (Amazon Ember for title, Amazon Ember Mono for mono). Don't force-pick a mono font that isn't on the site.
 
@@ -217,7 +217,7 @@ Map variable names to semantic roles using name-heuristics:
 | `muted`, `subtle`, `secondary`, `caption` | `muted` |
 | `accent`, `brand`, `primary`, `cta`, `highlight` | `accent` |
 | `border`, `rule`, `divider`, `outline` | `rule` |
-| `mono`, `code`, `pre` | `sublabel` font |
+| `mono`, `code`, `pre` | `eyebrow` / `arrow-label` (mono) font |
 
 **From JSON tokens:** follow the same heuristics on key names. If the JSON follows Style Dictionary format (`{ "color": { "brand": { "value": "#…" } } }`), flatten the path and apply heuristics to the leaf key.
 

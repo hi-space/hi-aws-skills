@@ -98,8 +98,8 @@ viewBox_w        = left_pad + comp_col_w + comp_role_gap
 header_y         = 72
 row_y(k)         = 140 + k * row_stride                  # 140, 180, 220, ...
 rows_bottom      = row_y(n_components - 1) + row_h       # 8 rows → 456
-legend_y_top     = rows_bottom + 20                      # 476 for 8-row canonical
-viewBox_h        = legend_y_top + 44                     # 520 for 8-row canonical
+legend_y_top     = rows_bottom + 20                      # 476 for 8-row canonical — only when a legend is requested
+viewBox_h        = rows_bottom + 24                      # 480 for 8-row canonical; legend_y_top + 44 (520) only with the optional legend
 
 # Column positions
 comp_col_x       = left_pad                                                       # 12
@@ -152,9 +152,9 @@ Solid paper fill across the full viewBox. No dot pattern.
 
 The focal cell can carry a 2nd line (`sub:`) rendered in `accent` with the `sublabel` role at 8px and 0.85 opacity.
 
-### 2.5 Legend (`y_top = legend_y_top, h ≈ 30`)
+### 2.5 Legend (opt-in; `y_top = legend_y_top, h ≈ 30`)
 
-Hairline separator at `legend_y_top`. Below the separator, one row of style swatches with their labels — only the styles actually used in the diagram appear in the legend.
+**Off by default** — the cell fills and their labels are read in place. Draw this only when the user asks for a key. Hairline separator at `legend_y_top`. Below the separator, one row of style swatches with their labels — only the styles actually used in the diagram appear in the legend.
 
 - "LEGEND" eyebrow at `(left_pad, legend_y_top + 20)`: `eyebrow` role, muted, letter-spacing 0.14em
 - Each style: swatch rect (14×12 `rx=2`) followed by a `sublabel` role label
@@ -271,7 +271,7 @@ Before emitting SVG, verify **every** item:
 7. Cells omitted from `cells:` render as `level: "none"` with `none_label` text (default `"No access"`).
 8. Custom-colored cells ≤ 2 (in addition to the focal cell).
 9. No connector elements anywhere in the SVG.
-10. Legend strip at `legend_y_top`, one swatch per `level` actually used, hairline separator above.
+10. No legend unless requested; when it is, one strip at `legend_y_top`, one swatch per `level` actually used, hairline separator above.
 11. `viewBox_h` grows with `n_components`; `viewBox_w` grows with `n_roles`.
 
 ---
@@ -371,7 +371,7 @@ Run §2 with these inputs:
 - `n_roles = 4`, `n_components = 8`, no color overrides, one focal cell.
 - `viewBox_w = 12 + 208 + 12 + 4·148 + 3·16 + 48 = 920` ✓
 - `row_y(k)` produces `140, 180, 220, 260, 300, 340, 380, 420` ✓
-- `rows_bottom = 420 + 36 = 456`; `legend_y_top = 476`; `viewBox_h = 520` ✓
+- `rows_bottom = 420 + 36 = 456`; default `viewBox_h = 480`; the shipped example carries the optional legend (`legend_y_top = 476`, `viewBox_h = 520`) ✓
 - `role_col_x(j) = [232, 396, 560, 724]` ✓
 - Focal cell at `(row=5, col=3)` → rect `(724, 340, 148, 36)` with accent stroke 1.4 ✓
 

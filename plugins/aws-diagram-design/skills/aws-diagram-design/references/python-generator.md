@@ -39,8 +39,8 @@ def build(lang):                       # called once per language in --langs (de
 
 Every diagram is built the same way. Follow the steps in order; the numbers are on the 4px grid.
 
-1. **Canvas.** Width 960 for body-width docs, 1280 for wide pages or slides. Height = content + 40 top margin +
-   56 legend strip; keep the lowest node or zone edge at or above `h - 60`.
+1. **Canvas.** Width 960 for body-width docs, 1280 for wide pages or slides. Height = content + 40 margin top and
+   bottom. No legend by default; only if the user asks for a key add 56 and keep the lowest node or zone edge at or above `h - 60`.
 2. **Columns and rows.** Nodes sit on a grid: column x starts at 40, node widths from the table below, gaps of 64–96
    between columns (room for a labelled arrow), 40–72 between rows. Put the primary flow left→right (or top→bottom)
    and side services (registry, storage, monitoring) on a second row or column, never floating in a corner.
@@ -70,7 +70,8 @@ Every diagram is built the same way. Follow the steps in order; the numbers are 
    a straight run that clears both boxes by ≥8px; a mask that overlaps a node is clipped by the node fill.
 7. **Focal.** `kind="focal"` on 1–2 nodes. Everything else `step` (default), `store`, `input`, `external`, `optional`,
    `security`.
-8. **Legend.** One entry per node kind and arrow style actually used, nothing else. Keys: a node kind, `arrow`,
+8. **Legend (opt-in).** Off by default — icons and sublabels carry the meaning. Only when the user asks for a key:
+   one entry per node kind and arrow style actually used, nothing else. Keys: a node kind, `arrow`,
    `arrow:accent`, `arrow:link`, `arrow-dashed`, `arrow:link-dashed`, or an icon name.
 
 ## API (Canvas)
@@ -86,7 +87,7 @@ Every diagram is built the same way. Follow the steps in order; the numbers are 
 | `hline(x1,y,x2)` `vline(x,y1,y2)` `L_hv` `L_vh` `elbow_hvh(x1,y1,x2,y2,mid=)` `elbow_vhv(...)` | Path strings | All orthogonal, r=8 arcs |
 | `label(x,y,text,*,anchor="middle")` | Arrow label on an opaque mask | `y` is the baseline; `size=`/`color=` keyword-only; `\n` for two lines |
 | `note(x,y,text,anchor="middle")` | Mono annotation above nodes | |
-| `legend([(key,text), ...])` | Bottom strip | See step 8 |
+| `legend([(key,text), ...])` | Optional bottom strip | Off unless called; see step 8 |
 | `svg()` | Output | Standalone SVG with `local()` @font-face; `build.py --png` finalizes it |
 
 Icon names: `icon=` accepts an alias from `awsdiag.AWS` (`S3`, `EKS`, `SageMaker`, `User`, …), any file stem from
@@ -98,7 +99,7 @@ nodes → overlay → legend), so spec statement order does not matter.
 ## Rules the library enforces, and what the spec still decides
 
 Baked in (plus the layout checks listed under WARN policy): white paper, squid-ink `#232F3E`, smile-orange accent tint/stroke for `focal`, Amazon Ember with Noto Sans
-KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 12 · arrow label 12 · zone 14 ·
+KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 14, same Ember face · arrow label 12 · zone 14 ·
 tag 10), icon-left pattern (32px icon in a ≥64px node, 24px in ≥48px, 16px below), opaque node mask, four arrow
 markers, accessible `<title>`/`<desc>` with slug-prefixed ids, PNG at 2x with the paper rect as background.
 
@@ -109,10 +110,10 @@ caveats go in the document prose or a table, not in the box. Keep AWS service na
 export. Two families:
 
 - `WARN name|sub [slug-lang] '<text>' needs w>=N`: a label wider than its box. Widen to the printed width, shorten
-  the text, or drop the sublabel. The estimate has no font metrics, so a mono sublabel flagged by ≤10px may render
+  the text, or drop the sublabel. The estimate has no font metrics, so a sublabel flagged by ≤10px may render
   fine; confirm on the PNG rather than assuming.
 - `WARN layout [slug-lang] ...` from `Canvas.check()`: two nodes overlap; a node straddles a zone border; a node sits
-  on a zone's badge row (`y < zone.y + 36`); a node or zone runs into the legend strip (`> h - 60`); an arrow endpoint
+  on a zone's badge row (`y < zone.y + 36`); a node or zone runs into a declared legend strip (`> h - 60`, only when `legend()` was called); an arrow endpoint
   touches nothing (no node edge, zone edge, lifeline, or other connector). Each message names the element and the
   coordinate to change.
 
@@ -127,5 +128,5 @@ export. Two families:
 | `KeyError: unknown AWS icon` | Run `python3 awsdiag.py` for the alias list, or use a stem from `assets/aws-icons/INDEX.md` |
 | `TypeError` on `label(...)` | `anchor`, `size`, `color` are keyword-only: `label(x, y, "TEXT", anchor="start")` |
 | Two arrows merge into one stroke | Different `mid=` for each `elbow_*`, or fan the attach points along the edge |
-| Legend overlaps the diagram | Increase canvas `h`; the strip is anchored at `h - 40`, content must end by `h - 60` |
+| Legend overlaps the diagram (only if you declared one) | Increase canvas `h`; the strip is anchored at `h - 40`, content must end by `h - 60` |
 | `WARN layout ... straddles zone` | Nodes are fully inside or fully outside a zone; an actor outside AWS goes left of the `cloud` zone, not on its border |

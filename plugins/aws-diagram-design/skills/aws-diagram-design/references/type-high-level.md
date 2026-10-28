@@ -82,7 +82,7 @@ effective_w        = 1000 - right_strip_w - strip_margin     # 1000 or 964
 
 n_cross            = count of components with kind == "cross-cutting"
 strip_y_bot        = max(428, 388 + n_cross * 44 - 4)        # extends to last crosscut row
-viewBox_h          = max(540, strip_y_bot + 112)             # 112 reserved for legend
+viewBox_h          = max(540, strip_y_bot + 40)              # bottom margin; +72 more only when the user asks for a legend
 viewBox            = f"0 0 1000 {viewBox_h}"
 ```
 
@@ -428,7 +428,7 @@ Before emitting SVG, verify **every** item. If any fails, fix it — don't ship.
 8. No node has > 3 outgoing edges, or if it does, it is the declared `focal` / hub.
 9. All `<path>` and `<line>` connectors are emitted **before** any node `<rect>` (z-order).
 10. Each vertical chevron pairs **1:1** with exactly one `bar` or `cross-cutting` component (§5 pairing rule). `len(verticals) == len(bars) + len(crosscuts)`.
-11. `viewBox_h = max(540, strip_y_bot + 112)` — grow the canvas when multiple crosscuts are declared so the legend still fits.
+11. `viewBox_h = max(540, strip_y_bot + 40)` — grow the canvas when multiple crosscuts are declared so the bottom margin holds (add 72 only when a legend was requested).
 12. Custom component colors (§3.4) apply only to container + icon + name; connectors stay topology-driven. Cap at 2 custom-colored components in addition to the focal.
 11. The diagram passes SKILL.md §9 (4-px grid; ≤ 2 accent elements; mono only for technical content; hairlines; no shadows; no `rounded-2xl`).
 

@@ -70,7 +70,7 @@ Rules:
 ## Anti-patterns
 - Every box in coral ("this is important too") — hierarchy collapses.
 - Bidirectional arrow when one direction is obvious from context.
-- Legend floating inside the diagram area.
+- A legend strip nobody asked for — icons and sublabels already identify every box.
 
 ## Examples
 - `assets/example-architecture.svg` — minimal light

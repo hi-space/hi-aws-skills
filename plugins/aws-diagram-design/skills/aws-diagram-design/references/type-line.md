@@ -12,7 +12,7 @@
 - **Vertex dots:** only on the focal series (`r=4`, filled). Other series: line only.
 - **Area fill (optional):** `<polygon>` closing back to `y=420` (x-axis baseline) at 0.08 opacity. Use for the focal series only when the area meaning is important.
 - **Multi-series:** up to 5 series. Focal = `accent`. Others = `series-1`, `series-2`, `series-3`, `series-4` from style-guide.md. Apply series palette in order — don't skip.
-- **Legend:** horizontal strip at the bottom. Swatch = 16×8px rect with the series fill/stroke. One entry per series.
+- **Legend:** a series key is data, so it stays even though type legends are off by default — horizontal strip at the bottom. Swatch = 16×8px rect with the series fill/stroke. One entry per series.
 
 ### Polyline pattern
 

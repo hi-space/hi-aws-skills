@@ -138,7 +138,7 @@ These mark "AI slop" schematics of any type:
 | JetBrains Mono as blanket "dev" font | Mono is for *technical* content — ports, commands, URLs. Names go in Amazon Ember (sans). |
 | Recolored / distorted AWS service icons | Official icons are identity marks — use as-is or use the generic monochrome set ([primitive-aws-icons.md](references/primitive-aws-icons.md)) |
 | Identical boxes for every node | Erases hierarchy |
-| Legend floating inside the diagram area | Collides with nodes |
+| A legend strip nobody asked for | Icons and sublabels already identify every box; add a key only when the reader asks for one |
 | Arrow labels with no masking rect | Bleeds through the line |
 | Vertical `writing-mode` text on arrows | Unreadable |
 | 3 equal-width summary cards as default | Generic grid — vary widths |
@@ -192,12 +192,12 @@ Type-specific anti-patterns live in each `references/type-*.md`.
 
 - **Title** — Amazon Ember, 1.75rem, 700
 - **Node name** — Amazon Ember, 12px, 600 — human-readable labels
-- **Sublabel** — Amazon Ember Mono, 9px — ports, URLs, field types
+- **Sublabel** — Amazon Ember, 10px, 400, muted — the second line under a node name (role, runtime, port). Same family as the name so Hangul and Latin sublabels match; about 85% of the name size, floor 10px
 - **Eyebrow / tag** — Amazon Ember Mono, 7–8px, uppercase, tracked — type tags, axis labels
 - **Arrow label** — Amazon Ember Mono, 8px — annotation on arrows
 - **Editorial aside** — Amazon Ember *italic*, 14px — callouts only
 
-**Mono is for technical content.** Names, titles, and callouts are Amazon Ember; sublabels, eyebrows, and arrow labels are **Amazon Ember Mono** — the entire type system is one brand family. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — templates already carry the `local()`-only `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) (installed copies win, no path to a font file), and `finalize.py` embeds the used faces as data URIs for the deliverable. Never add `url()` sources to an SVG — the self-check rejects any external reference. Always ship the fallback stacks; no external font CDN is referenced:
+**Mono is for small chrome only.** Names, node sublabels, titles, and callouts are Amazon Ember; eyebrows, tags, and arrow labels are **Amazon Ember Mono** — the entire type system is one brand family. A node's two lines share one face: Ember Mono has no Hangul, so a mono sublabel would fall back to Noto Sans KR and look like a third font next to Latin sublabels. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — templates already carry the `local()`-only `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) (installed copies win, no path to a font file), and `finalize.py` embeds the used faces as data URIs for the deliverable. Never add `url()` sources to an SVG — the self-check rejects any external reference. Always ship the fallback stacks; no external font CDN is referenced:
 
 ```html
 <!-- sans: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif -->
@@ -303,9 +303,9 @@ These six rules are **non-negotiable**. Run the pre-output checklist (§9) to ve
 <!-- 4. Node name (Amazon Ember — human-readable) -->
 <text x="CX" y="CY+2" fill="#232F3E" font-size="12" font-weight="600"
       font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Node Name</text>
-<!-- 5. Technical sublabel (Amazon Ember Mono) -->
-<text x="CX" y="CY+18" fill="#545B64" font-size="9"
-      font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle">tech:port</text>
+<!-- 5. Sublabel (Amazon Ember 400, muted, ~85% of the name size) -->
+<text x="CX" y="CY+18" fill="#545B64" font-size="10"
+      font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">Lambda · python3.13</text>
 ```
 
 For a node representing a named AWS service, use the icon-node pattern in [primitive-aws-icons.md](references/primitive-aws-icons.md) (24px official icon at left, no type tag).
@@ -328,9 +328,11 @@ Rules:
 - Never `writing-mode` vertical.
 - For vertical segments, place the label to the side (not on the line) with the same 6–10px horizontal gap.
 
-### Legend — horizontal strip at the bottom
+### Legend — off by default
 
-**Never put the legend inside the diagram area.** Place as a horizontal strip after all nodes, with a hairline separator:
+**Do not draw a legend unless the user asks for one.** Official icons, node names, and sublabels already say what each box is, and the node-kind fills are a hierarchy cue, not a code the reader has to look up. A series key on a chart (radar, line, bar, scatter) is data, not a type legend, and stays.
+
+When a key *is* requested: never inside the diagram area. Place it as a horizontal strip after all nodes, with a hairline separator, and expand the SVG `viewBox` height by ~60px:
 
 ```svg
 <line x1="30" y1="LEGEND_Y-8" x2="VIEWBOX_W-30" y2="LEGEND_Y-8"
@@ -339,8 +341,6 @@ Rules:
       letter-spacing="0.14em">LEGEND</text>
 <!-- Items — horizontal row, ~160px apart -->
 ```
-
-Expand SVG `viewBox` height by ~60px.
 
 ---
 
@@ -359,7 +359,7 @@ Expand SVG `viewBox` height by ~60px.
 | Padding inside boxes | 8, 12, 16 |
 | Border radius | 4, 6, 8 |
 
-Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–9px mono sizes fixed by style-guide.md (sublabels, eyebrows, arrow labels).
+Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–10px small sizes fixed by style-guide.md (sublabels, eyebrows, arrow labels).
 
 Quick check: if a coordinate ends in 1, 2, 3, 5, 6, 7, 9 — fix it.
 
@@ -402,7 +402,7 @@ The SVG *is* the page. There is no header, card grid, or footer around it.
 
 1. **Paper** — a full-size `<rect>` in the paper colour is the first painted element.
 2. **Diagram** — zones → arrows → labels → nodes → overlay, 40 px outer margin.
-3. **Legend strip** — bottom 60 px, horizontal.
+3. **No legend strip** by default. Only when the user asks for a key: a horizontal strip in an extra 60 px at the bottom.
 
 ---
 
@@ -436,7 +436,7 @@ Run before producing any diagram.
 **Signal:**
 
 - [ ] Coral used on ≤2 elements? If more, which actually deserve focal status?
-- [ ] Legend covers every type used — and nothing extra?
+- [ ] No legend unless the user asked for one? If present, it covers every type used — and nothing extra?
 - [ ] Within the type's complexity budget (§7)?
 
 **Technical:**
@@ -453,9 +453,8 @@ Run before producing any diagram.
 - [ ] **No label mask overlaps a node drawn after it? (Node fill would clip the text — §6 rule 6.)**
 - [ ] Every arrow label has an opaque `paper`-filled rect behind it (`#ffffff` in the AWS skin)?
 - [ ] Named AWS services use official icons from `assets/aws-icons/` — unmodified, uncolored, ≥16px ([primitive-aws-icons.md](references/primitive-aws-icons.md))?
-- [ ] Legend is a horizontal bottom strip, not floating?
 - [ ] No vertical `writing-mode` text?
-- [ ] `viewBox` expanded for the legend strip (~60px)?
+- [ ] If a legend was requested: horizontal bottom strip, never floating, `viewBox` expanded ~60px for it?
 - [ ] Every font size, coord, width, height, gap divisible by 4?
 - [ ] Ran `python3 <skill-dir>/scripts/finalize.py <file>.svg` — check OK (well-formed XML, accessible contract, no script/foreignObject/external url, label-mask geometry), fonts embedded, PNG written?
 - [ ] If animated, does the complete static/no-JS frame work, does reduced motion hide/disable playback, and is the controller copied verbatim from `template-motion.html`? In this repository, also run `python3 scripts/verify-motion.py path/to/generated.html`; from an installed skill, manually check print and static-query states on top of `self_check.py <file>.html`.
@@ -464,7 +463,7 @@ Run before producing any diagram.
 
 - [ ] Brand match uses exact public families/weights, verified via `getComputedStyle`; fallbacks disclosed?
 - [ ] Human-readable names in Amazon Ember (sans), not mono?
-- [ ] Technical sublabels (ports, commands, URLs) in Amazon Ember Mono?
+- [ ] Node sublabels in Amazon Ember 400, muted, at ≥85% of the name size (10px under a 12px name, 14px under 16px) — not mono, not smaller?
 - [ ] Page title in Amazon Ember 700?
 - [ ] Annotation callouts (if any) in *italic* Amazon Ember? (see [primitive-annotation.md](references/primitive-annotation.md))
 - [ ] Amazon Ember declared with its full fallback stack (`'Helvetica Neue', Helvetica, Arial, sans-serif`) — it's not on Google Fonts?
@@ -561,17 +560,17 @@ For an imported diagram, pixel dimensions come from the `viewBox` × scale facto
 When a document needs **several diagrams in one house style**, a **Korean and English version of the same layout**,
 or **PNG files rebuilt whenever content changes** (workshop guides, Hugo/MkDocs sites, wikis that forbid external
 images), do not hand-write each SVG. Load [`references/python-generator.md`](references/python-generator.md) and use
-the bundled generator at [`scripts/pygen/`](scripts/pygen/): specs call `Canvas.node/zone/path/label/legend`, and the
-library paints the skin, icon-left pattern, orthogonal `r=8` connectors, masked labels, legend strip, and accessible
+the bundled generator at [`scripts/pygen/`](scripts/pygen/): specs call `Canvas.node/zone/path/label`, and the
+library paints the skin, icon-left pattern, orthogonal `r=8` connectors, masked labels, and accessible
 `<title>`/`<desc>` exactly as §5–§7 and §12 require.
 
 ```
 python3 <skill-dir>/scripts/pygen/build.py <spec-dir> --out <spec-dir>/out --png --png-dir <static-dir>   # SVG per slug and language, finalized, PNG @2x
 ```
 
-House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names, 12px sublabels
-and arrow labels) because docs are read at body width and projected; one name line plus one short sublabel per node,
+House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names, 14px sublabels,
+12px arrow labels) because docs are read at body width and projected; one name line plus one short sublabel per node,
 details in the prose; official icon on every node that names an AWS service; every `WARN` from `build.py` (text overflow
-or a layout rule: overlap, zone straddle, badge row, legend strip, dangling arrow) is fixed before export, never ignored. Replacing a Mermaid block in Markdown counts as an import (§11): keep the content, redraw the
+or a layout rule: overlap, zone straddle, badge row, dangling arrow) is fixed before export, never ignored. Replacing a Mermaid block in Markdown counts as an import (§11): keep the content, redraw the
 layout, and remove the Mermaid source once the PNG is in place.
 

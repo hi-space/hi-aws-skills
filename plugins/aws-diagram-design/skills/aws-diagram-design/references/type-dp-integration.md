@@ -115,7 +115,7 @@ footer_gap       = 8
 footer_y(k)      = footer_top + k * (footer_bar_h + footer_gap)
 footer_bottom    = footer_top + n_footer * (footer_bar_h + footer_gap) - footer_gap
 
-viewBox_h        = max(600, footer_bottom + 84)     # 84 reserved for legend
+viewBox_h        = max(600, footer_bottom + 40)     # bottom margin; no legend strip by default
 
 # Platform.rows allocation inside zone
 bar_h_focal      = 56
