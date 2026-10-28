@@ -1,17 +1,19 @@
 ---
 name: aws-tech-blog-writer
-description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached; also when an existing AWS blog draft needs a style pass or a technical fact-check. The deliverable is a Word (.docx) file, built with the docx skill, with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘."
+description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached. The deliverable, produced through the sibling skill aws-blog-review at the end of the pipeline, is a Word (.docx) file with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘. A finished draft that only needs a review goes to the sibling skill aws-blog-review."
 license: MIT
 metadata:
-  version: "2.1.0"
+  version: "3.0.0"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
 # AWS Tech Blog Writer
 
 Turn a finished project into a post that could go up on the AWS Tech Blog as-is: correct AWS facts, real
-diagrams, house style, and honest placeholders where the author has to fill in what only they know. The
-deliverable is `<work>/06-final.docx`; the Markdown it was built from stays next to it for WordPress.
+diagrams, house style, and honest placeholders where the author has to fill in what only they know. This
+skill produces the draft (`<work>/04-draft.md`) and hands it to the sibling skill `aws-blog-review`, which
+checks it, revises it, and builds the Word file the author receives. Nothing this skill writes goes to
+the author unreviewed.
 
 `<skill-dir>` is the directory containing this SKILL.md. Every artifact lives in `<work>` (default
 `./blog-work/<slug>/`), so a later session or a subagent picks the job up from files, not from
@@ -30,13 +32,14 @@ Blog Progress (copy into your reply and keep it updated):
 - [ ] Stage 2  Plan                            -> 02-plan.md                        [approval gate]
 - [ ] Stage 3  Research | Diagrams (parallel)  -> 03-research.md | diagrams/manifest.md, images/
 - [ ] Stage 4  Draft, fresh context            -> 04-draft.md
-- [ ] Stage 5  Fact-check | Lint (parallel)    -> 05-claims.md | lint report
-- [ ] Stage 5b Style pass                      -> 06-final.md, placeholders.md
-- [ ] Stage 6  Word document, built and verified -> 06-final.docx
+- [ ] Stage 5  Hand-off to aws-blog-review     -> review-report.md, revised.md, <제목>.docx (that skill's R1 to R5)
 ```
 
-Entering mid-way is normal: a user who already has a draft starts at Stage 1 with the draft registered
-as source `S01`, and skips to Stage 5 once `01-facts.md` exists.
+Entering mid-way is normal: a user who already has a draft that needs rewriting starts at Stage 1 with
+the draft registered as source `S01` and continues through Stage 4, because a rewrite needs the fact
+base and the plan. A finished draft that needs a review and a corrected version, not a rewrite, skips
+this skill entirely and goes to the sibling skill `aws-blog-review` (`../aws-blog-review/SKILL.md`),
+which reuses this skill's lint, references, and builder.
 
 ## Stage 1: Brief and fact base
 
@@ -115,65 +118,44 @@ names as AWS writes them; figures introduced, embedded, and captioned.
 When the draft comes back, read it once as the target reader. If the argument order is wrong, tell the
 same subagent what to move (SendMessage keeps its context); do not start editing sentences yet.
 
-## Stage 5: Fact-check and lint, in parallel
+## Stage 5: Hand-off to aws-blog-review
 
-**Fact-check**: fill `templates/prompt-fact-checker.md` and send it to the plugin's `blog-fact-checker`
-agent (`subagent_type: aws-tech-blog-writer:blog-fact-checker`). Its definition in
-`agents/blog-fact-checker.md` holds the procedure and limits its tools to Read, Write, WebFetch, and the
-`aws-docs` / `aws-mcp` documentation tools. It reads `04-draft.md`, `templates/claims.md`, and
-`references/verification.md`, writes `<work>/05-claims.md`, and returns counts plus a corrections list
-(proposed sentence for each `corrected` claim, proposed `[기술 검증 필요] (Cnn)` text for each
-`unverified` one). It never edits the draft.
-
-**Lint**, while the fact-check runs: `python3 <skill-dir>/scripts/lint_blog.py <work>/04-draft.md`. It
-reports, with line numbers, forbidden punctuation, wrong or unintroduced service names, images without
-captions or files, code blocks without a language, malformed placeholders (errors), and the voice
-findings (warnings): banned vocabulary, figurative nouns, abstract nouns as actors, passives with an
-available actor, plain-form headings, connective overuse, long sentences.
-
-**Style pass** (Stage 5b, one writer): with the corrections list and the lint report in hand, edit the
-draft once following `references/voice.md` §5. Apply corrections first, then the voice rules paragraph
-by paragraph, then rerun the lint until it exits 0 with the warnings you keep justified. Save as
-`<work>/06-final.md`, write the placeholder list with `--placeholders-out <work>/placeholders.md`, and
-run `lint_blog.py <work>/06-final.md --final`; it must exit 0 before Stage 6 because a leftover fact-ID
-comment or a mis-coloured span goes straight into the author's Word copy. Then
-`python3 <skill-dir>/scripts/check_claims.py <work>` confirms every unverified claim has its placeholder.
-
-## Stage 6: Word document, built and verified
-
-The author reads and comments in Word. Invoke the `docx` skill and follow its "Creating a new Word
-document" workflow (docx-js); this skill's builder is the document script for that workflow:
+The draft is finished but unchecked: no AWS statement has been tested against documentation, first
+mentions are unlinked wherever `03-research.md` had no URL for the service, and only its writer has read
+the prose. Everything from here (lint, fact-check, story review, report, revision, Word build) is the
+sibling skill `aws-blog-review`, which runs the plugin's `blog-fact-checker` and `blog-reviewer` agents in
+fresh contexts and applies their findings in one revision pass. Invoke it now, in this session, and
+follow `../aws-blog-review/SKILL.md` from R1 with two differences that come from working inside a writer
+work directory:
 
 ```bash
-node <skill-dir>/scripts/build_docx.js <work>
+python3 <skill-dir>/../aws-blog-review/scripts/prepare_review.py <work>/04-draft.md --in-place
 ```
 
-It reads `06-final.md`, writes `06-final.docx`, and appends `placeholders.md` as a final "남은
-placeholder" section (`--no-appendix` turns that off). Placeholder spans become runs shaded in their
-category colour, figures are embedded at text width with their caption, tables and code keep their
-structure. Do not convert with `pandoc -o file.docx` instead: pandoc's DOCX writer drops the inline
-colours and the author cannot see what is missing.
+- R1 runs with `--in-place`: `<work>` stays the work directory, `draft.md` is a copy of `04-draft.md`
+  (the writer's artifact is not edited), `images/` is used where it is.
+- The fact-checker prompt gets `<facts: <work>/01-facts.md>`, so sentences the fact table states with a
+  source ID are project facts, not claims, unless they also assert AWS behaviour.
 
-The script ends with a verification block comparing Markdown and DOCX: image count and, per placeholder
-category, tags in the draft, in the document, and shaded runs. It exits 0 only when they agree. On
-`FAIL` or `MISSING`, fix the draft or the image path and rebuild. Then read the opening from the outside,
-`pandoc <work>/06-final.docx -t plain | head -80`, as the author would. If the post needs a construct
-the builder prints as plain text, extend `scripts/build_docx.js` under the `docx` skill's `docx-js.md`
-rules and keep the change in the skill.
+The review skill writes `review-report.md`, `revised.md`, `placeholders.md`, and `<제목>.docx` (the post
+title from the first H1) into `<work>`. Never build a Word file from `04-draft.md`: a document that
+looks finished gets forwarded to the author, and this one has not been checked. If the user stops the
+work before the review, hand back `04-draft.md` as Markdown and say that it is unreviewed.
 
 ## What to hand back
 
-In the user's language: the path of `06-final.docx` (the deliverable) and of `06-final.md`, the
-builder's verification summary, the figures with their `.brief.md`, the claims counts (verified /
-corrected / unverified), the placeholder list by category, and any stage skipped or not reviewed. While
-placeholders remain the post is ready for the author's pass, not ready to publish.
+In the user's language: what the review skill's "What to hand back" lists (verdict, report, revised
+Markdown, the `<제목>.docx` deliverable, before-and-after counts, remaining placeholders), plus the
+figures with their `.brief.md`, the plan's open questions the author still owes, and any stage skipped
+or not reviewed. While placeholders remain the post is ready for the author's pass, not ready to publish.
 
 ## Subagents
 
-Digests, research, the draft, and the fact-check are subagent work: file in, file out, given only the
-files named above and never the sources they do not need. The draft and the fact-check run as this
-plugin's own agents (`agents/blog-drafter.md`, `agents/blog-fact-checker.md`), whose tool lists the
-harness enforces; digests and research run as general-purpose subagents. If the plugin agents are not
+Digests, research, and the draft are subagent work: file in, file out, given only the files named
+above and never the sources they do not need. The draft runs as this plugin's own agent
+(`agents/blog-drafter.md`), whose tool list the harness enforces; digests and research run as
+general-purpose subagents; the fact-checker and the story reviewer are the review skill's agents and run
+in Stage 5 under its instructions. If the plugin agents are not
 registered (the skill copied without its plugin), send the same prompt to a general-purpose subagent with
 the agent body prepended. Never fork yourself; a fork inherits this whole context, which is the problem
 the split exists to avoid. Never let a subagent spawn subagents. Diagram skills run their own Reviewer.
@@ -183,18 +165,19 @@ the split exists to avoid. Never let a subagent spawn subagents. Diagram skills 
 | Agent | Stage | Tools | Reads | Writes |
 |---|---|---|---|---|
 | [blog-drafter](../../agents/blog-drafter.md) | 4 | Read, Write | voice, conventions, placeholders, plan, facts, research, manifest, skeleton | `04-draft.md` |
-| [blog-fact-checker](../../agents/blog-fact-checker.md) | 5 | Read, Write, WebFetch, aws-docs and aws-mcp documentation tools | verification, claims template, draft | `05-claims.md` |
+| [blog-fact-checker](../../agents/blog-fact-checker.md) | 5, via aws-blog-review R2 | Read, Write, WebFetch, aws-docs and aws-mcp documentation tools | verification, claims template, draft, facts | `05-claims.md` |
+| [blog-reviewer](../../agents/blog-reviewer.md) | 5, via aws-blog-review R2 | Read, Write | review rubric, conventions §1 §3 §6 §10, draft, PNGs | `story.md` |
 
 ## Reference files
 
 | File | Read it when |
 |---|---|
-| [voice.md](references/voice.md) | Drafter reads it whole; style pass follows its §5. Sentence rules, structure, before/after |
+| [voice.md](references/voice.md) | Drafter reads it whole; the review skill's revision pass follows its §5. Sentence rules, structure, before/after |
 | [aws-blog-conventions.md](references/aws-blog-conventions.md) | Planning and drafting: post types and skeletons, title, opening, naming, figures, code, links, bios |
-| [verification.md](references/verification.md) | Stage 3 research and Stage 5 fact-check: tool order, evidence rule, claim types, statuses |
+| [verification.md](references/verification.md) | Stage 3 research, and the fact-check the review skill runs in Stage 5: tool order, evidence rule, claim types, statuses |
 | [diagrams.md](references/diagrams.md) | Stage 3: which diagram skill, how to brief it from the facts, how to verify the picture |
 | [placeholders.md](references/placeholders.md) | Any time a fact is missing: four categories, exact HTML, how to word the request |
-| [templates/](templates/) | brief, source-digest, facts, plan, research, claims, diagram-manifest, blog-post, prompt-drafter, prompt-fact-checker |
+| [templates/](templates/) | brief, source-digest, facts, plan, research, claims (filled by the review skill's fact-checker), diagram-manifest, blog-post, prompt-drafter |
 
 ## Scripts
 
@@ -202,6 +185,6 @@ the split exists to avoid. Never let a subagent spawn subagents. Diagram skills 
 |---|---|
 | `scripts/init_workspace.py <slug> [--dir <path>]` | Create `<work>` and copy templates |
 | `scripts/ingest_sources.py <work>` | Convert PDF / DOCX / PPTX / drawio in `sources/` to text |
-| `scripts/lint_blog.py <draft.md> [--final] [--placeholders-out <file>] [--strict]` | Punctuation, naming, image, code, placeholder, and voice checks |
-| `scripts/check_claims.py <work>` | Validate `05-claims.md` and match unverified claims to draft placeholders |
-| `scripts/build_docx.js <work> [--out <file>] [--no-appendix]` | Build and verify `06-final.docx` from `06-final.md` with docx-js |
+| `scripts/lint_blog.py <draft.md> [--final] [--placeholders-out <file>] [--strict]` | Punctuation, naming, first-mention links (E8), image, code, placeholder, and voice checks; run by aws-blog-review R2 and R4 |
+| `scripts/check_claims.py` | Validate `05-claims.md` and match unverified claims to the revised draft's placeholders; run by aws-blog-review R4 |
+| `scripts/build_docx.js` | Build and verify the Word file with docx-js, named after the post title; run by aws-blog-review R5, never on `04-draft.md` |

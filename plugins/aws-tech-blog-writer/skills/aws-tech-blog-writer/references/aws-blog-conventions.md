@@ -161,6 +161,10 @@ write `해당 없음`.
 
 - Official documentation: `[Amazon Bedrock AgentCore 개발자 가이드](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/)`.
   Link text names the document, not "여기" or "이 링크".
+- The first body mention of every AWS service is itself a link to that service's documentation or
+  product page on `docs.aws.amazon.com` or `aws.amazon.com` (`[Amazon S3](https://aws.amazon.com/ko/s3/)`
+  or the user guide). `lint_blog.py` reports a missing or non-AWS link as error E8. Headings and
+  captions do not count as the first mention.
 - GitHub repositories with the org (`awslabs/amazon-bedrock-agentcore-samples`).
 - Other AWS blog posts by full title.
 - Collect them again under `## 더 알아보기` or `## 참고 자료` at the end, as a bullet list.

@@ -2,10 +2,12 @@
 /**
  * Build the Word deliverable for an AWS Tech Blog draft.
  *
- *   node build_docx.js <work-dir | draft.md> [--out <file.docx>] [--no-appendix] [--font-ko "<font>"]
+ *   node build_docx.js <work-dir | draft.md> [--out <file.docx>] [--name-from-title] [--no-appendix] [--font-ko "<font>"]
  *
- * Given a work directory, reads <work>/06-final.md and writes <work>/06-final.docx; appends
- * <work>/placeholders.md as a final "남은 placeholder" section unless --no-appendix is passed.
+ * Given a work directory, reads <work>/revised.md and writes <work>/<post title>.docx (the title is the
+ * first H1, with filename-unsafe characters removed); appends <work>/placeholders.md as a final
+ * "남은 placeholder" section unless --no-appendix is passed. Given a Markdown file, writes <name>.docx
+ * next to it, or <post title>.docx with --name-from-title. --out overrides the name either way.
  * Given a Markdown file, converts that file and writes the .docx next to it.
  *
  * Parsing is delegated to pandoc (`pandoc -t json`), rendering to docx-js (the `docx` npm package the
@@ -69,6 +71,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--out") args.out = argv[++i];
+    else if (a === "--name-from-title") args.nameFromTitle = true;
     else if (a === "--no-appendix") args.appendix = false;
     else if (a === "--font-ko") args.fontKo = argv[++i];
     else if (a === "--font-latin") args.fontLatin = argv[++i];
@@ -76,20 +79,43 @@ function parseArgs(argv) {
     else if (a === "-h" || a === "--help") { console.log(fs.readFileSync(__filename, "utf8").split("*/")[0]); process.exit(0); }
     else rest.push(a);
   }
-  if (rest.length !== 1) { console.error("usage: build_docx.js <work-dir | draft.md> [--out f.docx] [--no-appendix]"); process.exit(2); }
+  if (rest.length !== 1) { console.error("usage: build_docx.js <work-dir | draft.md> [--out f.docx] [--name-from-title] [--no-appendix]"); process.exit(2); }
   const target = path.resolve(rest[0]);
   if (fs.existsSync(target) && fs.statSync(target).isDirectory()) {
     args.work = target;
-    args.input = path.join(target, "06-final.md");
-    args.placeholders = path.join(target, "placeholders.md");
-    args.out = args.out || path.join(target, "06-final.docx");
+    args.input = path.join(target, "revised.md");
+    args.nameFromTitle = !args.out;
   } else {
     args.input = target;
-    args.placeholders = path.join(path.dirname(target), "placeholders.md");
-    args.out = args.out || target.replace(/\.md$/i, "") + ".docx";
   }
+  args.placeholders = path.join(path.dirname(args.input), "placeholders.md");
   if (!fs.existsSync(args.input)) { console.error(`not found: ${args.input}`); process.exit(2); }
+  if (!args.out) {
+    const fallback = args.input.replace(/\.md$/i, "") + ".docx";
+    if (args.nameFromTitle) {
+      const title = titleOf(fs.readFileSync(args.input, "utf8"));
+      if (title) args.out = path.join(path.dirname(args.input), title + ".docx");
+      else { console.warn(`no H1 in ${path.basename(args.input)}; naming the file ${path.basename(fallback)}`); args.out = fallback; }
+    } else args.out = fallback;
+  }
   return args;
+}
+
+// First H1 as a file name: inline markup stripped, characters Windows and macOS refuse removed, whitespace
+// collapsed, trailing dots dropped, capped so the path stays well under 255 bytes.
+function titleOf(markdown) {
+  const m = markdown.match(/^# +(.+?)\s*$/m);
+  if (!m) return null;
+  let s = m[1]
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/[`*_~]/g, "")
+    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/[. ]+$/, "");
+  if (s.length > 80) s = s.slice(0, 80).trim();
+  return s || null;
 }
 
 function pandocJson(file) {

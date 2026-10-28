@@ -3,7 +3,7 @@
 The reader is an engineer or an architect deciding whether to try what the post describes. They stop
 reading at the first sentence that sounds generated: an abstract noun doing something, a metaphor, a
 passive verb hiding who acted, a comment on how important something is. This file is the whole style
-contract for the drafter and the style pass. `scripts/lint_blog.py` checks the mechanical parts (word
+contract for the drafter and for the revision pass of the aws-blog-review skill. `scripts/lint_blog.py` checks the mechanical parts (word
 lists, punctuation, endings, density); the judgement parts are here.
 
 Two published posts by the author set the structural target and are quoted below:

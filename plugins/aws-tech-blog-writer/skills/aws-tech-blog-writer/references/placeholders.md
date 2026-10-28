@@ -61,7 +61,7 @@ Write the request in the language of the post. Keep it under three sentences; th
 
 ## Rules
 
-- Never resolve a placeholder by inference in a later pass. If the Stage 5 fact-check answers a
+- Never resolve a placeholder by inference in a later pass. If the fact-check answers a
   `[기술 검증 필요]`, the sentence is rewritten with a citation and the placeholder removed; if it does
   not, the placeholder stays.
 - A number, a date, or a name that is not in `01-facts.md` or `03-research.md` is a placeholder, even

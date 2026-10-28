@@ -38,16 +38,19 @@ def test_every_linked_reference_exists():
     assert missing == []
 
 
-def test_pipeline_ends_with_the_word_build():
+def test_writer_pipeline_ends_by_invoking_the_review_skill():
     text = SKILL_MD.read_text()
-    for needle in ("Stage 6", "06-final.docx", "scripts/build_docx.js", "verification", "`docx` skill",
-                   "pandoc -o file.docx"):
-        assert needle in text, needle
-    # the progress checklist the agent copies into its reply lists the docx step
-    assert re.search(r"- \[ \] Stage 6 .*06-final\.docx", text)
-    assert (SKILL / "scripts" / "build_docx.js").exists()
-    # the hand-back names the Word file as the deliverable
-    assert "`06-final.docx` (the deliverable)" in text
+    # the progress checklist stops at the hand-off; fact-check, style pass and Word build live in aws-blog-review
+    assert re.search(r"- \[ \] Stage 5 .*aws-blog-review", text), "Stage 5 must be the hand-off to aws-blog-review"
+    for gone in ("Stage 6", "Stage 5b", "06-final", "Style pass", "prompt-fact-checker.md",
+                 "build_docx.js <work>", "check_claims.py <work>"):
+        assert gone not in text, f"writer SKILL.md still carries the old pipeline: {gone}"
+    assert "--in-place" in text, "the hand-off must tell the review skill to work inside <work>"
+    assert "Never build a Word file from `04-draft.md`" in text
+    assert not (SKILL / "templates" / "prompt-fact-checker.md").exists(), "only the review skill fact-checks now"
+    # the Word build still exists, in the review skill, and names the file after the post title
+    review = (PLUGIN / "skills" / "aws-blog-review" / "SKILL.md").read_text()
+    assert "build_docx.js" in review and "--name-from-title" not in SKILL_MD.read_text()
 
 
 def test_placeholder_reference_no_longer_claims_pandoc_keeps_colours():
@@ -73,17 +76,16 @@ def test_docs_and_license_present():
         assert (PLUGIN / f).exists(), f
 
 
-def test_draft_and_fact_check_run_in_fresh_subagents():
+def test_draft_runs_in_a_fresh_subagent():
     text = SKILL_MD.read_text()
-    assert "prompt-drafter.md" in text and "prompt-fact-checker.md" in text
+    assert "prompt-drafter.md" in text
     assert "Never fork yourself" in text
-    for tpl in ("prompt-drafter.md", "prompt-fact-checker.md", "brief.md", "research.md"):
+    for tpl in ("prompt-drafter.md", "brief.md", "research.md"):
         assert (SKILL / "templates" / tpl).exists(), tpl
     # the drafter packet excludes the sources and digests
     drafter = (SKILL / "templates" / "prompt-drafter.md").read_text()
     assert "Do not open the source documents" in drafter
     assert "aws-tech-blog-writer:blog-drafter" in drafter
-    assert "aws-tech-blog-writer:blog-fact-checker" in (SKILL / "templates" / "prompt-fact-checker.md").read_text()
 
 
 def test_voice_rules_cover_the_three_machine_habits():
@@ -166,10 +168,125 @@ def test_fact_checker_agent_has_documentation_tools_and_cannot_edit_the_draft_by
         assert needle in a["_body"], needle
 
 
-def test_skill_md_names_both_agents_and_a_fallback():
+def test_writer_names_the_drafter_and_a_fallback_and_the_review_skill_names_the_checkers():
     text = re.sub(r"\s+", " ", SKILL_MD.read_text())
-    for needle in ("subagent_type: aws-tech-blog-writer:blog-drafter", "subagent_type: aws-tech-blog-writer:blog-fact-checker",
-                   "agents/blog-drafter.md", "agents/blog-fact-checker.md", "not registered"):
+    for needle in ("subagent_type: aws-tech-blog-writer:blog-drafter", "agents/blog-drafter.md", "not registered"):
         assert needle in text, needle
-    assert (PLUGIN / "agents" / "blog-drafter.md").exists() and (PLUGIN / "agents" / "blog-fact-checker.md").exists()
-    assert "blog-drafter" in (PLUGIN / "README.md").read_text()
+    assert "subagent_type: aws-tech-blog-writer:blog-fact-checker" not in text, "the writer no longer fact-checks"
+    review = re.sub(r"\s+", " ", (PLUGIN / "skills" / "aws-blog-review" / "SKILL.md").read_text())
+    for needle in ("subagent_type: aws-tech-blog-writer:blog-fact-checker", "subagent_type: aws-tech-blog-writer:blog-reviewer"):
+        assert needle in review, needle
+    for agent in ("blog-drafter", "blog-fact-checker", "blog-reviewer"):
+        assert (PLUGIN / "agents" / f"{agent}.md").exists(), agent
+        assert agent in (PLUGIN / "README.md").read_text(), agent
+
+
+def test_agents_and_references_no_longer_point_at_the_writer_fact_check_stage():
+    for name in ("blog-fact-checker", "blog-reviewer", "blog-drafter"):
+        body = (PLUGIN / "agents" / f"{name}.md").read_text()
+        for gone in ("Stage 5", "Stage 5b", "style pass", "06-final"):
+            assert gone not in body, f"{name}: {gone}"
+    fc = agent_frontmatter("blog-fact-checker")
+    assert "aws-blog-review" in fc["description"] and "Stage 5 of the aws-tech-blog-writer" not in fc["description"]
+    for ref in ("verification.md", "placeholders.md", "voice.md"):
+        text = (SKILL / "references" / ref).read_text()
+        for gone in ("Stage 5", "Stage 6", "style pass"):
+            assert gone not in text, f"{ref}: {gone}"
+    assert "## Fact-check" in (SKILL / "references" / "verification.md").read_text()
+
+
+# ---- aws-blog-review, the plugin's second skill
+
+REVIEW = PLUGIN / "skills" / "aws-blog-review"
+REVIEW_MD = REVIEW / "SKILL.md"
+
+
+def review_frontmatter() -> str:
+    fm = re.match(r"^---\n(.*?)\n---\n", REVIEW_MD.read_text(), re.S)
+    assert fm, "missing frontmatter"
+    return fm.group(1)
+
+
+def test_review_skill_frontmatter_names_it_and_fits_the_limit():
+    fm = review_frontmatter()
+    assert "name: aws-blog-review" in fm
+    assert len(fm) <= 1024, f"frontmatter is {len(fm)} chars"
+    assert fm.count("description:") == 1
+    for needle in ("블로그 리뷰", "블로그 검토", "Not for writing a post"):
+        assert needle in fm, needle
+    version = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["version"]
+    assert f'version: "{version}"' in fm
+
+
+def test_review_skill_links_resolve_and_reuses_the_writer_skill():
+    text = REVIEW_MD.read_text()
+    links = set(re.findall(r"\]\((references/[^)#]+|scripts/[^)#]+|templates/[^)#]*|\.\./\.\./agents/[^)#]+)\)", text))
+    missing = sorted(l for l in links if not (REVIEW / l).exists())
+    assert missing == [], missing
+    for f in ("references/review-rubric.md", "templates/review-report.md", "templates/prompt-reviewer.md",
+              "templates/prompt-fact-checker.md", "scripts/prepare_review.py"):
+        assert (REVIEW / f).exists(), f
+    for needle in ("lint_blog.py", "check_claims.py", "build_docx.js", "aws-tech-blog-writer:blog-fact-checker",
+                   "aws-tech-blog-writer:blog-reviewer", "Never fork yourself", "review-report.md", "--in-place",
+                   "--name-from-title"):
+        assert needle in text, needle
+    assert re.search(r"- \[ \] R5 .*<제목>\.docx", text), "the Word file is named after the post title"
+    assert "revised.docx" not in text
+
+
+def test_review_agent_is_read_write_only_and_the_prompts_name_the_agents():
+    agent = (PLUGIN / "agents" / "blog-reviewer.md").read_text()
+    fm = re.match(r"^---\n(.*?)\n---\n", agent, re.S).group(1)
+    assert re.search(r"^tools: Read, Write$", fm, re.M), fm
+    assert "name: blog-reviewer" in fm
+    assert "aws-tech-blog-writer:blog-reviewer" in (REVIEW / "templates" / "prompt-reviewer.md").read_text()
+    fc = (REVIEW / "templates" / "prompt-fact-checker.md").read_text()
+    assert "aws-tech-blog-writer:blog-fact-checker" in fc and "Currency" in fc
+    assert "<facts:" in fc, "when the draft comes from the writer, 01-facts.md separates project facts from claims"
+
+
+def test_rubric_covers_the_six_criteria_and_eight_story_checks():
+    rubric = (REVIEW / "references" / "review-rubric.md").read_text()
+    for crit in ("| A |", "| B |", "| C |", "| D |", "| E |", "| F |"):
+        assert crit in rubric, crit
+    for check in ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"):
+        assert re.search(rf"\| {check} ", rubric), check
+    for sev in ("차단", "수정", "권고"):
+        assert sev in rubric
+
+
+def test_writer_skill_hands_finished_drafts_to_the_review_skill():
+    text = SKILL_MD.read_text()
+    assert "aws-blog-review" in text
+    readme = (PLUGIN / "README.md").read_text()
+    assert "Stage 6" not in readme and "06-final" not in readme and "5b" not in readme
+    assert "aws-blog-review" in readme and "--in-place" in readme
+    version = json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["version"]
+    assert version.split(".")[0] == "3", "dropping the writer's Word build changes the outputs: major bump"
+    assert "needs a style pass or a technical fact-check" not in frontmatter()
+    lint = (SKILL / "scripts" / "lint_blog.py").read_text()
+    assert '"E8"' in lint and "AWS_LINK_HOSTS" in lint
+
+
+def test_rubric_maps_every_lint_code_and_defines_the_verdict_precedence():
+    rubric = (REVIEW / "references" / "review-rubric.md").read_text()
+    lint = (SKILL / "scripts" / "lint_blog.py").read_text()
+    codes = sorted(set(re.findall(r'"(E\d|W\d)"', lint)))
+    assert codes, "lint has no codes"
+    for code in codes:
+        assert re.search(rf"\| {code} ", rubric), f"lint code {code} has no row in the rubric"
+    for needle in ("Never a bare `Lnn`", "One defect, one row", "구조 수정 필요 when", "criterion A; every other"):
+        assert needle in rubric, needle
+    assert "Lnn` for lint lines" not in REVIEW_MD.read_text()
+
+
+def test_story_review_makes_heading_form_skeleton_and_figure_status_required_columns():
+    rubric = (REVIEW / "references" / "review-rubric.md").read_text()
+    for needle in ("| L | 소제목 (그대로) | 형태 |", "## 스켈레톤 대조", "| 그림 | 상태 |", "produces no finding"):
+        assert needle in rubric, needle
+    agent = (PLUGIN / "agents" / "blog-reviewer.md").read_text()
+    for needle in ("Fill 형태 for each row", "스켈레톤 대조", "이미지 필요 row", "there is no finding"):
+        assert needle in agent, needle
+    assert "are not gaps you report" not in agent, "exemption clauses do not scope; the figure recipe carries the rule"
+    # the reviewer still lists placeholders as findings in some runs; the report step filters them deterministically
+    assert "**Story rows the report drops.**" in rubric

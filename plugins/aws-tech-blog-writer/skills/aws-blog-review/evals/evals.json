@@ -1,0 +1,22 @@
+{
+  "skill_name": "aws-blog-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "이 블로그 초안 게재 전에 검토해줘. 실제 최신 AWS 정보랑 맞는지, 기술적으로 틀린 거 없는지, 그림마다 캡션 있는지, 처음 나오는 서비스가 공식 이름이랑 공식 링크로 들어갔는지, 전체 스토리가 말이 되는지 봐줘. draft.md 랑 images/ 첨부.",
+      "expected_output": "blog-review/<slug>/ with draft.md and images/ prepared by prepare_review.py; lint.txt, 05-claims.md (fact-checker, currency rows marked corrected with dates) and story.md (blog-reviewer with one-sentence reading, question map, figure table) produced in parallel by agents that did not write the draft; review-report.md with a verdict, counts per criterion A to F and severity, and one row per finding with position, quote, problem, concrete fix, and source; then revised.md applying every finding (facts corrected with URLs, unverified claims as [기술 검증 필요] placeholders, first mentions linked, captions added, sections moved as story.md proposed), lint --final exits 0, check_claims passes, revised.docx built by build_docx.js with verification ok; hand-back shows before/after counts",
+      "files": [
+        "draft.md",
+        "images/fig1-architecture.png"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "에디터가 돌려보낸 Word 원고야. 뭐가 문제인지 보고서로 정리하고 고친 버전도 만들어줘.",
+      "expected_output": "the .docx is converted with pandoc and its media extracted into blog-review/<slug>/; the same three parallel checks; the report is shown before revision if the user is reachable; the revised .md and .docx keep the author's facts, add placeholders instead of inventing, and every edit traces to a finding ID",
+      "files": [
+        "원고.docx"
+      ]
+    }
+  ]
+}

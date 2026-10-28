@@ -6,7 +6,7 @@
 
 ## 1. 문제: 팀마다 다른 LLM 접근 방식
 
-`Amazon Bedrock`을 팀마다 직접 호출했습니다.
+[Amazon Bedrock](https://aws.amazon.com/ko/bedrock/)을 팀마다 직접 호출했습니다.
 
 아래 그림 1은 전체 구성을 보여줍니다.
 
@@ -17,7 +17,7 @@
 | 구성 요소 | 역할 | 선택 이유 |
 |---|---|---|
 | AgentCore Gateway | MCP 도구 노출 | 인증 위임 |
-| AWS Lambda | 도구 실행 | 서버리스 |
+| [AWS Lambda](https://aws.amazon.com/ko/lambda/) | 도구 실행 | 서버리스 |
 
 ```python
 # gateway/handler.py

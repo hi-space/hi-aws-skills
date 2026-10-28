@@ -5,7 +5,7 @@
 
 Errors (exit 1): forbidden punctuation in prose, wrong AWS service prefixes or Korean transliterations,
 images without file / alt / caption, code fences without a language, malformed or empty placeholders,
-more than one H1. With --final, leftover fact-ID comments (<!-- F12 -->) are errors too.
+more than one H1, first mention of an AWS service (FULL_NAMES) not hyperlinked to an aws.amazon.com page. With --final, leftover fact-ID comments (<!-- F12 -->) are errors too.
 Warnings (exit 1 only with --strict): translation-ese vocabulary and constructions, figurative nouns,
 abstract nouns used as actors, passive endings with an available agent, plain-form headings, plain-form
 or 해요체 endings, connective overuse, over-long sentences, unintroduced service short names, numbers that
@@ -87,6 +87,8 @@ FULL_NAMES = {
     "Route 53": "Amazon Route 53",
     "API Gateway": "Amazon API Gateway",
     "VPC": "Amazon VPC",
+    "VPC Lattice": "Amazon VPC Lattice",
+    "Managed Knowledge Bases": "Amazon Bedrock Managed Knowledge Bases",
     "SageMaker": "Amazon SageMaker AI",
     "QuickSight": "Amazon QuickSight",
     "CloudFormation": "AWS CloudFormation",
@@ -124,7 +126,19 @@ AGENTIVE_PASSIVES = re.compile(
     r"배포|호출|전달|저장|수집|분석|생성|등록|승인|검증|측정|평가)(됩니다|되었습니다|되며|되고|되어\s|될 예정)")
 PASSIVE_ENDING_RE = re.compile(r"(됩니다|되었습니다|이루어집니다|어집니다|어졌습니다|여집니다)\.?$")
 CONNECTIVES = ["그래서", "하지만", "이때", "결국", "다만", "즉,"]
-PLAIN_HEADING_RE = re.compile(r"(는다|이다|니다|ㄴ다|않다|없다|있다|된다|한다|르다|하다|크다|많다|다르다|같다|어렵다|쉽다)\s*$")
+# A heading is a sentence when it (or a segment before a colon) ends in a verb or copula: a known ending,
+# or any two-word-or-longer segment whose last word is Hangul ending in 다 (경로다, 문제다, 옮기다).
+# A single word ending in 다 (바다) is a noun.
+PLAIN_HEADING_RE = re.compile(r"(는다|이다|니다|ㄴ다|않다|없다|있다|된다|한다|르다|하다|크다|많다|다르다|같다|어렵다|쉽다|했다|됐다|였다|았다|었다|기다)\s*$")
+COPULA_HEADING_RE = re.compile(r"\S\s+\S*[가-힣]다\s*$")
+
+
+def is_sentence_heading(title: str) -> bool:
+    for segment in title.split(":"):
+        seg = segment.strip()
+        if PLAIN_HEADING_RE.search(seg) or COPULA_HEADING_RE.search(seg):
+            return True
+    return False
 CONSTRUCTIONS = [
     (re.compile(r"에 있어서?(?!\w)"), "'~에 있어' (translated 'in terms of'); use '~에서', '~할 때'"),
     (re.compile(r"함에 있어"), "'~함에 있어'; use '~할 때'"),
@@ -159,6 +173,10 @@ PH_SPAN_RE = re.compile(
     r'<span style="(?P<style>[^"]*)">\s*\[(?P<tag>' + "|".join(PH_TAGS) + r")\]\s*(?P<text>.*?)</span>", re.S
 )
 PH_TAG_RE = re.compile(r"\[(" + "|".join(PH_TAGS) + r")\]")
+
+# first body mention of every full service name must be a link to an AWS page (aws-blog-conventions.md §9)
+AWS_LINK_HOSTS = ("docs.aws.amazon.com", "aws.amazon.com")
+LINK_RE = re.compile(r"\[(?P<text>[^\]]*)\]\((?P<url>https?://[^)\s]+)[^)]*\)")
 
 IMAGE_RE = re.compile(r"!\[(?P<alt>[^\]]*)\]\((?P<path>[^)\s]+)(?:\s+\"[^\"]*\")?\)")
 CAPTION_RE = re.compile(r"^\s*(?:\*|_)?그림\s*(\d+)\.\s*\S")
@@ -261,7 +279,7 @@ def lint(path: Path, final: bool, service_check: bool):
             title = hm.group(2)
             if title.rstrip().endswith(("?", "!")):
                 rep.add("warn", i, "W6", "heading ends with ? or !")
-            if PLAIN_HEADING_RE.search(strip_inline(title)):
+            if is_sentence_heading(strip_inline(title)):
                 rep.add("warn", i, "W6", "plain-form sentence heading; use a noun phrase (voice.md §2.4)")
             if PH_TAG_RE.search(title) and not PH_SPAN_RE.search(title):
                 # placeholders in headings are allowed as bare tags
@@ -276,9 +294,11 @@ def lint(path: Path, final: bool, service_check: bool):
         if cm:
             figure_numbers.append((i, int(cm.group(1))))
 
-        prose = strip_inline(raw)
+        # placeholder spans hold instructions to the author (해요체, long, may name services); not prose
+        without_ph = PH_SPAN_RE.sub(" ", raw)
+        prose = strip_inline(without_ph)
         prose_lines.append((i, prose))
-        body_text_positions.append((i, raw))
+        body_text_positions.append((i, without_ph))
         if not hm and not stripped.startswith("|") and not stripped.startswith("!["):
             paragraph.append((i, prose))
     flush_par()
@@ -327,13 +347,42 @@ def lint(path: Path, final: bool, service_check: bool):
             sm = re.search(r"(?<![A-Za-z])" + re.escape(short) + r"(?![A-Za-z])", body_wo_title)
             if not sm:
                 continue
-            fm = body_wo_title.find(full)
+            introducers = [f for f in FULL_NAMES.values() if short in f]
+            positions = [body_wo_title.find(f) for f in introducers]
+            positions = [x for x in positions if x != -1]
+            fm = min(positions) if positions else -1
             if fm == -1 or fm > sm.start():
                 # body is the join of body_text_positions (blank and fenced lines dropped), so the index into
                 # that join must be mapped back to the original line number it was recorded with
                 idx = body_wo_title[: sm.start()].count("\n")
                 line_no = body_text_positions[idx][0]
                 rep.add("warn", line_no, "W2", f"'{short}' appears before its full name '{full}' is introduced")
+
+        # ---- first mention must link to official documentation (E8)
+        fulls = sorted(set(FULL_NAMES.values()), key=len, reverse=True)
+        mention_lines = [(ln, raw) for ln, raw in body_text_positions
+                         if not HEADING_RE.match(raw) and not CAPTION_RE.match(raw)
+                         and not raw.strip().startswith("![")]
+        for full in fulls:
+            longer = [f[len(full):] for f in fulls if f != full and f.startswith(full)]
+            pat = re.compile(r"(?<![A-Za-z])" + re.escape(full)
+                             + "".join("(?!" + re.escape(suffix) + ")" for suffix in longer)
+                             + r"(?![A-Za-z])")
+            for ln, raw in mention_lines:
+                mm = pat.search(raw)
+                if not mm:
+                    continue
+                link = next((lk for lk in LINK_RE.finditer(raw)
+                             if lk.start("text") <= mm.start() and mm.end() <= lk.end("text")), None)
+                if link is None:
+                    rep.add("error", ln, "E8", f"first mention of '{full}' is not linked to its official "
+                                              f"documentation (aws-blog-conventions.md §9)")
+                else:
+                    host = re.sub(r"^https?://([^/]+).*$", r"\1", link.group("url"))
+                    if host not in AWS_LINK_HOSTS:
+                        rep.add("error", ln, "E8", f"first mention of '{full}' links to {host}; link the "
+                                                  f"AWS documentation or product page")
+                break
 
     # ---- images and captions
     base = path.parent
@@ -423,9 +472,10 @@ def lint(path: Path, final: bool, service_check: bool):
         if len(joined) > 80 and not re.search(r"[가-힣]", joined) and not joined.strip().startswith(("-", "*", "|", "[")):
             rep.add("warn", par[0][0], "W7", "English-only paragraph in a Korean post")
 
-    # ---- sentence length
+    # ---- sentence length (alt text of an image is a description for screen readers, not a sentence)
+    image_lines = {ln for ln, _, _ in images}
     for i, prose in prose_lines:
-        if i in table_lines or HEADING_RE.match(lines[i - 1]):
+        if i in table_lines or i in image_lines or HEADING_RE.match(lines[i - 1]):
             continue
         for s in split_sentences(prose):
             if len(s) > 110:

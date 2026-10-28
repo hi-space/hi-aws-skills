@@ -1,4 +1,4 @@
-# Verification: research (Stage 3) and fact-check (Stage 5)
+# Verification: research (Stage 3) and fact-check (aws-blog-review R2)
 
 Both stages open AWS documentation and record what it says next to a URL. Research runs before the
 draft and answers the general technical questions the plan raises; the fact-check runs after the draft
@@ -43,7 +43,7 @@ Input: `02-plan.md` (column "검증할 주장" and the open questions it kept) a
 Research only what a planned section will state. A sentence that says `Gateway는 MCP 툴 호출을 Lambda로
 전달합니다` needs one page; a paragraph on the auth chain needs the auth page, the target page, and the
 IAM example; a comparison table needs a source per cell. Stop when every general technical question has
-a status. Interesting is not needed, and every extra page is a page Stage 5 re-verifies.
+a status. Interesting is not needed, and every extra page is a page the fact-check re-verifies.
 
 Record in `03-research.md` (template `templates/research.md`), one entry per question:
 
@@ -59,12 +59,13 @@ Status:  answered | partial | unanswered (drafter writes [기술 검증 필요])
 
 Keep `Raised by`: when the author later corrects F17, this is how you find the entries that depended on it.
 
-## Stage 5: fact-check, in a fresh context
+## Fact-check, in a fresh context
 
-The drafter believes every sentence they wrote, so the fact-check runs as a general-purpose subagent
-that receives only `04-draft.md`, `templates/claims.md`, and this file (prompt in
-`templates/prompt-fact-checker.md`). It writes `05-claims.md` and returns a corrections list. It never
-edits the draft; the style pass applies corrections so that one writer touches the text.
+The drafter believes every sentence they wrote, so the fact-check runs as the plugin's `blog-fact-checker`
+agent, in the aws-blog-review skill's R2, receiving only the draft, `templates/claims.md`, this file, and
+the fact table if one exists (prompt in `skills/aws-blog-review/templates/prompt-fact-checker.md`). It
+writes `05-claims.md` and returns a corrections list. It never edits the draft; the review skill's
+revision pass (R4) applies corrections so that one writer touches the text.
 
 **What is a claim.** Anything about AWS, a vendor product, an SDK, or a protocol that a reader could
 test and find false: capabilities, mechanisms (what authenticates what, what is synchronous), names and
@@ -88,8 +89,9 @@ AWS behaviour is both; verify the AWS part.
      verification.
    - `out-of-scope`: a non-AWS product confirmed by its vendor's documentation (record that URL).
 4. Return the corrections list: every `corrected` and `unverified` row with the proposed wording. The
-   style pass applies it, then `python3 <skill-dir>/scripts/check_claims.py <work>` confirms every row
-   has a status and a URL and every `unverified` claim has a matching placeholder in the draft.
+   revision pass applies it, then `python3 <skill-dir>/scripts/check_claims.py <work> --draft
+   <work>/revised.md` confirms every row has a status and a URL and every `unverified` claim has a
+   matching placeholder in the draft.
 
 **Code blocks.** Identify the API or CLI surface each block uses, open the reference page for each
 operation, check operation names, required parameters, and return shapes. Code copied from the

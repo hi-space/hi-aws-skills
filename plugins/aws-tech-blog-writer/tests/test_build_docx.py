@@ -20,6 +20,7 @@ LINT = SKILL / "scripts" / "lint_blog.py"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
 COLOURS = {"작성자 확인": "FFF2CC", "기술 검증 필요": "F8CECC", "이미지 필요": "DAE8FC", "인용 승인 필요": "D5E8D4"}
+TITLE_PREFIX = (FIXTURES / "06-final.md").read_text(encoding="utf-8").splitlines()[0].lstrip("# ").split(":")[0].strip()
 
 needs_tools = pytest.mark.skipif(
     not (shutil.which("node") and shutil.which("pandoc") and shutil.which("unzip")),
@@ -39,7 +40,8 @@ def png(width: int, height: int) -> bytes:
 
 @pytest.fixture
 def work(tmp_path):
-    shutil.copy(FIXTURES / "06-final.md", tmp_path / "06-final.md")
+    # the review skill's R4 writes revised.md; a work directory builds that file under the post title
+    shutil.copy(FIXTURES / "06-final.md", tmp_path / "revised.md")
     shutil.copy(FIXTURES / "placeholders.md", tmp_path / "placeholders.md")
     (tmp_path / "images").mkdir()
     (tmp_path / "images" / "fig1-arch.drawio.png").write_bytes(png(1600, 800))  # wider than the text column
@@ -55,6 +57,12 @@ def document_xml(docx: Path) -> str:
         return z.read("word/document.xml").decode("utf-8")
 
 
+def built(work: Path) -> Path:
+    files = sorted(work.glob("*.docx"))
+    assert len(files) == 1, files
+    return files[0]
+
+
 def test_fixture_is_a_valid_final_draft():
     r = subprocess.run(["python3", str(LINT), str(FIXTURES / "06-final.md"), "--final", "--quiet-info", "--no-service-check"],
                        capture_output=True, text=True)
@@ -67,7 +75,8 @@ def test_fixture_is_a_valid_final_draft():
 def test_build_writes_docx_and_verifies(work):
     r = build(work)
     assert r.returncode == 0, r.stdout + r.stderr
-    assert (work / "06-final.docx").exists()
+    out = built(work)
+    assert out.name != "revised.docx" and out.stem.startswith(TITLE_PREFIX), out.name
     assert "verification: ok" in r.stdout
     assert "images: markdown 1, embedded 1" in r.stdout
 
@@ -75,7 +84,7 @@ def test_build_writes_docx_and_verifies(work):
 @needs_tools
 def test_every_placeholder_colour_survives(work):
     build(work)
-    xml = document_xml(work / "06-final.docx")
+    xml = document_xml(built(work))
     for tag, fill in COLOURS.items():
         assert f'w:fill="{fill}"' in xml, f"{tag} lost its shading"
         # the tag is one run, not split into "[작성자" and "확인]" as pandoc tokenises it
@@ -88,7 +97,7 @@ def test_every_placeholder_colour_survives(work):
 @needs_tools
 def test_structure_and_hygiene(work):
     build(work)
-    xml = document_xml(work / "06-final.docx")
+    xml = document_xml(built(work))
     assert xml.count("<pic:pic") == 1
     # image scaled to the 6.5in text column (EMU), not its 1600px natural width
     cx = int(re.search(r'<wp:extent cx="(\d+)"', xml).group(1))
@@ -104,9 +113,45 @@ def test_structure_and_hygiene(work):
 def test_no_appendix_flag_and_missing_image_fails(work):
     r = build(work, "--no-appendix")
     assert r.returncode == 0 and "appendix: no" in r.stdout
-    assert "남은 placeholder" not in document_xml(work / "06-final.docx")
+    assert "남은 placeholder" not in document_xml(built(work))
 
     (work / "images" / "fig1-arch.drawio.png").unlink()
     r = build(work)
     assert r.returncode == 1
     assert "MISSING" in r.stdout and "verification: FAILED" in r.stdout
+
+
+# ---- file naming: the Word file the author receives is named after the post
+
+TITLED = "# Amazon Bedrock AgentCore: 경신홀딩스의 AI 플랫폼 구축기 / 1부?\n\n첫 문단입니다.\n\n## 1. 개요\n\n본문입니다.\n"
+TITLED_NAME = "Amazon Bedrock AgentCore 경신홀딩스의 AI 플랫폼 구축기 1부.docx"
+
+
+@needs_tools
+def test_name_from_title_strips_filename_unsafe_characters(tmp_path):
+    (tmp_path / "revised.md").write_text(TITLED, encoding="utf-8")
+    (tmp_path / "placeholders.md").write_text("# 남은 placeholder (0개)\n", encoding="utf-8")
+    r = subprocess.run(["node", str(BUILD), str(tmp_path / "revised.md"), "--name-from-title"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / TITLED_NAME).exists(), sorted(p.name for p in tmp_path.iterdir())
+    assert not (tmp_path / "revised.docx").exists()
+    assert TITLED_NAME in r.stdout
+
+
+@needs_tools
+def test_work_directory_builds_revised_md_under_the_title_name(tmp_path):
+    (tmp_path / "revised.md").write_text(TITLED, encoding="utf-8")
+    (tmp_path / "placeholders.md").write_text("# 남은 placeholder (0개)\n", encoding="utf-8")
+    r = build(tmp_path)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / TITLED_NAME).exists()
+    assert not (tmp_path / "06-final.docx").exists() and not (tmp_path / "revised.docx").exists()
+
+
+@needs_tools
+def test_missing_title_falls_back_to_the_markdown_name(tmp_path):
+    (tmp_path / "revised.md").write_text("본문만 있습니다.\n", encoding="utf-8")
+    r = subprocess.run(["node", str(BUILD), str(tmp_path / "revised.md"), "--name-from-title"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert (tmp_path / "revised.docx").exists()
+    assert "no H1" in r.stdout + r.stderr

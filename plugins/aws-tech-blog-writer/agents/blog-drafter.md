@@ -1,6 +1,6 @@
 ---
 name: blog-drafter
-description: Use this agent for Stage 4 of the aws-tech-blog-writer skill, writing the first full Korean draft of an AWS Tech Blog post from a packet of files (plan, fact table, research, diagram manifest, voice and convention references). Typical triggers include the main agent reaching Stage 4 with 02-plan.md approved and 03-research.md and diagrams/manifest.md present, a user asking to redraft a post from an existing blog-work directory, and a reorder request sent back to the same drafter after the main agent read the draft. Not for editing an existing draft sentence by sentence (that is the Stage 5b style pass in the main context) and not for reading source documents. See "When to invoke" in the agent body for worked scenarios.
+description: Use this agent for Stage 4 of the aws-tech-blog-writer skill, writing the first full Korean draft of an AWS Tech Blog post from a packet of files (plan, fact table, research, diagram manifest, voice and convention references). Typical triggers include the main agent reaching Stage 4 with 02-plan.md approved and 03-research.md and diagrams/manifest.md present, a user asking to redraft a post from an existing blog-work directory, and a reorder request sent back to the same drafter after the main agent read the draft. Not for editing an existing draft sentence by sentence (that is the aws-blog-review skill's revision pass) and not for reading source documents. See "When to invoke" in the agent body for worked scenarios.
 model: inherit
 color: magenta
 tools: Read, Write
@@ -57,7 +57,10 @@ If a listed file is missing, stop and reply with the missing path. Do not substi
   figurative nouns (축, 몫, 재료, 그림, 여정, 열쇠). No evaluation words. `합니다`체 throughout.
 - **Headings are noun phrases** (voice.md §2.4), numbered per the skeleton. Not sentences, not questions.
 - **AWS service names as AWS writes them** (conventions §5): full name at first body mention, correct
-  `Amazon` or `AWS` prefix, sub-services as `AgentCore Gateway`, never `Bedrock Gateway`.
+  `Amazon` or `AWS` prefix, sub-services as `AgentCore Gateway`, never `Bedrock Gateway`. The first body
+  mention is a link to the service's documentation (conventions §9): use a URL that `03-research.md`
+  records for that service; if research has none, leave the name unlinked and list the service in your
+  reply so the review skill's revision pass can add the fact-checker's URL. Never invent a URL.
 - **Figures**: introduce in the text before they appear, embed `![alt](images/figN-<name>.png)` with alt
   text that describes what is drawn, caption `그림 N. 명사구` on the next line, numbered in reading order.
   Screenshots the author must take are `[이미지 필요]` spans with the caption already written.
