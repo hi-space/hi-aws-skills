@@ -77,3 +77,63 @@ def test_in_place_reviews_the_writer_work_dir_without_copying_it(tmp_path):
     assert not (tmp_path / "blog-review").exists(), "in-place must not create a second work dir"
     assert f"work: {work.resolve()}" in r.stdout
     assert "images/fig1.png" in src_text and (work / "images" / "fig1.png").exists()
+
+
+# ── image references are untrusted input ──────────────────────────────────
+# A draft may come from someone else, so only a relative path that resolves
+# inside the draft folder or the work folder, with an image extension, is
+# copied. Everything else is reported as missing and nothing lands in images/.
+
+def _load_prepare_review():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("prepare_review", PREPARE)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture
+def image_dirs(tmp_path):
+    src = tmp_path / "src"; src.mkdir()
+    work = tmp_path / "work"; work.mkdir()
+    (src / "fig1.png").write_bytes(b"\x89PNG")
+    (src / "notes.txt").write_text("x")
+    (tmp_path / "secret.txt").write_text("key")
+    (tmp_path / "outside.png").write_bytes(b"\x89PNG")
+    return _load_prepare_review(), src, work
+
+
+def test_relative_image_inside_the_draft_folder_is_copied(image_dirs):
+    pr, src, work = image_dirs
+    text, copied, missing = pr.copy_images("![a](fig1.png)", src, work)
+    assert copied == ["fig1.png"] and missing == []
+    assert "images/fig1.png" in text
+    assert (work / "images" / "fig1.png").exists()
+
+
+@pytest.mark.parametrize("ref", ["../secret.txt", "../outside.png", "sub/../../outside.png"])
+def test_parent_traversal_is_rejected(image_dirs, ref):
+    pr, src, work = image_dirs
+    _, copied, missing = pr.copy_images(f"![a]({ref})", src, work)
+    assert copied == [] and missing == [ref]
+    assert list((work / "images").iterdir()) == []
+
+
+def test_absolute_path_is_rejected(image_dirs, tmp_path):
+    pr, src, work = image_dirs
+    ref = str(tmp_path / "outside.png")
+    _, copied, missing = pr.copy_images(f"![a]({ref})", src, work)
+    assert copied == [] and missing == [ref]
+
+
+def test_non_image_extension_is_rejected(image_dirs):
+    pr, src, work = image_dirs
+    _, copied, missing = pr.copy_images("![a](notes.txt)", src, work)
+    assert copied == [] and missing == ["notes.txt"]
+
+
+def test_http_reference_is_left_alone(image_dirs):
+    pr, src, work = image_dirs
+    text, copied, missing = pr.copy_images("![a](https://example.com/a.png)", src, work)
+    assert (copied, missing) == ([], [])
+    assert "https://example.com/a.png" in text

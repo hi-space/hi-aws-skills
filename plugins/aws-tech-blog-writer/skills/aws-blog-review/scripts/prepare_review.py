@@ -180,6 +180,30 @@ def docx_to_markdown(src: Path, work: Path) -> str:
     return postprocess_markdown(r.stdout)
 
 
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+
+
+def _resolve_image(p: str, bases: list[Path]) -> Path | None:
+    """The referenced image, or None when it is missing or not allowed.
+
+    A draft is text the user may have received from someone else, so an image
+    reference is untrusted input: an absolute path or a `../` chain could
+    otherwise copy any readable file into images/ and from there into the
+    report and the Word file. A reference is only honoured when it is relative,
+    resolves to a file inside the draft's folder or the work folder, and has an
+    image extension.
+    """
+    rel = Path(p)
+    if rel.is_absolute() or rel.suffix.lower() not in IMAGE_SUFFIXES:
+        return None
+    for base in bases:
+        root = base.resolve()
+        cand = (base / rel).resolve()
+        if cand.is_file() and cand.is_relative_to(root):
+            return cand
+    return None
+
+
 def copy_images(text: str, src_dir: Path, work: Path) -> tuple[str, list[str], list[str]]:
     images_dir = work / "images"
     images_dir.mkdir(exist_ok=True)
@@ -189,8 +213,7 @@ def copy_images(text: str, src_dir: Path, work: Path) -> tuple[str, list[str], l
         p = m.group(2)
         if p.startswith("http"):
             return m.group(0)
-        candidates = [src_dir / p, work / p, Path(p)]
-        found = next((c for c in candidates if c.exists()), None)
+        found = _resolve_image(p, [src_dir, work])
         if found is None:
             missing.append(p)
             return m.group(0)
