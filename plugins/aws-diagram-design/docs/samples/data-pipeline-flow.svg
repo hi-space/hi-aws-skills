@@ -80,7 +80,7 @@
       <!-- Focal cross-role handoff: ETL -> Warehouse -->
       <path d="M470 156 H524 Q532 156 532 164 V204" fill="none" stroke="#EC7211" stroke-width="1.2" marker-end="url(#arr-accent)"/>
       <rect x="474" y="136" width="48" height="12" rx="2" fill="#ffffff"/>
-      <text x="498" y="145" fill="#EC7211" font-size="8" font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">PARQUET</text>
+      <text x="498" y="145" fill="#EC7211" font-size="8" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle" >PARQUET</text>
       <!-- Warehouse -> curated views -->
       <path d="M582 236 H594" fill="none" stroke="#545B64" marker-end="url(#arr-muted)"/>
       <!-- Published output, same-step vertical -->

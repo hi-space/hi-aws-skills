@@ -2,7 +2,7 @@
 
 Encodes the skill's mandatory rules in code so a spec only supplies layout and text:
 white paper, squid-ink text, smile-orange accent on 1-2 focal nodes, Amazon Ember type at the
-presentation ramp (16px names / 15px sublabels / 12px arrow labels), official AWS Architecture Icons
+presentation ramp (16px names / 15px sublabels / 14px arrow labels in the same Ember face), official AWS Architecture Icons
 (icon-left nodes, group badges on zones), rounded orthogonal connectors (r=8), masked arrow labels,
 optional bottom legend strip (only when the spec calls legend()), accessible <title>/<desc>. Korean text uses the Noto Sans KR / NanumBarunGothic
 fallback in the font stack; finalize.py loads Noto Sans KR at PNG render time.
@@ -48,7 +48,7 @@ KIND = {  # node kind → (fill, stroke, dash)   [SKILL.md §5 node type → tre
     "security": ("rgba(236,114,17,0.05)", "rgba(236,114,17,0.50)", "4,4"),
 }
 # presentation ramp (output-spec.md §2): readable at doc width and when projected
-NAME_SIZE = 16; SUB_SIZE = 15; LABEL_SIZE = 12; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
+NAME_SIZE = 16; SUB_SIZE = 15; LABEL_SIZE = 14; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
 ARROW = {"default": (MUTED, "arrow"), "accent": (ACCENT, "arrow-accent"), "link": (LINK, "arrow-link"), "soft": (SOFT, "arrow-soft")}
 
 # Friendly aliases → icon file. Anything not listed here resolves by file stem (see resolve_icon).
@@ -158,7 +158,7 @@ def min_node_w(name: str, sub: str | None = None, icon: bool = True, h: int = 64
     names = name if isinstance(name, list) else [name]
     tw = max([text_w(n, name_size) for n in names] + ([text_w(sub, sub_size)] if sub else [0]))
     isz = (32 if h >= 64 else (24 if h >= 48 else 16)) if icon else 0
-    pad = (12 + isz + 12 + 8) if icon else 16
+    pad = (10 + isz + 10 + 8) if icon else 16
     return int(-(-(tw + pad) // 4) * 4)
 
 
@@ -315,19 +315,20 @@ class Canvas:
         mk = f' marker-end="url(#{marker})"' if head else ""
         self.arrows.append(f'<path d="{d}" fill="none" stroke="{color}" stroke-width="{sw}"{dash}{mk}/>')
 
-    def label(self, x, y, text: str, *, anchor: str = "middle", size: int | None = None, color: str = SOFT):
+    def label(self, x, y, text: str, *, anchor: str = "middle", size: int | None = None, color: str = MUTED):
         """Arrow label at (x, baseline y) on an opaque paper mask; anchor/size/color are keyword-only.
+        Sublabel style one px smaller: Amazon Ember 400, muted (SKILL.md §5), so it reads at doc width.
         Horizontal arrow at Y: label(mid_x, Y - 12, "TEXT"). Vertical arrow at X: label(X + 16, y, "TEXT", anchor="start").
         Keep the mask on open canvas: nodes paint later and would clip it."""
         size = size or LABEL_SIZE
         lines = text.split("\n"); lh = size + 3
-        mw = max(text_w(l, size, mono=True) for l in lines) + 8
+        mw = max(text_w(l, size) for l in lines) + 8
         top = y - size - 1 - (len(lines) - 1) * lh
         mx = x - mw / 2 if anchor == "middle" else (x - 4 if anchor == "start" else x - mw + 4)
         self.labels.append(f'<rect x="{mx:.0f}" y="{top:.0f}" width="{mw:.0f}" height="{len(lines)*lh + 2}" rx="2" fill="{PAPER}"/>')
         for i, l in enumerate(lines):
             yy = y - (len(lines) - 1 - i) * lh
-            self.labels.append(f'<text x="{x}" y="{yy}" fill="{color}" font-size="{size}" font-family="{MONO}" text-anchor="{anchor}" letter-spacing="0.04em">{esc(l)}</text>')
+            self.labels.append(f'<text x="{x}" y="{yy}" fill="{color}" font-size="{size}" font-family="{SANS}" text-anchor="{anchor}">{esc(l)}</text>')
 
     # ---- nodes -----------------------------------------------------------
     def node(self, x, y, w, h, name, sub: str | None = None, icon: str | None = None, kind: str = "step",
@@ -343,8 +344,8 @@ class Canvas:
         block = len(names) * (name_size + 4) + ((ss + 4) if sub else 0) + ((TAG_SIZE + 4) if tag else 0)
         if icon:
             isz = 32 if h >= 64 else (24 if h >= 48 else 16)
-            p.append(_icon(icon, x + 12, y + (h - isz) // 2, isz, icon_color))
-            tx, anchor, avail = x + 12 + isz + 12, "start", w - (12 + isz + 12) - 8
+            p.append(_icon(icon, x + 10, y + (h - isz) // 2, isz, icon_color))
+            tx, anchor, avail = x + 10 + isz + 10, "start", w - (10 + isz + 10) - 8
         else:
             tx, anchor, avail = x + w / 2, "middle", w - 16
         by = y + h / 2 - block / 2 + name_size - 1

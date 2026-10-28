@@ -41,19 +41,23 @@ Every diagram is built the same way. Follow the steps in order; the numbers are 
 
 1. **Canvas.** Width 960 for body-width docs, 1280 for wide pages or slides. Height = content + 40 margin top and
    bottom. No legend by default; only if the user asks for a key add 56 and keep the lowest node or zone edge at or above `h - 60`.
-2. **Columns and rows.** Nodes sit on a grid: column x starts at 40, node widths from the table below, gaps of 64–96
-   between columns (room for a labelled arrow), 40–72 between rows. Put the primary flow left→right (or top→bottom)
+2. **Columns and rows.** Nodes sit on a grid: column x starts at 40, node widths from the table below, gaps of 40
+   between columns, or `text_w(label, LABEL_SIZE) + 24` rounded to 4 when the connector carries a label (so the
+   mask clears both boxes by 8 px; 56–96 at the presentation ramp), 40 between rows. A connector longer than 96 px
+   across open canvas is slack in the layout — move the nodes closer instead of stretching the arrow; nested zone
+   borders (24 px each) are the one legitimate reason for a longer run. Put the primary flow left→right (or top→bottom)
    and side services (registry, storage, monitoring) on a second row or column, never floating in a corner.
-3. **Node sizes.** Pick from the table; `awsdiag.min_node_w(name, sub, icon=True, h=64)` returns the minimum width
-   for a given text. Design for the longer language, then use the same box for both.
+3. **Node sizes.** Pick from the table; `awsdiag.min_node_w(name, sub, icon=True, h=56)` returns the minimum width
+   for a given text — use it instead of a generous fixed width. Design for the longer language, then use the same box for both.
 
    | Content | w × h | Icon |
    |---|---|---|
-   | name + sublabel, AWS service | 240 × 64 (up to 280 for long names) | 32px |
-   | name + sublabel, short | 184 × 56 | 24px |
-   | name only | 160 × 48 | 24px |
-   | compact step in a row of 5+ | 144 × 48, no sublabel | 24px |
-   | actor / user | 184 × 64, `kind="input"`, icon `User` or `Users` | 32px |
+   | name + sublabel, AWS service | `min_node_w(...)` × 56, typically 176–224 | 24px |
+   | name + sublabel, short | 160 × 56 | 24px |
+   | name only | 144 × 48 | 24px |
+   | compact step in a row of 5+ | 128 × 48, no sublabel | 24px |
+   | actor / user | `min_node_w(...)` × 56, `kind="input"`, icon `User` or `Users` | 24px |
+   | hero / focal that must dominate | up to 64 tall | 32px |
 
 4. **Zones.** `kind` chooses the official group badge: `cloud` (AWS Cloud, the outermost box only), `account`,
    `region` (dashed), `vpc`, `public` / `private` subnet, `ec2` (instance contents), `greengrass`, `server`,
@@ -66,7 +70,7 @@ Every diagram is built the same way. Follow the steps in order; the numbers are 
    `elbow_hvh`/`elbow_vhv` for two bends with `mid=` pinning the middle leg so parallel connectors stay ≥12px apart.
    An arrow never stops in open canvas and never crosses a node that is not its endpoint.
 6. **Labels.** Horizontal segment at `Y`: `c.label(mid_x, Y - 12, "READ")`. Vertical segment at `X`:
-   `c.label(X + 16, mid_y, "PULL", anchor="start")`. Labels are ≤14 characters, uppercase for verbs, mono, and sit on
+   `c.label(X + 16, mid_y, "PULL", anchor="start")`. Labels are ≤14 characters, uppercase for verbs, Amazon Ember 14px muted (sublabel style one px smaller), and sit on
    a straight run that clears both boxes by ≥8px; a mask that overlaps a node is clipped by the node fill.
 7. **Focal.** `kind="focal"` on 1–2 nodes. Everything else `step` (default), `store`, `input`, `external`, `optional`,
    `security`.
@@ -99,7 +103,7 @@ nodes → overlay → legend), so spec statement order does not matter.
 ## Rules the library enforces, and what the spec still decides
 
 Baked in (plus the layout checks listed under WARN policy): white paper, squid-ink `#232F3E`, smile-orange accent tint/stroke for `focal`, Amazon Ember with Noto Sans
-KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 15, same Ember face, weight 400 · arrow label 12 · zone 14 ·
+KR / NanumBarunGothic fallback for Hangul, presentation type ramp (name 16 · sublabel 15 · arrow label 14, all the same Ember face · zone 14 ·
 tag 10), icon-left pattern (32px icon in a ≥64px node, 24px in ≥48px, 16px below), opaque node mask, four arrow
 markers, accessible `<title>`/`<desc>` with slug-prefixed ids, PNG at 2x with the paper rect as background.
 

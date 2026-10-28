@@ -65,10 +65,11 @@ Node names shrink relative to the canvas as it grows — resist that. Scale the 
 | Title (Amazon Ember 700) | 28 | 40 | 32 |
 | Node name (Amazon Ember 600) | 12 | 16 | 12 |
 | Sublabel (Amazon Ember 400) | 11 | 15 | 11 |
-| Arrow label (Amazon Ember Mono) | 8 | 12 | 8 |
+| Arrow label (Amazon Ember 400, muted) | 10 | 14 | 10 |
 | Eyebrow / tag (Amazon Ember Mono) | 8 | 8 | 8 |
 | Node box min height | 48 | 64 | 48 |
-| Min gap between nodes | 24 | 40 | 24 |
+| Gap between neighbouring nodes (no label / with label) | 40 / mask+16 | 40 / mask+16 | 40 / mask+16 |
+| Longest connector before you relayout (open canvas) | 96 | 120 | 96 |
 
 Presentation ramp implies fewer nodes — 16px names in 64px boxes eat the canvas. If a `slide-16x9` layout won't fit, that's the size dial telling you the detail dial is set too high; drop a level rather than shrinking the type.
 

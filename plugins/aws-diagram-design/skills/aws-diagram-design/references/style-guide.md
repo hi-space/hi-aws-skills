@@ -75,7 +75,7 @@ A self-contained palette for the terminal-window primitive (see [primitive-termi
 | `node-name` | Amazon Ember | 12px | 600 | Human-readable labels |
 | `sublabel` | Amazon Ember | 11px | 400, `muted` | Second line under a node name — role, runtime, port. One px under `node-name` (90–95%); weight and colour separate the lines |
 | `eyebrow` | Amazon Ember Mono | 7–8px | 500, tracked 0.18em, uppercase | Type tags, axis labels |
-| `arrow-label` | Amazon Ember Mono | 8px | 400, tracked 0.06em | Arrow annotations |
+| `arrow-label` | Amazon Ember | 10px | 400, `muted` | Arrow annotations — sublabel style one px smaller |
 | `callout` | Amazon Ember *italic* | 14px | 400 | Editorial asides only |
 
 ### Font stack
@@ -86,7 +86,7 @@ Amazon Ember is **not on Google Fonts**, but this skill **bundles it** at [`asse
 2. **Bundled woff2 embedded by `finalize.py`** — templates declare `local()` only; the deliverable gets base64 data URIs for the faces it uses (spec §3.2). Never paste `url()` paths into an SVG.
 3. **Fallback stack** — always declared on `font-family`; sandboxed viewers (GitHub's SVG renderer, offline tools) fall back to Helvetica/Arial.
 
-Weight map for the bundled faces: Amazon Ember 300 Lt · 400 Rg (+italic) · 600 SBd · 700 Bd · 800 He; **Amazon Ember Mono 400/700** carries every mono role (eyebrows, arrow labels — a 500/600 spec snaps to the nearest bundled weight, which is expected). **No font loads from an external CDN** — generated diagrams need no Google Fonts `<link>`.
+Weight map for the bundled faces: Amazon Ember 300 Lt · 400 Rg (+italic) · 600 SBd · 700 Bd · 800 He; **Amazon Ember Mono 400/700** carries every mono role (eyebrows, type tags — a 500/600 spec snaps to the nearest bundled weight, which is expected). **No font loads from an external CDN** — generated diagrams need no Google Fonts `<link>`.
 
 ```css
 /* sans (names, titles, callouts) */ font-family: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -95,7 +95,7 @@ Weight map for the bundled faces: Amazon Ember 300 Lt · 400 Rg (+italic) · 600
 
 Installed Ember faces: Light 300 / Regular 400 / Medium 500 / Bold 700 / Heavy 800, plus italics. If a 600 weight renders as synthesized bold in a target environment, drop node names to 500 or up to 700 — never fake-bold the Heavy face.
 
-**Load-bearing rule:** Mono is for small chrome — eyebrows, tags, arrow labels. Names, node sublabels, titles, and callouts go in Amazon Ember, so both lines inside a box share one face (Ember Mono has no Hangul; a mono sublabel would fall back to Noto Sans KR and read as a third font). Italic Ember is reserved for annotation callouts (see [primitive-annotation.md](primitive-annotation.md)). **Never JetBrains Mono** as a blanket "dev" font. This skin intentionally drops the editorial serif (Instrument Serif) — AWS brand typography is single-family.
+**Load-bearing rule:** Mono is for small chrome — eyebrows and type tags. Names, node sublabels, arrow labels, titles, and callouts go in Amazon Ember, so both lines inside a box share one face (Ember Mono has no Hangul; a mono sublabel would fall back to Noto Sans KR and read as a third font). Italic Ember is reserved for annotation callouts (see [primitive-annotation.md](primitive-annotation.md)). **Never JetBrains Mono** as a blanket "dev" font. This skin intentionally drops the editorial serif (Instrument Serif) — AWS brand typography is single-family.
 
 ---
 

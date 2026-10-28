@@ -22,7 +22,7 @@ AWS 서비스를 명명하는 노드에는 다이어그램 타입에 관계없�
 
 ## 미리보기
 
-아래는 모두 이 스킬로 생성한 결과물입니다. SVG 원본과 PNG는 [docs/samples/](docs/samples/)에 있습니다.
+아래는 모두 이 스킬로 생성한 결과물입니다. SVG 원본과 PNG는 [docs/samples/](docs/samples/)에 있고, 아키텍처 4장은 [docs/samples/specs/](docs/samples/specs/)의 생성기 스펙에서 `bash docs/samples/build_samples.sh` 로 다시 만들어집니다.
 
 ### Serverless Web Application
 
@@ -38,7 +38,7 @@ AWS 서비스를 명명하는 노드에는 다이어그램 타입에 관계없�
 
 ### Event-Driven Data Pipeline
 
-Kinesis → Lambda → S3 데이터 레이크 스트리밍 수집과, Glue 카탈로그를 거쳐 Athena가 S3를 직접 스캔하는 분석 경로. 교차하는 커넥터는 bridge/hop으로 처리됩니다. ([SVG](docs/samples/event-driven-pipeline.svg) · [PNG](docs/samples/event-driven-pipeline.png))
+Kinesis → Lambda → S3 데이터 레이크 스트리밍 수집과, Glue 카탈로그를 거쳐 Athena가 S3를 직접 스캔하는 분석 경로. 되돌아가는 SCAN 점선은 S3 왼쪽 가장자리의 별도 접점으로 들어가 다른 커넥터와 겹치지 않습니다. ([SVG](docs/samples/event-driven-pipeline.svg) · [PNG](docs/samples/event-driven-pipeline.png))
 
 ![Event-Driven Data Pipeline 아키텍처 다이어그램](docs/samples/event-driven-pipeline.svg)
 

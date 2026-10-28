@@ -140,6 +140,7 @@ These mark "AI slop" schematics of any type:
 | Identical boxes for every node | Erases hierarchy |
 | A legend strip nobody asked for | Icons and sublabels already identify every box; add a key only when the reader asks for one |
 | Arrow labels with no masking rect | Bleeds through the line |
+| Nodes spread out to fill the canvas | Long connectors read as distance and padding reads as emptiness; pack the grid (32–48 px gaps, 56 px boxes) and shrink the viewBox instead |
 | Vertical `writing-mode` text on arrows | Unreadable |
 | 3 equal-width summary cards as default | Generic grid — vary widths |
 | Shadow on any element | Shadows are out. Borders are in. |
@@ -194,10 +195,10 @@ Type-specific anti-patterns live in each `references/type-*.md`.
 - **Node name** — Amazon Ember, 12px, 600 — human-readable labels
 - **Sublabel** — Amazon Ember, 11px, 400, muted — the second line under a node name (role, runtime, port). Same family as the name and **one px smaller** (90–95%: 11 under 12, 15 under 16); weight (600 vs 400) and colour (ink vs muted) do the rest of the hierarchy. Never drop further to make text fit — widen the box
 - **Eyebrow / tag** — Amazon Ember Mono, 7–8px, uppercase, tracked — type tags, axis labels
-- **Arrow label** — Amazon Ember Mono, 8px — annotation on arrows
+- **Arrow label** — Amazon Ember, 10px, 400, muted — sublabel style one px smaller; ≤14 characters, uppercase verbs
 - **Editorial aside** — Amazon Ember *italic*, 14px — callouts only
 
-**Mono is for small chrome only.** Names, node sublabels, titles, and callouts are Amazon Ember; eyebrows, tags, and arrow labels are **Amazon Ember Mono** — the entire type system is one brand family. A node's two lines share one face: Ember Mono has no Hangul, so a mono sublabel would fall back to Noto Sans KR and look like a third font next to Latin sublabels. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — templates already carry the `local()`-only `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) (installed copies win, no path to a font file), and `finalize.py` embeds the used faces as data URIs for the deliverable. Never add `url()` sources to an SVG — the self-check rejects any external reference. Always ship the fallback stacks; no external font CDN is referenced:
+**Mono is for small chrome only.** Names, node sublabels, arrow labels, titles, and callouts are Amazon Ember; eyebrows and type tags are **Amazon Ember Mono** — the entire type system is one brand family. A node's two lines share one face: Ember Mono has no Hangul, so a mono sublabel would fall back to Noto Sans KR and look like a third font next to Latin sublabels. Never JetBrains Mono as a blanket "dev" font. Neither face is on Google Fonts, but this skill **bundles both** at [`assets/fonts/`](assets/fonts/) — templates already carry the `local()`-only `@font-face` block from [`assets/fonts/README.md`](assets/fonts/README.md) (installed copies win, no path to a font file), and `finalize.py` embeds the used faces as data URIs for the deliverable. Never add `url()` sources to an SVG — the self-check rejects any external reference. Always ship the fallback stacks; no external font CDN is referenced:
 
 ```html
 <!-- sans: 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif -->
@@ -317,13 +318,13 @@ Every arrow label needs an opaque rect behind it. Without one it bleeds through 
 ```svg
 <!-- Mask spans ARROW_Y-20 to ARROW_Y-8: 12px plate + 8px visible gap above the stroke at ARROW_Y. -->
 <rect x="MID_X-18" y="ARROW_Y-20" width="36" height="12" rx="2" fill="#ffffff"/>
-<text x="MID_X" y="ARROW_Y-11" fill="#7D8998" font-size="8"
-      font-family="'Amazon Ember Mono', ui-monospace, monospace" text-anchor="middle" letter-spacing="0.06em">WRITE</text>
+<text x="MID_X" y="ARROW_Y-11" fill="#545B64" font-size="10"
+      font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif" text-anchor="middle">WRITE</text>
 ```
 
 Rules:
 
-- ≤14 characters, all-caps, centered on segment midpoint.
+- ≤14 characters, all-caps, centered on segment midpoint. Amazon Ember 10px 400 in `muted` — the sublabel face one px smaller, never 8px mono (unreadable at doc width).
 - **Mandatory 6–10px gap** between the bottom of the mask rect and the arrow stroke. The connector must remain visible — a label that hides its own arrow is a hard fail.
 - Never `writing-mode` vertical.
 - For vertical segments, place the label to the side (not on the line) with the same 6–10px horizontal gap.
@@ -359,7 +360,7 @@ When a key *is* requested: never inside the diagram area. Place it as a horizont
 | Padding inside boxes | 8, 12, 16 |
 | Border radius | 4, 6, 8 |
 
-Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–8px mono sizes fixed by style-guide.md (eyebrows, arrow labels) plus the 11px / 15px sublabel.
+Exempt: stroke widths (0.8, 1, 1.2), opacity values, the 22×22 dot-pattern, and the 7–8px mono eyebrow sizes fixed by style-guide.md plus the 11px / 15px sublabel and 10px / 14px arrow label.
 
 Quick check: if a coordinate ends in 1, 2, 3, 5, 6, 7, 9 — fix it.
 
@@ -401,7 +402,7 @@ If you exceed, split into two diagrams (overview + detail).
 The SVG *is* the page. There is no header, card grid, or footer around it.
 
 1. **Paper** — a full-size `<rect>` in the paper colour is the first painted element.
-2. **Diagram** — zones → arrows → labels → nodes → overlay, 40 px outer margin.
+2. **Diagram** — zones → arrows → labels → nodes → overlay, 40 px outer margin. **Compact by default:** neighbouring nodes sit 40 px apart, or label-mask width + 16 px when the connector carries a label (56–72 px at the standard ramp); rows 40 px apart; boxes 56 px tall for name + sublabel with a 24 px icon. A connector longer than ~96 px with nothing to cross means the layout has slack — move the nodes, never stretch the arrow. Nested zone borders (24 px padding each) are the one legitimate reason for a longer run.
 3. **No legend strip** by default. Only when the user asks for a key: a horizontal strip in an extra 60 px at the bottom.
 
 ---
@@ -569,7 +570,7 @@ python3 <skill-dir>/scripts/pygen/build.py <spec-dir> --out <spec-dir>/out --png
 ```
 
 House rules that this path adds on top of the taste gate (§9): presentation type ramp (16px names, 15px sublabels,
-12px arrow labels) because docs are read at body width and projected; one name line plus one short sublabel per node,
+14px arrow labels) because docs are read at body width and projected; one name line plus one short sublabel per node,
 details in the prose; official icon on every node that names an AWS service; every `WARN` from `build.py` (text overflow
 or a layout rule: overlap, zone straddle, badge row, dangling arrow) is fixed before export, never ignored. Replacing a Mermaid block in Markdown counts as an import (§11): keep the content, redraw the
 layout, and remove the Mermaid source once the PNG is in place.
