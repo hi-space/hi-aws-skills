@@ -2,7 +2,7 @@
 
 Encodes the skill's mandatory rules in code so a spec only supplies layout and text:
 white paper, squid-ink text, smile-orange accent on 1-2 focal nodes, Amazon Ember type at the
-presentation ramp (16px names / 14px sublabels / 12px arrow labels), official AWS Architecture Icons
+presentation ramp (16px names and sublabels / 12px arrow labels), official AWS Architecture Icons
 (icon-left nodes, group badges on zones), rounded orthogonal connectors (r=8), masked arrow labels,
 optional bottom legend strip (only when the spec calls legend()), accessible <title>/<desc>. Korean text uses the Noto Sans KR / NanumBarunGothic
 fallback in the font stack; finalize.py loads Noto Sans KR at PNG render time.
@@ -48,7 +48,7 @@ KIND = {  # node kind → (fill, stroke, dash)   [SKILL.md §5 node type → tre
     "security": ("rgba(236,114,17,0.05)", "rgba(236,114,17,0.50)", "4,4"),
 }
 # presentation ramp (output-spec.md §2): readable at doc width and when projected
-NAME_SIZE = 16; SUB_SIZE = 14; LABEL_SIZE = 12; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
+NAME_SIZE = 16; SUB_SIZE = 16; LABEL_SIZE = 12; TAG_SIZE = 10; ZONE_SIZE = 14; LEGEND_SIZE = 12
 ARROW = {"default": (MUTED, "arrow"), "accent": (ACCENT, "arrow-accent"), "link": (LINK, "arrow-link"), "soft": (SOFT, "arrow-soft")}
 
 # Friendly aliases → icon file. Anything not listed here resolves by file stem (see resolve_icon).
@@ -332,7 +332,7 @@ class Canvas:
     # ---- nodes -----------------------------------------------------------
     def node(self, x, y, w, h, name, sub: str | None = None, icon: str | None = None, kind: str = "step",
              tag: str | None = None, name_size: int = NAME_SIZE, sub_size: int | None = None, icon_color: str = INK):
-        """Block node: name (1 line, or list for 2) + optional one-line sublabel (same Ember family, 14px, muted). icon: AWS alias/stem or generic name."""
+        """Block node: name (1 line, or list for 2) + optional one-line sublabel (same Ember family and size, weight 400, muted). icon: AWS alias/stem or generic name."""
         fill, stroke, dash = KIND[kind]
         self._rects.append((x, y, w, h, name if isinstance(name, str) else " / ".join(name)))
         dsh = f' stroke-dasharray="{dash}"' if dash else ""

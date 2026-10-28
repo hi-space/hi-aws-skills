@@ -2,8 +2,8 @@
 
     python3 build.py . --out /tmp/diag --png
 
-Shows the house style: AWS Cloud zone with badge, icon-left nodes (16px name + 14px sublabel, same Ember
-family), one focal node, orthogonal r=8 connectors, masked arrow labels 8px above the line, no legend
+Shows the house style: AWS Cloud zone with badge, icon-left nodes (16px name + 16px sublabel, same Ember
+family, lighter weight and colour), one focal node, orthogonal r=8 connectors, masked arrow labels 8px above the line, no legend
 (call c.legend([...]) only when the reader asks for a key; it needs ~56px more canvas height).
 """
 from awsdiag import Canvas, T

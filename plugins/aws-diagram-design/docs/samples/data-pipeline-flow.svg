@@ -18,8 +18,8 @@
 .lane-label { fill: #545B64; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; }
 .role-text { fill: #232F3E; font-size: 6px; font-weight: 600; }
 .node-title { fill: #232F3E; font: 600 9px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
-.node-sub { fill: #545B64; font: 400 8px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
-.node-tool { fill: #7D8998; font: 400 7px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
+.node-sub { fill: #545B64; font: 400 9px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
+.node-tool { fill: #7D8998; font: 400 8px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
 .chip-text { fill: #fff; font-size: 5px; font-weight: 700; }
 .focal-text { fill: #EC7211; }
 .gov-text { fill: #b85450; }
@@ -30,8 +30,8 @@
           .lane-label { fill: #545B64; font-size: 8px; font-weight: 500; letter-spacing: 0.14em; }
           .role-text { fill: #232F3E; font-size: 6px; font-weight: 600; }
           .node-title { fill: #232F3E; font: 600 9px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
-          .node-sub { fill: #545B64; font: 400 8px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
-          .node-tool { fill: #7D8998; font: 400 7px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
+          .node-sub { fill: #545B64; font: 400 9px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
+          .node-tool { fill: #7D8998; font: 400 8px 'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif; text-anchor: middle; }
           .chip-text { fill: #fff; font-size: 5px; font-weight: 700; }
           .focal-text { fill: #EC7211; }
           .gov-text { fill: #b85450; }

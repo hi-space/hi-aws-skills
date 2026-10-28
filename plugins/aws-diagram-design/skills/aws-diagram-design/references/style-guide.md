@@ -73,7 +73,7 @@ A self-contained palette for the terminal-window primitive (see [primitive-termi
 |---|---|---|---|---|
 | `title` | Amazon Ember | 1.75rem | 700 | Page H1 |
 | `node-name` | Amazon Ember | 12px | 600 | Human-readable labels |
-| `sublabel` | Amazon Ember | 10px | 400, `muted` | Second line under a node name — role, runtime, port. ≈85% of `node-name`, floor 10px |
+| `sublabel` | Amazon Ember | 12px | 400, `muted` | Second line under a node name — role, runtime, port. Same size as `node-name`; weight and colour separate the lines |
 | `eyebrow` | Amazon Ember Mono | 7–8px | 500, tracked 0.18em, uppercase | Type tags, axis labels |
 | `arrow-label` | Amazon Ember Mono | 8px | 400, tracked 0.06em | Arrow annotations |
 | `callout` | Amazon Ember *italic* | 14px | 400 | Editorial asides only |

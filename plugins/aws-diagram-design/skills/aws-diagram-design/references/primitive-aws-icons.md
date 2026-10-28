@@ -127,7 +127,7 @@ The icon replaces the rectangular type tag from SKILL.md §6 — don't stack bot
 </g>
 <text x="X+48" y="Y+26" fill="#232F3E" font-size="12" font-weight="600"
       font-family="'Amazon Ember', 'Helvetica Neue', Arial, sans-serif">Order API</text>
-<text x="X+48" y="Y+42" fill="#545B64" font-size="10"
+<text x="X+48" y="Y+42" fill="#545B64" font-size="12"
       font-family="'Amazon Ember', 'Helvetica Neue', Arial, sans-serif">Lambda · python3.13</text>
 ```
 

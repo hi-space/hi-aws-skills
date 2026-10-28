@@ -63,7 +63,7 @@
         </g>
       </g>
       <text x="88" y="138" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Users</text>
-      <text x="88" y="154" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web / mobile</text>
+      <text x="88" y="154" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">web / mobile</text>
 
       <!-- CloudFront -->
       <rect x="272" y="112" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -75,7 +75,7 @@
         </g>
       </g>
       <text x="320" y="138" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">CloudFront</text>
-      <text x="320" y="154" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">CDN edge</text>
+      <text x="320" y="154" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">CDN edge</text>
 
       <!-- API Gateway -->
       <rect x="512" y="112" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -87,7 +87,7 @@
         </g>
       </g>
       <text x="560" y="138" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">API Gateway</text>
-      <text x="560" y="154" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">REST /api</text>
+      <text x="560" y="154" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">REST /api</text>
 
       <!-- Lambda (focal) -->
       <rect x="752" y="112" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -99,7 +99,7 @@
         </g>
       </g>
       <text x="800" y="138" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Lambda</text>
-      <text x="800" y="154" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">node.js 22</text>
+      <text x="800" y="154" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">node.js 22</text>
 
       <!-- S3 -->
       <rect x="272" y="240" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -113,7 +113,7 @@
         </g>
       </g>
       <text x="320" y="266" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">Amazon S3</text>
-      <text x="320" y="282" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">static assets</text>
+      <text x="320" y="282" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">static assets</text>
 
       <!-- DynamoDB -->
       <rect x="752" y="240" width="160" height="56" rx="6" fill="#ffffff"/>
@@ -125,5 +125,5 @@
         </g>
       </g>
       <text x="800" y="266" fill="#232F3E" font-size="12" font-weight="600" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">DynamoDB</text>
-      <text x="800" y="282" fill="#545B64" font-size="10" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">orders table</text>
+      <text x="800" y="282" fill="#545B64" font-size="12" font-family="'Amazon Ember', 'Helvetica Neue', Helvetica, Arial, sans-serif">orders table</text>
 </svg>
