@@ -67,28 +67,28 @@
         <rect x="128" y="168" width="40" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
         <text x="148" y="177" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
         <text x="200" y="208" fill="#f5f5f5" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Draft</text>
-        <text x="200" y="224" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">unpublished</text>
+        <text x="200" y="224" fill="#bfc0c0" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">unpublished</text>
 
         <!-- State: In Review -->
         <rect x="340" y="160" width="160" height="80" rx="8" fill="#393e53" stroke="#f5f5f5" stroke-width="1"/>
         <rect x="348" y="168" width="40" height="12" rx="2" fill="transparent" stroke="rgba(245,245,245,0.40)" stroke-width="0.8"/>
         <text x="368" y="177" fill="#f5f5f5" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
         <text x="420" y="208" fill="#f5f5f5" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">In Review</text>
-        <text x="420" y="224" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">awaiting approval</text>
+        <text x="420" y="224" fill="#bfc0c0" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">awaiting approval</text>
 
         <!-- State: Published (focal coral) -->
         <rect x="560" y="160" width="160" height="80" rx="8" fill="rgba(240,138,89,0.08)" stroke="#f08a59" stroke-width="1"/>
         <rect x="568" y="168" width="40" height="12" rx="2" fill="transparent" stroke="rgba(240,138,89,0.50)" stroke-width="0.8"/>
         <text x="588" y="177" fill="#f08a59" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
         <text x="640" y="208" fill="#f5f5f5" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Published</text>
-        <text x="640" y="224" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">live on site</text>
+        <text x="640" y="224" fill="#bfc0c0" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">live on site</text>
 
         <!-- State: Archived -->
         <rect x="560" y="300" width="160" height="100" rx="8" fill="rgba(245,245,245,0.05)" stroke="#bfc0c0" stroke-width="1"/>
         <rect x="568" y="308" width="40" height="12" rx="2" fill="transparent" stroke="rgba(191,192,192,0.50)" stroke-width="0.8"/>
         <text x="588" y="317" fill="#bfc0c0" font-size="7" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
         <text x="640" y="348" fill="#f5f5f5" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Archived</text>
-        <text x="640" y="364" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">noindex · hidden</text>
+        <text x="640" y="364" fill="#bfc0c0" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">noindex · hidden</text>
         <text x="640" y="382" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">redirect retained</text>
 
         <!-- End ring dot -->

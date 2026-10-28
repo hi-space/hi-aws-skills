@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1000 420" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="timeline-title timeline-desc">
+<svg viewBox="0 0 1000 392" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="timeline-title timeline-desc">
       <title id="timeline-title">Product launch · fourteen months</title>
       <desc id="timeline-desc">Timeline showing product milestones from the first post in February 2025 through three design versions and the schematic skill in April 2026.</desc>
         <defs>
@@ -55,31 +55,19 @@
         <circle cx="500" cy="240" r="4" fill="#2d3142"/>
         <text x="500" y="312" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">SEP 2025</text>
         <text x="500" y="328" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Design v2</text>
-        <text x="500" y="344" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">typography pass</text>
+        <text x="500" y="344" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">typography pass</text>
 
         <!-- Event 4: JAN 2026 · Design v3 (above, coral major) -->
         <line x1="740" y1="160" x2="740" y2="240" stroke="#eb6c36" stroke-width="1"/>
         <circle cx="740" cy="240" r="6" fill="#eb6c36"/>
         <text x="740" y="128" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">JAN 2026</text>
         <text x="740" y="148" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Design v3</text>
-        <text x="740" y="164" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">complexity budget</text>
+        <text x="740" y="164" fill="#4f5d75" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">complexity budget</text>
 
         <!-- Event 5: APR 2026 · now · Diagram Design skill (below, coral) -->
         <line x1="900" y1="240" x2="900" y2="296" stroke="#eb6c36" stroke-width="1"/>
         <circle cx="900" cy="240" r="6" fill="#eb6c36"/>
         <text x="900" y="312" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">APR 2026 · NOW</text>
         <text x="900" y="328" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Schematic skill</text>
-        <text x="900" y="344" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">eight diagram types</text>
-
-        <!-- Legend -->
-        <line x1="40" y1="376" x2="960" y2="376" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
-        <text x="40" y="392" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
-
-        <circle cx="52" cy="408" r="4" fill="#2d3142"/>
-        <text x="68" y="412" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Event</text>
-
-        <circle cx="148" cy="408" r="6" fill="#eb6c36"/>
-        <text x="164" y="412" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif">Major milestone</text>
-
-        <text x="296" y="412" fill="#4f5d75" font-size="8.5" font-family="'Geist', sans-serif" font-style="italic">Spacing is proportional to real elapsed time.</text>
-      </svg>
+        <text x="900" y="344" fill="#4f5d75" font-size="11" font-family="'Geist', sans-serif" text-anchor="middle">eight diagram types</text>
+</svg>

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg viewBox="0 0 1200 664" xmlns="http://www.w3.org/2000/svg" aria-label="Sources connect to a core data platform and three consumer surfaces" role="img" aria-labelledby="dp-integration-title dp-integration-desc">
+<svg viewBox="0 0 1200 624" xmlns="http://www.w3.org/2000/svg" aria-label="Sources connect to a core data platform and three consumer surfaces" role="img" aria-labelledby="dp-integration-title dp-integration-desc">
       <title id="dp-integration-title">Generic data platform integration topology</title>
       <desc id="dp-integration-desc">Integration topology showing CRM, POS exports, and an event stream landing in object storage for query, notebooks, dashboards, and a partner API.</desc>
       <defs>
@@ -33,13 +33,11 @@ svg text { font-family:var(--sans) }
 .role-text.focal { fill:var(--accent) }
 .node-name { fill:var(--ink);font:600 12px var(--sans) }
 .node-name.focal { fill:var(--ink) }
-.node-sub { fill:var(--muted);font:9px var(--mono) }
+.node-sub{fill:var(--muted);font:11px var(--sans)}
 .footer-red { fill:var(--custom-red-fill);stroke:var(--custom-red-stroke) }
 .footer-blue { fill:var(--custom-blue-fill);stroke:var(--custom-blue-stroke) }
 .footer-red-text { fill:var(--custom-red) }
 .footer-blue-text { fill:var(--custom-blue) }
-.legend-key { fill:var(--muted);font:500 8px var(--mono);letter-spacing:.14em }
-.legend-text { fill:var(--muted);font:8px var(--sans) }
 /* /page-css */
     </style>
         <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="var(--dot)"/></pattern>
@@ -95,6 +93,4 @@ svg text { font-family:var(--sans) }
       <!-- Layer-wide footer services -->
       <g><rect class="node-mask" x="40" y="460" width="1120" height="56" rx="6"/><rect class="footer-red" x="40" y="460" width="1120" height="56" rx="6"/><use href="#ico-key" transform="translate(72 488)" style="color:var(--custom-red)"/><text class="node-name footer-red-text" x="96" y="486">Identity provider</text><text class="node-sub" x="96" y="502">SSO · service identities · policy groups</text>
         <rect class="node-mask" x="40" y="524" width="1120" height="56" rx="6"/><rect class="footer-blue" x="40" y="524" width="1120" height="56" rx="6"/><use href="#ico-log" transform="translate(72 552)" style="color:var(--custom-blue)"/><text class="node-name footer-blue-text" x="96" y="550">Centralized logging</text><text class="node-sub" x="96" y="566">platform events · audit trail · retention</text></g>
-      <!-- Legend -->
-      <line x1="40" y1="608" x2="1160" y2="608" stroke="var(--rule)" stroke-width=".8"/><text class="legend-key" x="40" y="628">TYPE KEY</text><rect x="128" y="620" width="16" height="12" rx="2" fill="var(--side-fill)" stroke="var(--side-stroke)"/><text class="legend-text" x="152" y="630">Source / consumer</text><rect x="296" y="620" width="16" height="12" rx="2" fill="var(--accent-tint)" stroke="var(--accent)"/><text class="legend-text" x="320" y="630">Focal platform surface</text><rect x="492" y="620" width="16" height="12" rx="2" fill="var(--bar-fill)" stroke="var(--zone-stroke)"/><text class="legend-text" x="516" y="630">Orchestration</text><line x1="640" y1="626" x2="672" y2="626" stroke="var(--accent)" stroke-width="1.4" marker-end="url(#arrow-accent)"/><text class="legend-text" x="684" y="630">Primary data path</text><line x1="824" y1="626" x2="856" y2="626" stroke="var(--accent)" stroke-dasharray="5 4" marker-end="url(#arrow-accent)"/><text class="legend-text" x="868" y="630">Layer-wide service</text>
-    </svg>
+</svg>

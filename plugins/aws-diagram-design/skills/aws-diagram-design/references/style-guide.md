@@ -27,7 +27,7 @@ Every token is referred to by **semantic role**, not by its hex value. Type refe
 
 > **Brand palette source:** AWS brand — `squid ink #232F3E`, `smile orange #FF9900`, white. Pure `#FF9900` reads weakly as thin strokes/text on white, so light-mode `accent` uses the darker step `#EC7211` (the orange AWS itself uses on light UI); `#FF9900` is the accent on dark and the base of `accent-tint`. `muted`/`soft`/`rule-solid`/`link` come from the AWS/Cloudscape grey-blue ramp. Category identity colors (`#ED7100`, `#8C4FFF`, …) belong to the icons and zone borders — see [primitive-aws-icons.md](primitive-aws-icons.md) — and are **not** editorial accents.
 
-> **Note:** The pre-baked example SVG files in `assets/` were built under earlier skins and don't reflect the AWS skin. New diagrams the skill produces must use the tokens above.
+> **Note:** The pre-baked example SVG files in `assets/` were built under earlier skins (Geist type, coral accent) and don't reflect the AWS palette or fonts; they do follow the 2.1 layout rules (no type legend, sublabel in the name's sans family one px smaller — chart series keys stay). New diagrams the skill produces must use the tokens above.
 
 ### Inversion rule (light → dark)
 

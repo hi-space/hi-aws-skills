@@ -70,7 +70,7 @@
 
         <!-- Innermost label — human readable -->
         <text x="500" y="248" fill="#f5f5f5" font-size="16" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">CLAUDE.md</text>
-        <text x="500" y="272" fill="#bfc0c0" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.08em">inherits every level above</text>
+        <text x="500" y="272" fill="#bfc0c0" font-size="15" font-family="'Geist', sans-serif" text-anchor="middle">inherits every level above</text>
 
         <!-- Annotation top-right: italic callout with curved arrow -->
         <text x="904" y="36" fill="#f5f5f5" font-size="14" font-style="italic" font-family="'Instrument Serif', serif" text-anchor="end">no imports, no configuration</text>

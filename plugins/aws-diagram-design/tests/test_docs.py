@@ -61,10 +61,10 @@ def test_python_generator_doc_uses_build_png():
 import json
 
 
-def test_manifests_at_2_1_2():
+def test_manifests_at_2_1_3():
     for p in (PLUGIN / "plugin.json", PLUGIN / ".claude-plugin" / "plugin.json"):
         data = json.loads(read(p))
-        assert data["version"] == "2.1.2", p
+        assert data["version"] == "2.1.3", p
         assert "HTML" not in data["description"], p
 
 

@@ -44,17 +44,17 @@
         <!-- Set labels — positioned INSIDE each circle's non-overlapping lobe, so the diagram reads like a classic Venn -->
         <!-- Desirable — top lobe (centered inside top of Desirable circle) -->
         <text x="500" y="96" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Desirable</text>
-        <text x="500" y="112" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">PEOPLE WANT IT</text>
+        <text x="500" y="112" fill="#4f5d75" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">PEOPLE WANT IT</text>
 
         <!-- Feasible — bottom-left lobe -->
         <text x="340" y="386" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Feasible</text>
-        <text x="340" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">WE CAN BUILD IT</text>
+        <text x="340" y="402" fill="#4f5d75" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">WE CAN BUILD IT</text>
 
         <!-- Viable — bottom-right lobe -->
         <text x="660" y="386" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Viable</text>
-        <text x="660" y="402" fill="#4f5d75" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">BUSINESS SUSTAINS</text>
+        <text x="660" y="402" fill="#4f5d75" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">BUSINESS SUSTAINS</text>
 
         <!-- Focal label: white text on the dark intersection -->
         <text x="500" y="268" fill="#ffffff" font-size="14" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Shippable</text>
-        <text x="500" y="284" fill="rgba(245,245,245,0.75)" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">THE SWEET SPOT</text>
+        <text x="500" y="284" fill="rgba(245,245,245,0.75)" font-size="13" font-family="'Geist', sans-serif" text-anchor="middle">THE SWEET SPOT</text>
       </svg>

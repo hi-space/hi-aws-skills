@@ -24,7 +24,7 @@
 .example-label { fill: var(--soft); font-size: 8px; }
 .arc-label { font-size: 10px; text-anchor: middle; }
 .path-title { fill: var(--ink); font: 600 11px var(--sans); }
-.path-sub { fill: var(--muted); font: 400 9px var(--mono); }
+.path-sub { fill: var(--muted); font: 400 10px var(--sans); }
 /* /page-css */
     </style>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
