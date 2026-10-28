@@ -3,7 +3,7 @@ name: aws-tech-blog-writer
 description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached. The deliverable, produced through the sibling skill aws-blog-review at the end of the pipeline, is a Word (.docx) file with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘. A finished draft that only needs a review goes to the sibling skill aws-blog-review."
 license: MIT
 metadata:
-  version: "3.0.0"
+  version: "3.0.1"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 

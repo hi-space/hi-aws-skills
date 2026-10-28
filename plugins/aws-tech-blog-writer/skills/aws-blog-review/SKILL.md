@@ -3,7 +3,7 @@ name: aws-blog-review
 description: "Use when the user has a finished or nearly finished Korean AWS Tech Blog draft, as Markdown or a Word file, and asks to review, check, or proofread it before submission or after an editor sent it back: whether its AWS statements still match current documentation, whether anything is technically wrong, whether every figure is captioned, whether each AWS service is introduced by its official name with a documentation link, and whether the argument holds from opening to conclusion. Korean triggers: 블로그 리뷰, 블로그 검토, 이 글 검토해줘, 게재 전 점검, 기고 전 확인, 초안 리뷰, 원고 검수. Not for writing a post from project sources (that is aws-tech-blog-writer)."
 license: MIT
 metadata:
-  version: "3.0.0"
+  version: "3.0.1"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
