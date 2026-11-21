@@ -3,7 +3,7 @@ name: aws-tech-blog-writer
 description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached. The deliverable, produced through the sibling skill aws-blog-review at the end of the pipeline, is a Word (.docx) file with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘. A finished draft that only needs a review goes to the sibling skill aws-blog-review."
 license: MIT
 metadata:
-  version: "3.1.0"
+  version: "3.2.0"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
@@ -96,7 +96,11 @@ state. This can run as a subagent given the plan, the open questions, and `verif
 
 **Diagrams** (`references/diagrams.md`): at least one architecture figure of what was built, usually one
 concept figure. Architecture goes through the `aws-drawio-diagram` skill briefed from the component
-inventory and the request paths in `01-facts.md`; concept figures through `aws-diagram-design`. After
+inventory and the request paths in `01-facts.md`. Concept figures are illustrated scenes by default
+(`references/illustrations.md`): draw the object or the actor the paragraph is about with the pictograms in
+`assets/illustration/_pict.py`, build with `scripts/build_figures.py <work>`, and open the preview sheet to
+check overlaps by eye; box-only concept figures through `aws-diagram-design` are for abstract categories
+with nothing to depict. After
 each skill reports ready, open the PNG, list every node and edge you see, and check them against the
 inventory. A service in the picture that is not in the facts, or a component the picture omits, is a
 defect regardless of the diagram skill's own validator. Record the check in `<work>/diagrams/manifest.md`
@@ -183,6 +187,7 @@ the split exists to avoid. Never let a subagent spawn subagents. Diagram skills 
 | [aws-blog-conventions.md](references/aws-blog-conventions.md) | Planning and drafting: post types and skeletons, title, opening, naming, figures, code, links, bios |
 | [verification.md](references/verification.md) | Stage 3 research, and the fact-check the review skill runs in Stage 5: tool order, evidence rule, claim types, statuses |
 | [diagrams.md](references/diagrams.md) | Stage 3: which diagram skill, how to brief it from the facts, how to verify the picture |
+| [illustrations.md](references/illustrations.md) | Stage 3, concept figures: when to draw a scene instead of boxes, style, pictogram catalog, build and look procedure |
 | [placeholders.md](references/placeholders.md) | Any time a fact is missing: four categories, exact HTML, how to word the request |
 | [templates/](templates/) | brief, source-digest, facts, plan, research, claims (filled by the review skill's fact-checker), diagram-manifest, blog-post, prompt-drafter |
 
@@ -192,6 +197,7 @@ the split exists to avoid. Never let a subagent spawn subagents. Diagram skills 
 |---|---|
 | `scripts/init_workspace.py <slug> [--dir <path>]` | Create `<work>` and copy templates |
 | `scripts/ingest_sources.py <work>` | Convert PDF / DOCX / PPTX / drawio in `sources/` to text |
+| `scripts/build_figures.py <work> [--only slug] [--install N:slug ...]` | Render the illustrated concept figures in `<work>/diagrams/_specs/` to SVG and PNG, write `diagrams/out/preview.png`, copy shipping figures to `images/figN-<slug>.png` |
 | `scripts/lint_blog.py <draft.md> [--final] [--placeholders-out <file>] [--strict]` | Punctuation, naming, first-mention links (E8), image, code, placeholder, and voice checks; run by aws-blog-review R2 and R4 |
 | `scripts/check_claims.py` | Validate `05-claims.md` and match unverified claims to the revised draft's placeholders; run by aws-blog-review R4 |
 | `scripts/build_docx.js` | Build and verify the Word file with docx-js, named after the post title; run by aws-blog-review R5, never on `04-draft.md` |

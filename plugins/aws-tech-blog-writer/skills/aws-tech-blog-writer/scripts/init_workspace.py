@@ -6,7 +6,7 @@
 Creates <parent>/<slug>/ (default parent: ./blog-work) with:
   00-brief.md 01-facts.md 02-plan.md 03-research.md 05-claims.md
 (04-draft.md is not pre-created: the Stage 4 drafter subagent writes it from templates/blog-post.md)
-  sources/ sources/text/ diagrams/manifest.md images/
+  sources/ sources/text/ diagrams/manifest.md diagrams/_specs/_pict.py images/
 Existing files are never overwritten.
 """
 from __future__ import annotations
@@ -27,7 +27,8 @@ COPIES = {
     "claims.md": "05-claims.md",
     "diagram-manifest.md": "diagrams/manifest.md",
 }
-DIRS = ["sources", "sources/text", "diagrams", "images"]
+DIRS = ["sources", "sources/text", "diagrams", "diagrams/_specs", "images"]
+PICT = SKILL_DIR / "assets" / "illustration" / "_pict.py"
 
 
 def main() -> int:
@@ -49,6 +50,13 @@ def main() -> int:
             continue
         shutil.copyfile(TEMPLATES / src, target)
         created.append(dst)
+
+    pict = work / "diagrams" / "_specs" / "_pict.py"
+    if pict.exists():
+        skipped.append("diagrams/_specs/_pict.py")
+    else:
+        shutil.copyfile(PICT, pict)
+        created.append("diagrams/_specs/_pict.py")
 
     # Digest template is copied per source later; leave a pointer.
     pointer = work / "sources" / "README.md"

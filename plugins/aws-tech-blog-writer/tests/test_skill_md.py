@@ -307,3 +307,40 @@ def test_explanatory_post_rules_reach_the_drafter_the_reviewer_and_the_lint():
     lint_src = (SKILL / "scripts" / "lint_blog.py").read_text()
     for name in ("PROCESS_TRACES", "MAX_TABLES", "MAX_PLACEHOLDERS", "FIGURATIVE_VERBS"):
         assert name in lint_src, name
+
+
+def test_concept_figures_default_to_illustrated_scenes():
+    """3.2.0: concept figures draw the object or actor, not a row of boxes."""
+    text = SKILL_MD.read_text()
+    assert "references/illustrations.md" in text and "build_figures.py" in text
+    ref = (SKILL / "references" / "illustrations.md").read_text()
+    for must in ("preview.png", "_pict.py", "Adding a pictogram", "One idea per figure", "No\n  sentence under a drawing"):
+        assert must in ref, must
+    assert "illustrations.md" in (SKILL / "references" / "diagrams.md").read_text()
+    pict = (SKILL / "assets" / "illustration" / "_pict.py").read_text()
+    for fn in ("def arm(", "def person(", "def humanoid(", "def frame(", "def server(", "def canvas(", "def put_arm("):
+        assert fn in pict, fn
+
+
+def test_example_figures_build(tmp_path):
+    import subprocess, sys, shutil
+    design = PLUGIN.parent / "aws-diagram-design" / "skills" / "aws-diagram-design" / "scripts" / "pygen" / "build.py"
+    if not design.exists():
+        pytest.skip("aws-diagram-design is not next to this plugin")
+    specs = tmp_path / "diagrams" / "_specs"
+    specs.mkdir(parents=True)
+    shutil.copyfile(SKILL / "assets" / "illustration" / "spec_example.py", specs / "spec_example.py")
+    r = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_figures.py"), str(tmp_path), "--install", "1:example-policy-loop"],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "WARN" not in r.stdout + r.stderr
+    assert (tmp_path / "images" / "fig1-example-policy-loop.png").stat().st_size > 10_000
+    assert (specs / "_pict.py").exists(), "the builder installs the pictogram library next to the specs"
+
+
+def test_init_workspace_installs_the_pictogram_library(tmp_path):
+    import subprocess, sys
+    r = subprocess.run([sys.executable, str(SKILL / "scripts" / "init_workspace.py"), "demo", "--dir", str(tmp_path)],
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    assert (tmp_path / "demo" / "diagrams" / "_specs" / "_pict.py").exists()

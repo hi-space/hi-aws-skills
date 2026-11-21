@@ -30,7 +30,7 @@
 | 그림 | 종류 | 스킬 | 내용 | 근거 C/F |
 |---|---|---|---|---|
 | 1 | 아키텍처 | aws-drawio-diagram | | |
-| 2 | 개념 | aws-diagram-design | | |
+| 2 | 개념(장면 그림) | illustration (build_figures.py) | 그릴 대상: | |
 | 3 | 스크린샷 | [이미지 필요] | | |
 
 ## 알려진 placeholder (초안 전에 이미 아는 것)

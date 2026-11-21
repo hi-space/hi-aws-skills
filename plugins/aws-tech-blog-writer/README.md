@@ -78,6 +78,17 @@ AWS에서 구축한 프로젝트, PoC, 고객 사례를 **AWS 기술 블로그(a
 - 설명하는 글. 개념이 무엇이고 왜 필요하며 어떻게 동작하는지를 먼저 쓰고, 출처는 설명 하나에 예시 하나로 쓴다. 용어는 처음 쓰는 문장에서 정의하고 용어 표는 만들지 않는다. 표는 최대 3개(3.1.0).
 - 글을 쓴 흔적 금지. `이 글의 제안`, `이 글을 준비하면서 찾지 못했습니다`, 조회일, 숫자마다 붙는 시행 횟수는 본문에 쓰지 않는다. 확인하지 못했고 글에 꼭 필요하지 않은 내용은 문장을 빼고 `open-items.md`에 적어 작성자에게 따로 알린다. 본문 placeholder는 작성자만 채울 수 있는 것으로 최대 5개(3.1.0).
 
+## 개념 그림: 상자 대신 장면 (3.2.0)
+
+개념 그림은 상자와 화살표만으로 그리지 않고, 문단이 말하는 대상을 직접 그립니다. 로봇 팔과 컵, 조종기를 든 사람, 시뮬레이션 환경을 실행하는 서버처럼 독자가 처음 보는 개념을 눈으로 볼 수 있게 합니다. `assets/illustration/_pict.py` 가 로봇 팔, 휴머노이드, 사람, 카메라, 모니터, 서버, 문서, 저장소 같은 픽토그램과 배치 도우미를 제공하고, `references/illustrations.md` 가 색과 글자 크기, 한 그림에 한 가지 내용, 새 픽토그램을 그리는 방법, 빌드한 뒤 미리보기 시트를 열어 겹침을 눈으로 확인하는 절차를 정합니다. 색은 남색(외곽선), 회색(몸체), 주황(독자가 따라갈 대상) 세 가지이고 초록과 빨강은 성공과 실패 표시에만 씁니다.
+
+```bash
+python3 skills/aws-tech-blog-writer/scripts/build_figures.py blog-work/<slug>                       # SVG, PNG, preview.png
+python3 skills/aws-tech-blog-writer/scripts/build_figures.py blog-work/<slug> --install 1:policy-loop   # images/fig1-policy-loop.png
+```
+
+렌더러는 `aws-diagram-design` 의 Python 생성기를 씁니다. AWS 아키텍처 그림은 그대로 `aws-drawio-diagram` 과 공식 아이콘으로 그리고, 분류 체계처럼 그릴 대상이 없는 개념 그림만 `aws-diagram-design` 의 상자 그림으로 그립니다.
+
 ## Word 파일 (aws-blog-review R5)
 
 `docx` 스킬의 docx-js 워크플로로 만듭니다. pandoc의 DOCX writer는 인라인 색을 버려 placeholder가 보이지 않으므로 쓰지 않습니다.
@@ -105,6 +116,7 @@ node skills/aws-tech-blog-writer/scripts/build_docx.js blog-work/<slug>     # re
 |---|---|
 | `scripts/init_workspace.py <slug>` | 작업 디렉터리와 템플릿 생성 |
 | `scripts/ingest_sources.py <work>` | PDF / DOCX / PPTX / drawio 자료를 텍스트로 변환 |
+| `scripts/build_figures.py <work> [--install N:slug ...]` | `diagrams/_specs/` 의 장면 그림 스펙을 SVG와 PNG로 만들고 미리보기 시트(`diagrams/out/preview.png`)를 쓴 뒤, 실을 그림을 `images/figN-<slug>.png` 로 복사 |
 | `scripts/lint_blog.py <draft.md> [--final] [--placeholders-out <file>]` | 문장부호, 서비스명, 이미지와 캡션, 코드, placeholder, 문체(의인화, 피동, 비유, 서술형 소제목) 검사 |
 | `scripts/check_claims.py <work> --draft <file>` | `05-claims.md` 검증과 개정본 placeholder 대조 |
 | `scripts/build_docx.js <work> [--out <file>] [--name-from-title] [--no-appendix]` | `revised.md` 로 `<제목>.docx` 빌드와 검증 |

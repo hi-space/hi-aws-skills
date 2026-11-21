@@ -10,7 +10,8 @@ validator and once by you against `01-facts.md`.
 | You need | Skill | Output that ships |
 |---|---|---|
 | AWS architecture: services, accounts, VPC boundaries, request paths, what calls what | `aws-drawio-diagram` | `<name>.drawio.png` (XML embedded, editable), plus `<name>.brief.md` and `<name>.guide.md` kept next to it |
-| Concept figure: before/after, layered model, process, swimlane, sequence between actors, comparison quadrant | `aws-diagram-design` | PNG exported from the generated HTML via its export procedure |
+| Concept figure with something to depict: a device or robot, a person doing a step, data moving between machines, a process with actors, before/after | Illustrated scene, `references/illustrations.md` and `scripts/build_figures.py` (default for concept figures) | `images/figN-<slug>.png`, SVG and spec kept in `diagrams/` |
+| Concept figure of abstract categories only: taxonomy, layered model, comparison quadrant | `aws-diagram-design` | PNG exported from the generated HTML via its export procedure |
 | A second, simplified view of the same architecture for the opening (fewer boxes) | `aws-drawio-diagram` with a reduced brief, or `aws-diagram-design` Architecture type redrawing the `.drawio` | PNG |
 | Console screenshot, demo UI, dashboard | Nobody: `[이미지 필요]` placeholder with the caption written | (author supplies) |
 
@@ -37,7 +38,16 @@ source material), register them as sources, verify they still match the facts, a
 redraw. The rebuild command is in the skill's review checklist (`build_diagram.py <name>.layout.json ...
 --brief <name>.brief.md` must print `brief check ... ✓`).
 
-## Briefing the concept skill
+## Concept figures: illustrated scenes first
+
+A concept figure made only of labelled boxes repeats the paragraph next to it. Draw the thing the
+paragraph is about: the robot arm and the cup, the operator with the controller, the servers and what
+passes between them. `references/illustrations.md` has the style, the pictogram catalog, and the build and
+look procedure; `scripts/build_figures.py <work>` renders the specs in `<work>/diagrams/_specs/` and writes
+a preview sheet you must open before shipping. Use a box figure only when there is nothing to depict.
+Architecture figures are not affected: they keep official AWS icons.
+
+## Briefing the concept skill (box figures)
 
 `aws-diagram-design` wants a type (Architecture, Process, Sequence, Layer stack, ...), a size preset, and
 the content. Keep it under nine nodes; the skill's own philosophy is deletion. Because the post is in

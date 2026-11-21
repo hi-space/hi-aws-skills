@@ -140,8 +140,9 @@ version; if the source does not say, placeholder it.
 - Caption on the line under the image, sequential numbering, no period at the end of a noun phrase:
   `그림 1. Amazon Bedrock AgentCore를 중심으로 구성한 전체 아키텍처`
 - Alt text in the Markdown image is a plain description for screen readers, not the caption.
-- Architecture figures come from `aws-drawio-diagram` (official icons, verified). Concept figures from
-  `aws-diagram-design`. Screenshots the author must take are `[이미지 필요]` placeholders with a caption
+- Architecture figures come from `aws-drawio-diagram` (official icons, verified). Concept figures are
+  illustrated scenes (`references/illustrations.md`): the object or actor the paragraph is about, drawn with
+  pictograms, not a row of labelled boxes; box figures from `aws-diagram-design` only for abstract categories. Screenshots the author must take are `[이미지 필요]` placeholders with a caption
   already written so the author knows what to capture.
 - No text-heavy slides pasted as images. If a picture needs a paragraph to read, it becomes a table.
 
