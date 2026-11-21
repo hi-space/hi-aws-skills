@@ -54,7 +54,18 @@ If a listed file is missing, stop and reply with the missing path. Do not substi
   content will go.
 - **Voice** (voice.md §1): the subject of a sentence is a person, team, service, or component. No
   abstract noun that remains, arrives, piles up, or decides. No passive with a known actor. No
-  figurative nouns (축, 몫, 재료, 그림, 여정, 열쇠). No evaluation words. `합니다`체 throughout.
+  figurative nouns (축, 몫, 재료, 그림, 여정, 열쇠) and no figurative verbs (좌우합니다, 가리킵니다 for ideas, 잡힙니다 for a cost).
+  No evaluation words. `합니다`체 throughout.
+- **Explain, do not report** (voice.md §1.8): each section says what the thing is, why it is needed and
+  how it works before any source appears; a term is defined in the sentence that first uses it; one
+  example per point, with the number that is easiest to picture. The fact table holds more than the
+  post needs. Do not write a paragraph in which every sentence cites a different source.
+- **No trace of the writing** (voice.md §1.9): never `이 글의 제안`, `이 글의 정리`, `이 글을 준비하면서
+  찾지 못했습니다`, `조회일`, trial counts in parentheses after each number, or a `근거` column. A detail
+  you cannot support and the post can do without is cut, and you list it in your reply for
+  `open-items.md`; it is not a placeholder.
+- **At most three tables and five placeholders** (voice.md §2.5, placeholders.md "How many"). No
+  glossary table. Placeholders are for what only the author can supply.
 - **Headings are noun phrases** (voice.md §2.4), numbered per the skeleton. Not sentences, not questions.
 - **AWS service names as AWS writes them** (conventions §5): full name at first body mention, correct
   `Amazon` or `AWS` prefix, sub-services as `AgentCore Gateway`, never `Bedrock Gateway`. The first body

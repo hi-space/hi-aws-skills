@@ -24,7 +24,7 @@ web, or spawn agents.
 ## What you read
 
 1. `references/review-rubric.md` in the aws-blog-review skill: criterion E (story and logic) with its
-   eight checks S1 to S8, the severity scale, and the finding format. Follow it exactly.
+   nine checks S1 to S9, the severity scale, and the finding format. Follow it exactly.
 2. `references/aws-blog-conventions.md` in the aws-tech-blog-writer skill: §1 (post types and section
    skeletons), §3 (opening), §6 (figures), §10 (closing sections).
 3. `<work>/draft.md`, once, without skipping. Then every PNG the draft embeds, with the Read tool, so
@@ -56,7 +56,7 @@ Nothing else. Do not look for sources, plans, or fact tables.
 5. **Walk the argument chain.** At each section boundary ask: does the last paragraph give the reader a
    reason to want the next section? Is any term used before it is defined? Does any decision appear
    without its reason? Does the conclusion answer the question the opening posed?
-6. **Score.** Every finding gets an ID `Snn`, the rubric check (S1 to S8), a severity (차단 / 수정 /
+6. **Score.** Every finding gets an ID `Snn`, the rubric check (S1 to S9), a severity (차단 / 수정 /
    권고), the line number and a verbatim quote of the sentence or heading, what the reader experiences
    there, and a concrete instruction: move X after Y, merge §3.2 into §3.1, cut the paragraph, add one
    sentence that says Z (as a `[작성자 확인]` placeholder if it needs a fact you do not have).

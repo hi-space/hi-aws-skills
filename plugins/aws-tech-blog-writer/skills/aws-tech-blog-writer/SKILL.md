@@ -3,7 +3,7 @@ name: aws-tech-blog-writer
 description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached. The deliverable, produced through the sibling skill aws-blog-review at the end of the pipeline, is a Word (.docx) file with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘. A finished draft that only needs a review goes to the sibling skill aws-blog-review."
 license: MIT
 metadata:
-  version: "3.0.1"
+  version: "3.1.0"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
@@ -75,7 +75,12 @@ draws on, the figures it needs, code it shows, the AWS claims it will make (thes
 questions), and a word budget. Fix the title (a noun phrase with the primary service's full name), the
 opening paragraph, the author list, and the disclaimer.
 
-Two checks: walk the plan as the target reader and cut any section that does not answer a question
+The plan also fixes the table budget (at most three, each named with what the reader compares in it)
+and, for a concept post, the order in which terms are introduced, so that each is defined where it is
+first used and no glossary is needed (voice.md §1.8, §2.5).
+
+Three checks: for every section, the plan says what the reader will understand, not which sources it
+will cite; walk the plan as the target reader and cut any section that does not answer a question
 they would have; every section must map to facts or to a named placeholder. If the user is reachable,
 present the plan and wait. Unattended, proceed and say in the report that the plan was not reviewed.
 
@@ -112,7 +117,9 @@ conversation, and it writes `<work>/04-draft.md` in one pass (the file does not 
 The rules the agent enforces, so you can check the result: every project statement ends with its fact
 IDs in an HTML comment; every AWS statement rests on a research entry or is written so the fact-checker
 can test it; numbers only from facts or research; placeholders in the exact `placeholders.md` form;
-noun-phrase headings; subjects that can act; no passive with a known actor; no figurative nouns; AWS
+explanation before sources and one example per point (voice.md §1.8); no trace of how the post was
+written, at most three tables and five placeholders (§1.9, §2.5); noun-phrase headings; subjects that
+can act; no passive with a known actor; no figurative nouns; AWS
 names as AWS writes them; figures introduced, embedded, and captioned.
 
 When the draft comes back, read it once as the target reader. If the argument order is wrong, tell the
@@ -146,7 +153,7 @@ work before the review, hand back `04-draft.md` as Markdown and say that it is u
 
 In the user's language: what the review skill's "What to hand back" lists (verdict, report, revised
 Markdown, the `<제목>.docx` deliverable, before-and-after counts, remaining placeholders), plus the
-figures with their `.brief.md`, the plan's open questions the author still owes, and any stage skipped
+figures with their `.brief.md`, the plan's open questions the author still owes, the items in `open-items.md`, and any stage skipped
 or not reviewed. While placeholders remain the post is ready for the author's pass, not ready to publish.
 
 ## Subagents

@@ -17,6 +17,21 @@ visible at a glance (colour), say which kind of gap it is (tag), and describe th
 Everything else is not a placeholder. A general technical question you can answer by opening AWS
 documentation is research (Stage 3), not a placeholder.
 
+## How many, and what stays out of the body
+
+A placeholder interrupts the reader of the Word file, so the body carries only gaps the post cannot be
+published without and that only the author can close: the URL of a sibling post, a result, a name, a
+bio, an approval, a screenshot. Five in one post is the ceiling the lint accepts (W12).
+
+A detail the post can do without is not a placeholder. If a sentence rests on something you could not
+verify (a Region list, a version, whether a feature covers a format), cut the sentence or narrow it to
+what the documentation says, and record the item in `<work>/open-items.md`: what was unclear, where the
+sentence would have gone, what to check. The hand-back message lists these for the author. This keeps
+the writer's open questions out of a post whose reader came to learn the subject (voice.md §1.9).
+
+A `[기술 검증 필요]` span stays in the body only when the unverified statement is one the argument
+depends on, which is usual in a customer case study and rare in a concept post.
+
 ## HTML form
 
 Inline HTML in Markdown. Inline styles paste into the WordPress editor and survive `pandoc` to HTML; a

@@ -61,6 +61,12 @@ A design and the reasoning behind it. Numbered H2s, noun-phrase headings.
 (저자 소개)
 ```
 
+A type C post that explains a field to readers who are new to it (a series part such as "(3)
+시뮬레이션", with no project behind it) is a concept post. Its sections follow the reader's questions
+(why it is needed, what it consists of, how each use works, where it breaks, how to build it on AWS)
+and it obeys voice.md §1.8 and §1.9 strictly: explanation first, one example per point, at most three
+tables, no trace of the research in the body.
+
 ## 2. Title
 
 - Korean sentence with English service names, ending in a noun or a verbal noun: `~ 구축하기`, `~ 운영하기`,
@@ -154,8 +160,13 @@ version; if the source does not say, placeholder it.
 ## 8. Tables
 
 Use a table when three or more items share the same attributes (component / role / why chosen; before /
-after; step / command / expected result). Header row in Korean, values may be English. No empty cells;
-write `해당 없음`.
+after; step / command / expected result) and the reader will compare across the rows. Header row in
+Korean, values may be English. No empty cells; write `해당 없음`.
+
+At most three tables in a post. Not tables: a glossary (define each term where it is first used), a
+list of product versions, a list of papers with their numbers, a price list longer than the one or two
+figures the reader needs, a closing table that restates the sections. Editors and readers skip a post
+that reads as a reference sheet (voice.md §1.8, §2.5).
 
 ## 9. Links
 

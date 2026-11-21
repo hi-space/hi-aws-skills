@@ -51,6 +51,12 @@ drafts: 축 (for a request path or a workstream), 몫, 재료, 뼈대, 그림 (`
 밑거름, 문을 열다, 길을 열다. Replace each with the literal noun: 축 → 경로 / 구성 / 부분, 몫 → 플랫폼
 소유자가 해야 하는 일, 재료 → 자격증명 / 토큰, 목표 그림 → 목표 구성.
 
+Verbs carry metaphors too. A verb for a physical act used for a relation between ideas goes:
+`A가 B를 좌우합니다` → `A에 따라 B가 달라집니다`, `세 변화는 같은 방향을 가리킵니다` → state what the three
+changes have in common, `비용은 GPU-hours로 잡힙니다` → `비용은 GPU-hours 단위로 계산합니다`, `정책은 실제
+환경도 그 가운데 하나로 받아들입니다` → `정책은 실제 환경의 조건에서도 동작합니다`, `현실을 흉내 낸 것` →
+`현실을 계산으로 근사한 것`.
+
 Services doing their job (`Gateway가 인증을 처리합니다`, `Runtime이 세션을 격리합니다`) is literal and fine.
 Idioms that read as a person talking (`짚어 둘 필요가 있습니다`, `살펴보겠습니다`, `주목할 점은`) go.
 
@@ -89,6 +95,44 @@ Not as inevitabilities (`B가 필수적입니다`) and not as the technology cho
   `하세요` outside a step list.
 - Contrast form `A는 ~지만, B는 ~` separates the familiar case from the new one and is encouraged.
 
+### 1.8 The post explains; it does not prove that the writer did the research
+
+The reader opened the post to understand the subject. Each section answers, in this order: what the
+thing is, why it is needed, how it works, and one example. A term is defined in the sentence that
+first uses it (`정책(policy)은 관측을 받아 로봇의 다음 동작을 정하는 모델입니다`), not in a glossary.
+
+A source is an illustration of a point already made in plain words, one per point. A paragraph whose
+sentences each cite a different paper with a number is a literature survey; keep the result that makes
+the point easiest to picture and cut the rest. The fact table and the research file hold everything
+that was verified; the post uses the part the reader needs.
+
+| Evidence dump | Explanation |
+|---|---|
+| [A](..)는 21회 시행에서 57.14%를, [B](..)는 4회 시행에서 42.8%를, [C](..)는 최대 52.7%를 보고했습니다. | 모터의 실제 반응을 신경망으로 학습해 시뮬레이터에 넣는 방법도 있습니다. [B](..) 연구에서는 실제 로봇을 6.5분 동안 걷게 해 얻은 데이터로 모터 모델을 학습했고, 힘을 조절할 때의 오차가 약 43% 줄었습니다. |
+| 표 5는 상관을 보고한 연구 일곱 건을 표본 조건과 함께 정리한 것입니다. | 같은 작업 공간을 두 방법으로 가상 장면으로 만들어 평가했더니, 공들여 만든 장면은 실제 결과와의 상관계수가 0.90이었고 기본 설정으로 만든 장면은 0.51이었습니다. |
+
+The same fact stated with all its conditions appears once. Later mentions point to that section.
+
+### 1.9 No trace of how the post was written
+
+The body never mentions the post's own making. These belong in the plan, the fact table, the review
+report, or the hand-back message to the author, and the lint flags them (W10):
+
+- Comments on the post's own status: `이 글의 제안입니다`, `이 글이 정리한 것이며`, `이 글의 구성은`,
+  a table column named `근거` that says which rows are official and which are the writer's.
+- Reports of the search: `이 글을 준비하면서 찾지 못했습니다`, `확인하지 못했습니다`, `초록에는 수치가
+  없습니다`, `2026년 11월 21일에 조회한`.
+- Audit qualifiers after every number: `(방법당 21회 시행)`, `(조합당 20회 실행)`, `이 수치는 추종
+  오차이며 성공률이 아닙니다` repeated per citation. State a condition only when the reader would
+  otherwise misread the number, in the sentence itself.
+- Deferrals to the series as a reason to read: `2부가 3부로 넘긴`, `1부는 방법을 설명하지 않았습니다`.
+  One sentence that links the earlier part where the reader meets the same idea is enough.
+
+When the writer could not verify a detail the post does not need, the sentence is cut and the item goes
+to `<work>/open-items.md` for the hand-back (placeholders.md, "How many"). When a configuration is the
+writer's own combination of documented features, describe what each service does; do not label the
+combination.
+
 ## 2. Structure
 
 ### 2.1 Opening
@@ -122,6 +166,11 @@ author has asked for noun phrases in new drafts, and the lint warns on a heading
 
 ### 2.5 Lists and tables
 
+A post has at most three tables (lint W11). A table earns its place when the reader will compare
+across its rows: the options against the criteria, the scenarios against the services. A glossary
+table, a version list, a table that repeats a figure, a table of sources, and a summary table that
+restates the sections are written as prose or cut. Terms are defined where they are first used (§1.8).
+
 Bullets with a bold lead phrase and a colon, three to five items, one sentence each, for requirements,
 options, and takeaways. The list marker is Markdown `-`; a typed `•` or `·` is an error. A comparison of
 two or more options with three or more criteria is a table (criteria as rows, options as columns); a
@@ -153,7 +202,8 @@ The full lists live in `scripts/lint_blog.py` (`BANNED_VOCAB`, `METAPHORS`, `CON
 that most often survive a first draft: `여정`, `핵심`, `인사이트`, `다양한` (name the items), `원활한`,
 `효율적으로` (without a measurement), `이를 통해`, `~에 있어`, `~를 가능하게`, `~라고 볼 수 있습니다`,
 `단순히 ~가 아니라`, `뿐만 아니라`, `첫째/둘째/셋째`, `이는`/`이것은` as a sentence subject,
-`~에 대해 알아보겠습니다`, `결론적으로`, `요약하면`. Punctuation that is always an error: em and en
+`~에 대해 알아보겠습니다`, `결론적으로`, `요약하면`. Report formulas that pile up in a researched
+post are counted: `~에 따르면` six times or `~라고 보고했습니다` eight times is a warning (§1.8). Punctuation that is always an error: em and en
 dashes (except the series marker in the H1), middle dots, arrows, emoji, `...`, `!` in body text.
 
 ## 4. Before and after
@@ -188,7 +238,8 @@ After:
 ## 5. Style pass procedure
 
 1. Apply the fact-checker's corrections list first; a corrected fact often breaks the next sentence.
-2. Read each paragraph once for meaning. If the reader learns nothing new, cut it.
+2. Read each paragraph once for meaning. If the reader learns nothing new, cut it. If it reports
+   sources instead of explaining (§1.8) or mentions the post's own making (§1.9), rewrite it.
 3. For every sentence, name the subject. Abstract noun acting (§1.1) or passive with a known actor
    (§1.2): rewrite.
 4. Search for figurative nouns (§1.3) and evaluation words (§1.4); replace with the literal thing or

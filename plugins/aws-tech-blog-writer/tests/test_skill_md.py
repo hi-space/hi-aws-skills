@@ -245,11 +245,11 @@ def test_review_agent_is_read_write_only_and_the_prompts_name_the_agents():
     assert "<facts:" in fc, "when the draft comes from the writer, 01-facts.md separates project facts from claims"
 
 
-def test_rubric_covers_the_six_criteria_and_eight_story_checks():
+def test_rubric_covers_the_six_criteria_and_nine_story_checks():
     rubric = (REVIEW / "references" / "review-rubric.md").read_text()
     for crit in ("| A |", "| B |", "| C |", "| D |", "| E |", "| F |"):
         assert crit in rubric, crit
-    for check in ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8"):
+    for check in ("S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9"):
         assert re.search(rf"\| {check} ", rubric), check
     for sev in ("차단", "수정", "권고"):
         assert sev in rubric
@@ -290,3 +290,20 @@ def test_story_review_makes_heading_form_skeleton_and_figure_status_required_col
     assert "are not gaps you report" not in agent, "exemption clauses do not scope; the figure recipe carries the rule"
     # the reviewer still lists placeholders as findings in some runs; the report step filters them deterministically
     assert "**Story rows the report drops.**" in rubric
+
+
+def test_explanatory_post_rules_reach_the_drafter_the_reviewer_and_the_lint():
+    """3.1.0: the post explains to a reader; the writer's bookkeeping stays out of the body."""
+    voice = (SKILL / "references" / "voice.md").read_text()
+    assert "### 1.8" in voice and "### 1.9" in voice
+    assert "at most three tables" in voice
+    placeholders = (SKILL / "references" / "placeholders.md").read_text()
+    assert "open-items.md" in placeholders and "## How many" in placeholders
+    drafter = (PLUGIN / "agents" / "blog-drafter.md").read_text()
+    assert "voice.md §1.8" in drafter and "voice.md §1.9" in drafter
+    rubric = (REVIEW / "references" / "review-rubric.md").read_text()
+    for code in ("W10", "W11", "W12"):
+        assert code in rubric, code
+    lint_src = (SKILL / "scripts" / "lint_blog.py").read_text()
+    for name in ("PROCESS_TRACES", "MAX_TABLES", "MAX_PLACEHOLDERS", "FIGURATIVE_VERBS"):
+        assert name in lint_src, name

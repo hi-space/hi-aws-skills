@@ -11,7 +11,7 @@ checks (lint, fact-check, story review) each feed specific criteria; the table s
 | B | 기술 정확성 (technically correct) | `05-claims.md` `corrected` and `unverified` rows, including every code block | Every testable AWS, SDK, or protocol statement has a URL that says the same thing |
 | C | 그림 캡션 (every figure captioned) | lint E3, story review S3 | A `그림 N.` caption on the line under every image and every `[이미지 필요]` placeholder, sequential numbers, caption describes the picture |
 | D | 서비스명과 링크 (official name and link at first mention) | lint E2, W2, E8 | Full official name at the first body mention, hyperlinked to a `docs.aws.amazon.com` or `aws.amazon.com` page; sub-service names as AWS writes them |
-| E | 스토리와 논리 (argument holds) | story review S1 to S8 | A reader can state what the post argues, every section answers a question they had, figures arrive when needed, the conclusion answers the opening |
+| E | 스토리와 논리 (argument holds) | story review S1 to S9 | A reader can state what the post argues, every section answers a question they had, figures arrive when needed, the conclusion answers the opening |
 | F | 문체 (house voice) | lint warnings W4 to W9 | Reported at 권고 unless the sentence also fails another criterion; the review is not a rewrite |
 
 ## Severity
@@ -40,6 +40,9 @@ carries two different messages, suffixed `a`, `b`), with its positions listed in
 | E7 leftover fact-ID comment | F | 수정 | W7 English-only paragraph | F | 권고 |
 | E8 first mention without AWS link | D | 차단 | W8 long sentence | F | 권고 |
 | | | | W9 abstract actor, agentless passive | F | 권고 |
+| | | | W10 writing-process trace in the body | E | 수정 |
+| | | | W11 more than three tables, glossary table | E | 수정 |
+| | | | W12 more than five placeholders | E | 수정 |
 
 **Claims.** A `corrected` row whose Note records a change over time (renamed, preview to GA, superseded,
 shut down, quota changed) is criterion A; every other `corrected` or `unverified` row is criterion B.
@@ -60,7 +63,7 @@ form a severity other than 수정 is normalised to 수정. The report's 집계 c
 **Verdict.** 구조 수정 필요 when `story.md` proposes a new order or S1 failed; otherwise 수정 후 게재
 가능 when any 차단 row remains; otherwise 게재 가능.
 
-## Criterion E: the eight story checks
+## Criterion E: the nine story checks
 
 The story reviewer (`agents/blog-reviewer.md`) runs these and writes `story.md`. Each check either
 produces findings or one row that says 통과.
@@ -75,6 +78,7 @@ produces findings or one row that says 통과.
 | S6 중복과 공백 | Is anything said twice, and is any step or reason missing that the reader needs to rebuild or to believe? | Repeated paragraph, missing step in a walkthrough, a result without the method that produced it |
 | S7 유형 | Does the post follow one skeleton (conventions §1) with noun-phrase headings? | Mixed types; headings that are sentences (`~필요했다`, `~다른 경로다`, `~옮기다`) or questions, listed in one finding with replacements; a required section missing (결과 or 저자 소개 in a case study, 리소스 정리 in a walkthrough) |
 | S8 비중 | Is the length of each section proportional to its weight in the argument, within the 4,000-character guidance? | A section three times longer than its neighbours without carrying more of the argument, an introduction longer than the solution |
+| S9 설명 | Does the post explain the subject to a reader who came to understand it, without showing how it was written? | Evidence dump: a paragraph or table that lists sources and numbers without first stating the idea in plain words; more than three tables, a glossary table, a table of sources; a term used before the sentence that defines it; writing-process traces in the body (`이 글의 제안`, `이 글을 준비하면서 찾지 못했습니다`, `조회일`, trial counts after every number, a `근거` column); more than five placeholders, or a placeholder for a detail the post can do without (voice.md §1.8, §1.9, §2.5; placeholders.md "How many") |
 
 ## Finding format
 

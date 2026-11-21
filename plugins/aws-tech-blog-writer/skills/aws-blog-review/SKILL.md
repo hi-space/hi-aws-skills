@@ -3,7 +3,7 @@ name: aws-blog-review
 description: "Use when the user has a finished or nearly finished Korean AWS Tech Blog draft, as Markdown or a Word file, and asks to review, check, or proofread it before submission or after an editor sent it back: whether its AWS statements still match current documentation, whether anything is technically wrong, whether every figure is captioned, whether each AWS service is introduced by its official name with a documentation link, and whether the argument holds from opening to conclusion. Korean triggers: 블로그 리뷰, 블로그 검토, 이 글 검토해줘, 게재 전 점검, 기고 전 확인, 초안 리뷰, 원고 검수. Not for writing a post from project sources (that is aws-tech-blog-writer)."
 license: MIT
 metadata:
-  version: "3.0.1"
+  version: "3.1.0"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
@@ -108,9 +108,11 @@ in this order, which is `voice.md` §5 with structure added:
 1. Fact corrections (`corrected` rows): replace the sentence with the proposed one and add the URL as
    a link if the row says where.
 2. `unverified` rows: wrap the sentence in the `[기술 검증 필요] (Cnn) ...` placeholder from the row,
-   exact HTML form from `<writer-dir>/references/placeholders.md`. Never delete the claim, never soften
-   it to `~로 알려져 있습니다`.
-3. Structure (story findings S1, S2, S4 to S8): move, merge, or cut sections as the 수정 제안 says.
+   exact HTML form from `<writer-dir>/references/placeholders.md`. Never soften the claim to
+   `~로 알려져 있습니다`. If the post can do without the sentence (usual in a concept post, see
+   placeholders.md "How many"), cut it instead, mark the claim row `out-of-scope` with a note that the
+   sentence was removed, and add the item to `<work>/open-items.md` for the hand-back.
+3. Structure (story findings S1, S2, S4 to S9): move, merge, or cut sections as the 수정 제안 says.
    A finding that asks for a sentence you cannot write from the draft becomes a `[작성자 확인]`
    placeholder that says what the sentence must state. Inside a placeholder's text, name another
    placeholder kind in words (`인용 승인 placeholder`), never as a bracketed tag: the lint and the
@@ -151,8 +153,9 @@ and ends with a verification block that must say ok. Then read the opening as th
 
 In the user's language: the verdict; the paths of `review-report.md`, `revised.md`, and `<제목>.docx`;
 a before-and-after line (lint errors and warnings, claims verified / corrected / unverified, story
-findings by severity); the section moves you made; the placeholders that remain by category; and any
-stage skipped or not reviewed. While placeholders remain, the post is ready for the author's pass, not
+findings by severity); the section moves you made; the placeholders that remain by category; the items in
+`open-items.md` (details cut from the body because they could not be verified); and any stage skipped
+or not reviewed. While placeholders remain, the post is ready for the author's pass, not
 for submission.
 
 ## Agents
@@ -166,7 +169,7 @@ for submission.
 
 | File | Read it when |
 |---|---|
-| [review-rubric.md](references/review-rubric.md) | R3 and R4: criteria A to F, severity, the eight story checks, finding and story.md formats |
+| [review-rubric.md](references/review-rubric.md) | R3 and R4: criteria A to F, severity, the nine story checks, finding and story.md formats |
 | [templates/](templates/) | review-report, prompt-reviewer, prompt-fact-checker |
 | `<writer-dir>/references/voice.md` §5 | R4: the order of the revision pass |
 | `<writer-dir>/references/placeholders.md` | R4: exact HTML for the four placeholder kinds |

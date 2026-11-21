@@ -165,3 +165,71 @@ def test_w6_catches_every_sentence_heading_including_copula_and_colon_segments(t
     for h in fine:
         line = body.splitlines().index(h) + 1
         assert not any(f"L{line} " in l for l in w6), (h, w6)
+
+
+# ---- explanatory posts: the body explains to a reader, it does not show the writer's bookkeeping
+#      (voice.md §1.8, §1.9, §2.5; placeholders.md "How many")
+
+def _table(n: int) -> str:
+    return f"| 항목 | 값 |\n|---|---|\n| 가{n} | 나 |\n\n표 {n}. 예시\n\n"
+
+
+def test_writing_process_trace_in_body_is_flagged(tmp_path):
+    draft = tmp_path / "d.md"
+    draft.write_text(
+        _doc("도입 문장입니다.\n\n## 1. 구성\n\n이 구성은 이 글의 제안입니다.\n\n"
+             "이 방식을 설명한 자료는 이 글을 준비하면서 찾지 못했습니다.\n"),
+        encoding="utf-8",
+    )
+    out = lint(draft)
+    assert re.search(r"WARN\s+L7\s+W10\s+writing-process trace '이 글의 제안'", out), out
+    assert re.search(r"WARN\s+L9\s+W10\s+writing-process trace", out), out
+
+
+def test_more_than_three_tables_is_flagged_once(tmp_path):
+    draft = tmp_path / "d.md"
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n" + "".join(_table(n) for n in range(1, 5))), encoding="utf-8")
+    out = lint(draft)
+    assert len(re.findall(r"W11\s+4 tables", out)) == 1, out
+
+
+def test_three_tables_pass(tmp_path):
+    draft = tmp_path / "d.md"
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n" + "".join(_table(n) for n in range(1, 4))), encoding="utf-8")
+    assert "W11" not in lint(draft)
+
+
+def test_glossary_table_before_the_first_section_is_flagged(tmp_path):
+    draft = tmp_path / "d.md"
+    draft.write_text(
+        _doc("도입 문장입니다.\n\n| 용어 | 이 글에서의 뜻 |\n|---|---|\n| 정책 | 동작을 정하는 모델 |\n\n## 1. 구성\n\n본문입니다.\n"),
+        encoding="utf-8",
+    )
+    out = lint(draft)
+    assert re.search(r"WARN\s+L5\s+W11\s+glossary table", out), out
+
+
+def test_figurative_verb_is_flagged(tmp_path):
+    draft = tmp_path / "d.md"
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n장면의 품질이 평가 결과를 좌우합니다.\n"), encoding="utf-8")
+    out = lint(draft)
+    assert re.search(r"WARN\s+L7\s+W4\s+figurative verb '좌우합니다'", out), out
+
+
+def test_too_many_placeholders_is_flagged(tmp_path):
+    span = ('<span style="background-color:#FFF2CC;color:#7F6000;padding:1px 4px;">'
+            '[작성자 확인] 이 자리에 들어갈 수치와 날짜를 구체적으로 적어 주세요.</span>\n\n')
+    draft = tmp_path / "d.md"
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n" + span * 6), encoding="utf-8")
+    out = lint(draft)
+    assert re.search(r"W12\s+6 placeholders", out), out
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n" + span * 5), encoding="utf-8")
+    assert "W12" not in lint(draft)
+
+
+def test_repeated_report_formula_is_flagged(tmp_path):
+    draft = tmp_path / "d.md"
+    body = "".join(f"자료 {n}에 따르면 성공률이 올랐습니다.\n\n" for n in range(6))
+    draft.write_text(_doc("도입 문장입니다.\n\n## 1. 구성\n\n" + body), encoding="utf-8")
+    out = lint(draft)
+    assert re.search(r"W5\s+'~에 따르면' used 6 times", out), out

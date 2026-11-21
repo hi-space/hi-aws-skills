@@ -111,6 +111,19 @@ SOFT_VOCAB = ["다양한", "효과적으로", "효율적으로", "이를 통해"
 METAPHORS = ["나침반", "등불", "항해", "심장", "두뇌", "무대", "다리 역할", "톱니바퀴", "퍼즐", "열쇠",
              "문을 열", "길을 열", "발판", "날개를", "레시피", "빙산", "이정표", "청사진", "지렛대", "밑거름",
              "뼈대", "큰 그림", "전체 그림", "목표 그림", "재료", "몫", "씨앗", "열매", "울타리", "무기"]
+# a verb for a physical act used for a non-physical relation (voice.md §1.3)
+FIGURATIVE_VERBS = ["좌우합니다", "좌우하는", "좌우한다", "같은 방향을 가리", "으로 잡힙니다", "로 잡힙니다",
+                    "흉내 낸", "흉내 내", "발목을 잡", "물꼬를", "발을 맞추", "궤도에 오", "무게를 싣"]
+# sentences that show the writer's bookkeeping instead of explaining to the reader (voice.md §1.9)
+PROCESS_TRACES = ["이 글의 제안", "이 글이 제안", "이 글의 정리", "이 글이 정리한", "이 글을 준비하면서",
+                  "이 글을 쓰면서", "찾지 못했습니다", "확인하지 못했습니다", "확인되지 않았습니다",
+                  "조회일", "에 조회한", "초록에는", "초록 기준", "본문에서 확인", "이 글에서는 다루지 않",
+                  "이 글의 구성은", "이 글은 이 구성을"]
+PROCESS_TRACE_RE = re.compile(r"\((방법|조건|조합|시나리오|셀|태스크|과제)당 (약 )?\d+회[^)]{0,12}\)")
+REPORT_FORMULAS = [("에 따르면", 6, "'~에 따르면'"), ("보고했습니다", 8, "'~라고 보고했습니다'")]
+MAX_TABLES = 3
+MAX_PLACEHOLDERS = 5
+GLOSSARY_HEADER_RE = re.compile(r"^\|\s*용어\s*\|")
 # 축 is literal in 시간축 / X축 / 좌표축; elsewhere it stands for a workstream or a request path
 FIGURATIVE_AXIS_RE = re.compile(r"(?<![가-힣A-Za-z])축(?=[은는이가을를의로와과에 ,.:)])")
 # abstract noun as the actor of a human or physical verb (voice.md §1.1)
@@ -435,6 +448,16 @@ def lint(path: Path, final: bool, service_check: bool):
         for w in METAPHORS:
             if w in prose:
                 rep.add("warn", i, "W4", f"figurative noun '{w}'; write the literal thing (voice.md §1.3)")
+        for w in FIGURATIVE_VERBS:
+            if w in prose:
+                rep.add("warn", i, "W4", f"figurative verb '{w}'; write what happens literally (voice.md §1.3)")
+        for w in PROCESS_TRACES:
+            if w in prose:
+                rep.add("warn", i, "W10", f"writing-process trace '{w}'; explain to the reader, "
+                                           "report open items outside the post (voice.md §1.9)")
+        if PROCESS_TRACE_RE.search(prose):
+            rep.add("warn", i, "W10", "writing-process trace: trial count in parentheses; "
+                                       "keep it only where the reader needs it (voice.md §1.9)")
         if FIGURATIVE_AXIS_RE.search(prose):
             rep.add("warn", i, "W4", "'축' as a workstream or path; write 경로 / 구성 / 부분 (voice.md §1.3)")
         for rx, msg in CONSTRUCTIONS:
@@ -454,6 +477,11 @@ def lint(path: Path, final: bool, service_check: bool):
     for w, c in soft_counts.items():
         if c >= 3:
             rep.add("warn", 0, "W4", f"'{w}' used {c} times; name the items or the mechanism instead")
+    for w, limit, label in REPORT_FORMULAS:
+        c = sum(prose.count(w) for i, prose in prose_lines if i not in table_lines)
+        if c >= limit:
+            rep.add("warn", 0, "W5", f"{label} used {c} times; a post that reports source after source reads "
+                                     "as a survey, explain the idea and keep one example (voice.md §1.8)")
     conn_counts = defaultdict(int)
     for _, prose in prose_lines:
         for w in CONNECTIVES:
@@ -471,6 +499,23 @@ def lint(path: Path, final: bool, service_check: bool):
             rep.add("warn", par[0][0], "W9", f"{len(passive_sentences)} passive-ending sentences in one paragraph; name the actor (voice.md §1.2)")
         if len(joined) > 80 and not re.search(r"[가-힣]", joined) and not joined.strip().startswith(("-", "*", "|", "[")):
             rep.add("warn", par[0][0], "W7", "English-only paragraph in a Korean post")
+
+    # ---- tables: a few carry a comparison, many turn the post into a reference sheet (voice.md §2.5)
+    table_starts = sorted(i for i in table_lines if i - 1 not in table_lines)
+    if len(table_starts) > MAX_TABLES:
+        rep.add("warn", table_starts[MAX_TABLES], "W11",
+                f"{len(table_starts)} tables; keep at most {MAX_TABLES} and write the rest as prose (voice.md §2.5)")
+    first_h2 = next((n for n, raw in enumerate(lines, 1) if raw.startswith("## ")), len(lines) + 1)
+    for i in table_starts:
+        if i < first_h2 and GLOSSARY_HEADER_RE.match(lines[i - 1].strip()):
+            rep.add("warn", i, "W11", "glossary table before the first section; define each term where "
+                                      "the text first uses it (voice.md §2.5)")
+
+    # ---- placeholders: the body carries only what the author alone can supply (placeholders.md)
+    if len(placeholders) > MAX_PLACEHOLDERS:
+        rep.add("warn", placeholders[MAX_PLACEHOLDERS][0], "W12",
+                f"{len(placeholders)} placeholders; keep at most {MAX_PLACEHOLDERS} in the body, cut sentences "
+                "that rest on an unverified detail and list them in open-items.md (placeholders.md)")
 
     # ---- sentence length (alt text of an image is a description for screen readers, not a sentence)
     image_lines = {ln for ln, _, _ in images}
