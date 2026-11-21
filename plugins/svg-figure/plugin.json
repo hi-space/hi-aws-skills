@@ -1,0 +1,21 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "svg-figure",
+  "description": "Use when the user wants an explanatory figure hand-drawn as SVG and delivered as .svg and .png files (or inline in an HTML page): structure and flow sketches, before/after and option comparisons, physical objects with parts and sensor coverage, motion paths, step-by-step scenes. Flat editorial style where colour is a token that means state (decided, new, risk, proposal) and one drawing reads in light and dark; bundled checker, light/dark/phone preview sheet and exporter. Not AWS-specific. Korean triggers: 그림 그려줘, SVG로 그려줘, 설명 그림, 개념도, 도해, 구조도, 전후 비교 그림, 센서 배치도, 회의록 그림 스타일.",
+  "version": "1.0.0",
+  "author": {
+    "name": "hi-space"
+  },
+  "license": "MIT",
+  "keywords": [
+    "svg",
+    "figure",
+    "diagram",
+    "illustration",
+    "dark-mode",
+    "design-tokens",
+    "png",
+    "korean"
+  ],
+  "repository": "https://github.com/hi-space/hi-aws-skills"
+}

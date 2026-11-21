@@ -1,0 +1,37 @@
+/* svg-figure tokens. Figures reference these names only: fill="var(--ink)".
+   Swap the values for your brand; keep the names, keep the light/dark pair. */
+:root{
+  --paper:#eef2f4;--panel:#ffffff;--band:#e9eff3;--soft:#f5f8fa;
+  --ink:#13202a;--muted:#566874;--line:#c3cfd7;
+  --new:#0a6a86;--new-bg:#dcf0f6;--ok:#1d7a4b;--ok-bg:#d9f1e3;--risk:#b3262d;--risk-bg:#fbe2e2;
+  --key:#ffe46b;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#0b1115;--panel:#141d23;--band:#18232b;--soft:#18232b;
+    --ink:#e5ecf0;--muted:#9db0bc;--line:#34444e;
+    --new:#5ec5df;--new-bg:#123744;--ok:#63d398;--ok-bg:#153a27;--risk:#ff8d92;--risk-bg:#3e1b1e;
+    --key:#6b5a00;
+  }
+}
+
+/* Page side: the figure scales with its column and inherits the page font. */
+figure{margin:0;min-width:0}
+figure svg{display:block;width:100%;height:auto}
+figure.fig{background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:16px}
+figcaption{font-size:15px;color:var(--muted);margin-top:10px;line-height:1.55}
+
+/* Wide + tall pair for a full-width overview figure: one of the two shows. */
+.ov-tall{display:none}
+@media (max-width:760px){.ov-wide{display:none}.ov-tall{display:block;max-width:440px;margin:0 auto}}
+@media print{.ov-wide{display:block}.ov-tall{display:none}}
+
+/* State legend: the page shows it once, figures never repeat it. */
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:14px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:7px}
+.sw{display:inline-block;width:18px;height:12px;border-radius:2px;border:2px solid}
+.sw.ok{background:var(--ok-bg);border-color:var(--ok)}
+.sw.new{background:var(--new-bg);border-color:var(--new)}
+.sw.risk{background:var(--risk-bg);border-color:var(--risk);border-style:dashed}
+.sw.prop{background:var(--panel);border-color:var(--muted);border-style:dashed}
+.sw.base{background:var(--panel);border-color:var(--line)}

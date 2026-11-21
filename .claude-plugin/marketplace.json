@@ -1,7 +1,7 @@
 {
   "name": "hi-aws-skills",
   "metadata": {
-    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial SVG + PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders, plus the aws-blog-review pre-submission review skill), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills), plus demo-video-recorder (demo/LinkedIn videos of a web UI with Playwright and ffmpeg: in-page camera, story-scripted captions, highlight reels)."
+    "description": "hi-space's AWS skills for Claude Code and other Agent Skills runtimes: aws-diagram-design (AWS-branded editorial SVG + PNG diagrams with a Python generator), aws-drawio-diagram (editable draw.io diagrams with a verified stencil catalog), and aws-ppt-master (natively editable PPTX decks with AI images on Amazon Bedrock and a layout/copy-voice QA gate), and aws-tech-blog-writer (AWS Tech Blog posts in Korean house style, fact-checked, delivered as .docx with colour-coded placeholders, plus the aws-blog-review pre-submission review skill), and aws-workshop-studio (hands-on AWS workshop generator in the quick-* VitePress format with standalone aws-fact-check and persona-review skills), plus svg-figure (hand-drawn explanatory SVG figures with state-colour tokens, exported as .svg + .png) and demo-video-recorder (demo/LinkedIn videos of a web UI with Playwright and ffmpeg: in-page camera, story-scripted captions, highlight reels)."
   },
   "owner": {
     "name": "hi-space"
@@ -36,6 +36,11 @@
       "name": "demo-video-recorder",
       "source": "./plugins/demo-video-recorder",
       "description": "Demo / LinkedIn videos of a web UI on a headless Linux box: story script first, Playwright wall-clock recording with an in-page CSS camera (crisp zoom-ins), title card and captions burned from beats anchored to UI events, sped-up waits, highlight reel from several clips. Also captions user-made screen recordings (.mov). Not AWS-specific."
+    },
+    {
+      "name": "svg-figure",
+      "source": "./plugins/svg-figure",
+      "description": "Hand-drawn explanatory SVG figures delivered as .svg + .png (or inline HTML): colour tokens that mean state (decided, new, risk, proposal) and work in light and dark, readable type floors per canvas, technical illustrations (parts, sensor coverage, cutaway, motion, storyboard), with a checker, a light/dark/phone preview sheet and an exporter. Not AWS-specific."
     }
   ]
 }
