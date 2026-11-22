@@ -16,6 +16,12 @@ fact and gets no row unless it also asserts AWS behaviour; if `none`, there is n
 treat every project statement that asserts AWS behaviour as a claim. Project timeline and region, for
 availability checks: <기간, 리전 | unknown; check as of today>.
 
+Concept post: <yes | no>. If yes, statements about models, papers, and open-source tools (parameter
+counts, GPU counts, success rates, dataset sizes, what a method does) are claims too. Open the linked
+paper or page, check that the number belongs to the task and condition the sentence names, and that
+numbers joined in one sentence come from the same task. Do this yourself in this context; do not hand
+it to other agents.
+
 Currency: for every name, availability, limit, and API claim, also record whether the current page
 differs from what the draft says (renamed service or feature, preview to GA, deprecated or superseded
 operation, changed default or quota). Such a row is `corrected`, with the change and the date you saw

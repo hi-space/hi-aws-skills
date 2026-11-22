@@ -338,6 +338,33 @@ def test_example_figures_build(tmp_path):
     assert (specs / "_pict.py").exists(), "the builder installs the pictogram library next to the specs"
 
 
+def test_role_icons_and_forms_are_documented_and_build(tmp_path):
+    """3.3.0: one icon per role, the form follows the content, AWS sections get architecture figures."""
+    import subprocess, sys, shutil
+    ref = (SKILL / "references" / "illustrations.md").read_text()
+    for must in ("Role icons: one icon per role", "Forms: pick the form from what the content is", "agent_icon", "spec_forms.py"):
+        assert must in ref, must
+    d = (SKILL / "references" / "diagrams.md").read_text()
+    assert "How many architecture figures" in d and "960 px wide" in d and "--scale 3" in d
+    assert "RAMP" in (SKILL / "assets" / "illustration" / "_pict.py").read_text()
+    assert "default=3" in (SKILL / "scripts" / "build_figures.py").read_text()
+    pict = (SKILL / "assets" / "illustration" / "_pict.py").read_text()
+    for fn in ("agent_icon", "gear_icon", "shield_icon", "icon_box", "block", "pulses", "lane", "timeline", "boundary", "ring_arc", "bar"):
+        assert f"def {fn}(" in pict, fn
+    design = PLUGIN.parent / "aws-diagram-design" / "skills" / "aws-diagram-design" / "scripts" / "pygen" / "build.py"
+    if not design.exists():
+        pytest.skip("aws-diagram-design is not next to this plugin")
+    specs = tmp_path / "diagrams" / "_specs"
+    specs.mkdir(parents=True)
+    shutil.copyfile(SKILL / "assets" / "illustration" / "spec_forms.py", specs / "spec_forms.py")
+    r = subprocess.run([sys.executable, str(SKILL / "scripts" / "build_figures.py"), str(tmp_path)], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "WARN" not in r.stdout + r.stderr
+    out = tmp_path / "diagrams" / "out"
+    for slug in ("rate-bands", "lanes", "timeline", "boundaries", "cycle", "bars"):
+        assert (out / f"example-{slug}-ko.svg").exists(), slug
+
+
 def test_init_workspace_installs_the_pictogram_library(tmp_path):
     import subprocess, sys
     r = subprocess.run([sys.executable, str(SKILL / "scripts" / "init_workspace.py"), "demo", "--dir", str(tmp_path)],

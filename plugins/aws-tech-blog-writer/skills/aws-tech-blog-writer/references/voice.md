@@ -113,6 +113,24 @@ that was verified; the post uses the part the reader needs.
 
 The same fact stated with all its conditions appears once. Later mentions point to that section.
 
+A number is never the last word on a point. The sentence after it says what the number means for the
+reader: what becomes possible, what to choose, what to check (`같은 모델이라도 학습 방식에 따라 24GB급
+GPU로 충분할 수도, 80GB급 GPU가 필요할 수도 있다는 뜻입니다`). If no such sentence can be written, the
+number does not belong in the post. When the meaning can be stated without the number (`시연을 20개에서
+200개로 늘려도 성공률이 절반에 못 미쳤습니다`), prefer that to two percentages. In a concept post this
+rule outranks §1.5: density of measured detail is for case studies, where the numbers are the result.
+
+Numbers from one source that are joined in a sentence must belong to the same task and condition. Two
+baselines from different tasks written as one progression (`55%, 75%, 100%`) is a factual error, not a
+style choice; the fact-checker catches it only if the sentence is checked against the paper's table.
+
+A name gets a section only when the field uses it as a category (a survey, several groups, a stable
+definition). A vendor's label for one product, or a term whose users define it differently, gets one
+sentence where the product is introduced (`NVIDIA는 이렇게 여러 역할을 맡는 Cosmos 3를 omni-model이라고
+부릅니다`), so the reader recognises the word elsewhere, and is left out of taxonomy figures, chapter
+titles, and summary tables. A section whose point is that names are unreliable argues about naming
+instead of explaining the subject; fold what it teaches into the section that needs it.
+
 ### 1.9 No trace of how the post was written
 
 The body never mentions the post's own making. These belong in the plan, the fact table, the review

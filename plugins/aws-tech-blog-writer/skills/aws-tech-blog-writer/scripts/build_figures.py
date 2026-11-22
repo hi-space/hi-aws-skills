@@ -47,6 +47,7 @@ def main() -> int:
     ap.add_argument("--only", default="")
     ap.add_argument("--langs", default="ko")
     ap.add_argument("--install", nargs="*", default=[], metavar="N:slug")
+    ap.add_argument("--scale", type=int, default=3, help="PNG pixels per viewBox px; 3 keeps text sharp when Word or the blog scales the figure to body width")
     a = ap.parse_args()
 
     specs = a.work / "diagrams" / "_specs"
@@ -63,7 +64,7 @@ def main() -> int:
 
     out = a.work / "diagrams" / "out"
     png = out / "png"
-    cmd = [sys.executable, str(build), str(specs), "--out", str(out), "--langs", a.langs, "--png", "--png-dir", str(png)]
+    cmd = [sys.executable, str(build), str(specs), "--out", str(out), "--langs", a.langs, "--png", "--scale", str(a.scale), "--png-dir", str(png)]
     if a.only:
         cmd += ["--only", a.only]
     r = subprocess.run(cmd, capture_output=True, text=True)

@@ -3,7 +3,7 @@ name: aws-tech-blog-writer
 description: "Use when the user wants a post for the AWS Tech Blog (aws.amazon.com/ko/blogs/tech) about a project, PoC, or customer engagement built on AWS: a customer case study, an implementation walkthrough, or an architecture deep dive, even if they only say '블로그 글 써줘' with project documents attached. The deliverable, produced through the sibling skill aws-blog-review at the end of the pipeline, is a Word (.docx) file with colour-coded placeholders wherever only the author knows the fact. Korean triggers: AWS 기술 블로그 글 작성, AWS 블로그 기고, 테크 블로그 초안, 프로젝트 소개 블로그, 고객 사례 블로그, PoC 블로그, 블로그 포스팅 써줘. A finished draft that only needs a review goes to the sibling skill aws-blog-review."
 license: MIT
 metadata:
-  version: "3.2.0"
+  version: "3.3.0"
   source: "https://github.com/hi-space/hi-aws-skills"
 ---
 
@@ -99,7 +99,9 @@ concept figure. Architecture goes through the `aws-drawio-diagram` skill briefed
 inventory and the request paths in `01-facts.md`. Concept figures are illustrated scenes by default
 (`references/illustrations.md`): draw the object or the actor the paragraph is about with the pictograms in
 `assets/illustration/_pict.py`, build with `scripts/build_figures.py <work>`, and open the preview sheet to
-check overlaps by eye; box-only concept figures through `aws-diagram-design` are for abstract categories
+check overlaps by eye; keep one icon per role (the agent is a robot face) and choose each figure's form from
+its content so the figures do not all share one skeleton; the section on the AWS configuration gets an
+architecture figure per path it explains, not only the overall one; box-only concept figures through `aws-diagram-design` are for abstract categories
 with nothing to depict. After
 each skill reports ready, open the PNG, list every node and edge you see, and check them against the
 inventory. A service in the picture that is not in the facts, or a component the picture omits, is a

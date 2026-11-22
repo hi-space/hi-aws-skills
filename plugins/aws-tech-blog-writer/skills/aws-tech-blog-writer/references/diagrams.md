@@ -19,6 +19,29 @@ Do not draw architecture with `mermaid` or with hand-written SVG for a blog post
 reviewers will ask for a redo. Do not use `aws-diagram-design` for the main architecture when a
 `.drawio` can be produced; editors and co-authors expect an editable file.
 
+## How many architecture figures
+
+One overall architecture figure is the minimum, not the target. The author said of a post with eleven
+concept figures and one architecture figure: "AWS에서 에이전트 쪽 그림은 AWS 다이어그램 그림도 좀 그려줘야지".
+In the part of the post that explains the AWS configuration, every figure is an AWS architecture figure
+with official icons:
+
+- the overall figure: every service and where it runs;
+- one figure per path the text walks through, when the section has subsections that each follow a
+  different path (the request path, the path of a check or an approval, where records and evaluation go,
+  cloud to device). Each shows only the services on that path, numbered in the order the paragraph tells it.
+
+Draw them 960 px wide, the `doc-inline` preset of `aws-diagram-design` and the width of the pictogram
+figures, with names at 18 px, detail lines at 17 px and arrow labels at 16 px, detail lines and labels in
+dark gray `#3A434E` rather than the lighter muted gray, and the PNG rendered at 3x (`build.py --png --scale 3`).
+The post shows the figure at about 65% of the canvas, so anything smaller or lighter reads as blurred. A 1408 px canvas with the
+same text sizes shrinks to body width and the author could not read it ("글자들이 다 너무 작아서"). When the
+nodes do not fit in 960 px, stack the zones vertically (cloud above, device below) or split the figure;
+do not widen the canvas or shrink the text.
+
+Pictogram forms from `illustrations.md` stop where the AWS section starts. A service on such a figure
+always carries its official icon and full name.
+
 ## Briefing the architecture skill from the fact base
 
 The `aws-drawio-diagram` skill starts with an Architect phase that writes a brief (components,
@@ -44,7 +67,9 @@ A concept figure made only of labelled boxes repeats the paragraph next to it. D
 paragraph is about: the robot arm and the cup, the operator with the controller, the servers and what
 passes between them. `references/illustrations.md` has the style, the pictogram catalog, and the build and
 look procedure; `scripts/build_figures.py <work>` renders the specs in `<work>/diagrams/_specs/` and writes
-a preview sheet you must open before shipping. Use a box figure only when there is nothing to depict.
+a preview sheet you must open before shipping. Give each role its own icon and take the
+form of each figure from what its content is (rate, lanes, timeline, nesting, cycle, bars), so that the
+figures of one post do not all look alike. Use a box figure only when there is nothing to depict.
 Architecture figures are not affected: they keep official AWS icons.
 
 ## Briefing the concept skill (box figures)

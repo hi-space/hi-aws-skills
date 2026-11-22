@@ -9,6 +9,8 @@ Conventions
   they touch the ground; boxes (frame, monitor, server, panel, model_box) take their top-left corner.
 - Ink outlines, gray bodies, orange for the thing the reader should look at. Green and red only in mark().
 - A figure is a list of strings handed to canvas(); later items paint over earlier ones.
+- Role icons (agent_icon, nn, gear_icon, shield_icon) and form helpers (pulses, lane, timeline, boundary,
+  ring_arc, bar) are at the end of the file; spec_forms.py shows each form.
 """
 import math
 from awsdiag import Canvas, SANS, INK, MUTED, PAPER, SOFT, ACCENT, esc
@@ -20,7 +22,16 @@ def g(x, y, body, s=1.0):
     return f'<g transform="translate({x},{y}) scale({s})">{body}</g>'
 
 
+# Figures are shown at body width: Word scales the 960 px canvas to about 65%, so 14 px text reads as
+# 7 pt and a thin mid-gray detail line looks blurred. Specs keep the nominal sizes 13 / 14 / 16; txt()
+# renders them as 15 / 16 / 18 and draws detail text in TEXT2, darker than MUTED (arrows stay MUTED).
+RAMP = {13: 15, 14: 16, 15: 16, 16: 18}
+TEXT2 = "#3A434E"
+
+
 def txt(x, y, s, size=14, weight=400, color=MUTED, anchor="middle"):
+    size = RAMP.get(size, size)
+    color = TEXT2 if color == MUTED else color
     return f'<text x="{x}" y="{y}" fill="{color}" font-size="{size}" font-weight="{weight}" font-family="{SANS}" text-anchor="{anchor}">{esc(s)}</text>'
 
 
@@ -180,6 +191,23 @@ def server(x, y, w=74, h=92):
     return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" fill="{GRAY}" stroke="{INK}" stroke-width="1.6"/>' + rows
 
 
+def node(x, y, w=74, h=92):
+    """Compute node (cloud instance or cluster node): a rounded square with a chip inside, drawn in the same
+    74 x 92 box as server() so one can replace the other. Use this, not server(), for cloud instances."""
+    s = min(w, h); ox, oy = x + (w - s) / 2, y + (h - s) / 2
+    c0, cs = s * 0.27, s * 0.46
+    cx, cy = ox + c0, oy + c0
+    pins = "".join(
+        f'<line x1="{cx + cs*(i+1)/4:.1f}" y1="{cy - 7}" x2="{cx + cs*(i+1)/4:.1f}" y2="{cy}" stroke="{INK}" stroke-width="2.2"/>'
+        f'<line x1="{cx + cs*(i+1)/4:.1f}" y1="{cy + cs}" x2="{cx + cs*(i+1)/4:.1f}" y2="{cy + cs + 7}" stroke="{INK}" stroke-width="2.2"/>'
+        f'<line x1="{cx - 7}" y1="{cy + cs*(i+1)/4:.1f}" x2="{cx}" y2="{cy + cs*(i+1)/4:.1f}" stroke="{INK}" stroke-width="2.2"/>'
+        f'<line x1="{cx + cs}" y1="{cy + cs*(i+1)/4:.1f}" x2="{cx + cs + 7}" y2="{cy + cs*(i+1)/4:.1f}" stroke="{INK}" stroke-width="2.2"/>'
+        for i in range(3))
+    return (f'<rect x="{ox}" y="{oy}" width="{s}" height="{s}" rx="{s*0.14:.0f}" fill="{GRAY}" stroke="{INK}" stroke-width="1.8"/>' + pins
+            + f'<rect x="{cx:.1f}" y="{cy:.1f}" width="{cs:.1f}" height="{cs:.1f}" rx="4" fill="{PAPER}" stroke="{INK}" stroke-width="1.6"/>'
+            + f'<rect x="{cx + cs*0.28:.1f}" y="{cy + cs*0.28:.1f}" width="{cs*0.44:.1f}" height="{cs*0.44:.1f}" rx="3" fill="{ACCENT}"/>')
+
+
 def mark(x, y, ok=True, r=10):
     p = '<path d="M -5,0 L -1.5,4 L 5,-4"' if ok else '<path d="M -4,-4 L 4,4 M 4,-4 L -4,4"'
     return g(x, y, f'<circle r="{r}" fill="{GREEN if ok else RED}"/>' + p + f' stroke="{PAPER}" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>')
@@ -240,3 +268,109 @@ def canvas(slug, title_, desc, h, parts, w=960, lang="ko"):
     c = Canvas(w, h, slug, title_, desc, lang)
     c.overlay.append("".join(parts))
     return c
+
+# ---------------------------------------------------------------------------------------------------
+# Role icons. One icon per role across a post: the reader should tell an agent from a model from a
+# controller without reading the label. All are about 60 x 50 with the origin at the top-left.
+# ---------------------------------------------------------------------------------------------------
+
+def agent_icon(x, y, s=1.0):
+    """AI agent (the part that decides, calls tools and checks results): a robot face with an antenna."""
+    return g(x, y, f'<line x1="30" y1="5" x2="30" y2="13" stroke="{INK}" stroke-width="1.8"/>'
+                   f'<circle cx="30" cy="4" r="3.6" fill="{ACCENT}" stroke="{INK}" stroke-width="1.3"/>'
+                   f'<rect x="3" y="22" width="7" height="16" rx="2.5" fill="{INK}"/><rect x="50" y="22" width="7" height="16" rx="2.5" fill="{INK}"/>'
+                   f'<rect x="9" y="12" width="42" height="37" rx="9" fill="{PAPER}" stroke="{INK}" stroke-width="1.7"/>'
+                   f'<circle cx="22" cy="27" r="4.4" fill="{ACCENT}" stroke="{INK}" stroke-width="1.3"/>'
+                   f'<circle cx="38" cy="27" r="4.4" fill="{ACCENT}" stroke="{INK}" stroke-width="1.3"/>'
+                   f'<path d="M 22,39 Q 30,44 38,39" fill="none" stroke="{INK}" stroke-width="1.8" stroke-linecap="round"/>', s)
+
+
+def gear_icon(x, y, s=1.0):
+    """Controller, actuator side, deterministic machinery: a gear."""
+    teeth = "".join(f'<rect x="-4" y="-23" width="8" height="9" rx="1.5" fill="{INK}" transform="rotate({k*45})"/>' for k in range(8))
+    return g(x, y, f'<g transform="translate(30,25)">{teeth}<circle r="15" fill="{GRAY}" stroke="{INK}" stroke-width="1.6"/><circle r="5" fill="{ACCENT}"/></g>', s)
+
+
+def shield_icon(x, y, s=1.0):
+    """A check that a request has to pass (policy, guardrail, regression test): a shield with a tick."""
+    return g(x, y, f'<path d="M 30,1 L 50,9 V 26 Q 50,42 30,50 Q 10,42 10,26 V 9 Z" fill="{PAPER}" stroke="{INK}" stroke-width="1.8" stroke-linejoin="round"/>'
+                   f'<path d="M 21,26 l 6,6 l 12,-13" fill="none" stroke="{ACCENT}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>', s)
+
+
+def icon_box(x, y, w, h, icon, name, sub=(), focal=False):
+    """Named box with a role icon on the left: icon_box(..., agent_icon, "에이전트", ["한 줄", "두 줄"])."""
+    fill, stroke = (TINT, ACCENT) if focal else (PAPER, INK)
+    n = len(sub)
+    ty = y + h / 2 - (n * 19) / 2 + 5
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="10" fill="{fill}" stroke="{stroke}" stroke-width="1.4"/>'
+            + icon(x + 14, y + h / 2 - 25) + txt(x + 86, ty, name, 16, 600, INK, "start")
+            + lines(x + 86, ty + 21, list(sub), 14, 400, MUTED, "start"))
+
+
+def block(x, y, w, h, label):
+    """Plain gray block for a thing that is only an endpoint in this figure (the robot, a device, a client)."""
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="8" fill="{GRAY}" stroke="{INK}" stroke-width="1.4"/>'
+            + txt(x + w / 2, y + h / 2 + 5, label, 14, 600, INK))
+
+
+# ---------------------------------------------------------------------------------------------------
+# Form helpers. A post whose figures are all "box, arrow, box" reads as one figure repeated; pick the
+# form from what the content is (references/illustrations.md, "Forms"). spec_forms.py uses every one.
+# ---------------------------------------------------------------------------------------------------
+
+def pulses(x, y, w, kind):
+    """Rate track, 20 px tall on a baseline: how often something acts. kind is "rare" (a few long outlined
+    spans: slow, irregular decisions), "regular" (evenly spaced blocks) or "dense" (fine ticks: a fast loop)."""
+    base = f'<line x1="{x}" y1="{y+24}" x2="{x+w}" y2="{y+24}" stroke="{SOFT}" stroke-width="1"/>'
+    if kind == "rare":
+        body = "".join(f'<rect x="{x + w*a:.1f}" y="{y}" width="{w*b:.1f}" height="20" rx="4" fill="{PAPER}" stroke="{ACCENT}" stroke-width="1.6"/>'
+                       for a, b in ((0.04, 0.33), (0.64, 0.24)))
+    elif kind == "regular":
+        n = max(4, int(w // 29))
+        body = "".join(f'<rect x="{x + 6 + k*(w-17)/(n-1) - 5.5:.1f}" y="{y}" width="11" height="20" rx="2" fill="{GRAY}" stroke="{INK}" stroke-width="1.2"/>' for k in range(n))
+    else:
+        n = int(w // 5)
+        body = "".join(f'<line x1="{x+3+k*5}" y1="{y}" x2="{x+3+k*5}" y2="{y+20}" stroke="{INK}" stroke-width="1.5"/>' for k in range(n))
+    return body + base
+
+
+def lane(y, x1, x2, gaps=()):
+    """Horizontal path from x1 to x2 with an arrowhead at x2, broken at each (a, b) in gaps so that an
+    object drawn there (chip, doc, nn) sits on the path instead of under a line."""
+    xs = [x1] + [v for ab in sorted(gaps) for v in ab] + [x2]
+    segs = list(zip(xs[::2], xs[1::2]))
+    return "".join(f'<line x1="{a}" y1="{y}" x2="{b}" y2="{y}" stroke="{MUTED}" stroke-width="1.6"/>' for a, b in segs[:-1]) + arrow(segs[-1][0], y, segs[-1][1], y)
+
+
+def timeline(x1, x2, y, start="", end=""):
+    """Time arrow with a label over each end; put frames, docs or marks under it in time order."""
+    return (arrow(x1, y, x2, y) + (txt(x1 + 8, y - 12, start, 14, anchor="start") if start else "")
+            + (txt(x2 - 24, y - 12, end, 14, 600, INK) if end else ""))
+
+
+def boundary(x, y, w, h, icon, name, sub="", fill=PALE):
+    """Enclosure with its icon and name in the top-left corner. Nest two or three to show that whatever is
+    inside can be reached only by crossing each one; put mark() where a path crosses the edge."""
+    return (f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="14" fill="{fill}" stroke="{INK}" stroke-width="1.6"/>'
+            + icon(x + 18, y + 12, 0.72) + txt(x + 66, y + 36, name, 16, 600, INK, "start")
+            + (txt(x + 66 + len(name) * 15 + 14, y + 36, sub, 14, anchor="start") if sub else ""))
+
+
+def ring_pt(cx, cy, rx, ry, deg):
+    """Point on an ellipse, 0 degrees at the top, clockwise."""
+    t = math.radians(deg)
+    return cx + rx * math.sin(t), cy - ry * math.cos(t)
+
+
+def ring_arc(cx, cy, rx, ry, d1, d2, color=MUTED):
+    """Clockwise arc with an arrowhead from angle d1 to d2. Leave 20 to 30 degrees around each node so the
+    arc ends in open space next to the icon, not on it or on its label."""
+    (x1, y1), (x2, y2) = ring_pt(cx, cy, rx, ry, d1), ring_pt(cx, cy, rx, ry, d2)
+    mk = "arrow-accent" if color == ACCENT else "arrow"
+    return f'<path d="M {x1:.1f},{y1:.1f} A {rx},{ry} 0 0 1 {x2:.1f},{y2:.1f}" fill="none" stroke="{color}" stroke-width="1.6" marker-end="url(#{mk})"/>'
+
+
+def bar(x, y, w, label):
+    """Bar whose length is the quantity. Use one px-per-unit scale for every bar in the figure and say so in
+    the paragraph; a 12x difference drawn to scale needs no adjective."""
+    return f'<rect x="{x}" y="{y}" width="{w}" height="16" rx="3" fill="{ACCENT}"/>' + txt(x + w + 10, y + 13, label, 14, 600, INK, "start")

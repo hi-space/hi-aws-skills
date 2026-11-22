@@ -89,6 +89,17 @@ python3 skills/aws-tech-blog-writer/scripts/build_figures.py blog-work/<slug> --
 
 렌더러는 `aws-diagram-design` 의 Python 생성기를 씁니다. AWS 아키텍처 그림은 그대로 `aws-drawio-diagram` 과 공식 아이콘으로 그리고, 분류 체계처럼 그릴 대상이 없는 개념 그림만 `aws-diagram-design` 의 상자 그림으로 그립니다.
 
+## 그림의 형식과 아이콘 (3.3.0)
+
+한 글의 개념 그림이 모두 "상자, 화살표, 상자"이면 그림 하나를 반복한 것처럼 보입니다. 3.3.0은 두 가지를 정합니다.
+
+- 역할마다 아이콘 하나. 에이전트는 로봇 얼굴(`agent_icon`), 호출되는 모델은 신경망(`nn`), 제어기는 톱니바퀴(`gear_icon`), 요청이 통과해야 하는 검사는 방패(`shield_icon`)로 그리고 글 전체에서 유지합니다.
+- 내용에 맞는 형식. 동작 주기가 다른 계층은 주기 눈금이 있는 띠(`pulses`), 양 끝이 같은 여러 방식은 나란한 경로(`lane`), 시간에 따라 남는 것은 시간 순서(`timeline`), 요청이 지나야 하는 장치는 중첩 경계(`boundary`), 다음 실행으로 이어지는 개선은 가운데에 저장소가 있는 고리(`ring_arc`), 비율이 요점인 두 수치는 같은 축척의 막대(`bar`)로 그립니다. `assets/illustration/spec_forms.py` 가 형식마다 예제를 하나씩 만듭니다.
+
+글자는 본문 폭으로 줄었을 때 읽히도록 이름 18, 설명 16, 이름표 15 px로 그리고 설명 글자는 진한 회색을 씁니다. PNG는 3배 해상도로 내보냅니다. AWS 아키텍처 그림도 960 px 폭에 이름 18, 설명 17, 화살표 16 px로 그립니다.
+
+AWS 구성을 설명하는 장은 전체 아키텍처 그림 하나로 끝내지 않고, 본문이 따라가는 경로마다 공식 아이콘으로 그린 아키텍처 그림을 둡니다(`references/diagrams.md`).
+
 ## Word 파일 (aws-blog-review R5)
 
 `docx` 스킬의 docx-js 워크플로로 만듭니다. pandoc의 DOCX writer는 인라인 색을 버려 placeholder가 보이지 않으므로 쓰지 않습니다.

@@ -18,6 +18,51 @@ figures in this plugin. Architecture figures keep the official AWS icons and are
 If more than half of the figures in the plan are box figures, look again for the object or the actor each
 one is about. A post about a physical system should open with a scene.
 
+## Role icons: one icon per role
+
+When one icon stands for the agent, the model and the controller alike, the reader has to read every
+label to tell them apart, and the author said so ("에이전트랑 VLA 등 너무 구분이 안 돼"). Fix the vocabulary
+at the start of a post and keep it in every figure.
+
+| Role | Icon | Function |
+|---|---|---|
+| AI agent: the part that decides, calls tools, checks results | Robot face with an antenna | `agent_icon` |
+| Learned model that is called: policy, VLA, classifier | Small network | `nn` (only for this) |
+| Controller, actuator side, deterministic machinery | Gear | `gear_icon` |
+| A check a request must pass: policy, guardrail, regression test | Shield with a tick | `shield_icon` |
+| The physical robot or device | The drawing itself (`arm`, `humanoid`), or a gray `block()` when it is only an endpoint | |
+
+`icon_box(x, y, w, h, icon, name, sub, focal)` puts any of them in a named box. Draw the robot arm only
+where the scene needs it (a task being done, before and after, several robots); an arm repeated in every
+figure as decoration is noise.
+
+## Forms: pick the form from what the content is
+
+Eleven figures that are all "box, arrow, box" or equal panels read as one figure repeated, however clean
+each one is. The author asked for variety ("설명 다이어그램이 다 너무 유사하게 표현되는 것 같아 다채롭게").
+Before placing anything, say what kind of thing the paragraph explains and take the form from this table.
+`assets/illustration/spec_forms.py` builds one example of each.
+
+| The paragraph explains | Form | Helpers | Example |
+|---|---|---|---|
+| Something happening in a place, with actors and objects | Scene | pictograms | `spec_example.py` `policy_loop` |
+| Layers that act at different rates or time scales | Stacked bands, each with a rate track | `icon_box`, `pulses` | `rate_bands` |
+| Several ways to get from the same start to the same end | Parallel lanes between two fixed ends; only what sits on the lane differs | `lane` | `lanes` |
+| What is kept, dropped or summarised as time passes | Time arrow with items under it in order | `timeline`, `frame` | `timeline_memory` |
+| What a request must pass to reach something; defence in layers | Nested enclosures, marks where the path crosses an edge, a bypass drawn across them | `boundary`, `mark` | `boundaries` |
+| Improvement that feeds the next run; anything that accumulates | Ring of steps with the store in the middle | `ring_arc`, `ring_pt` | `cycle` |
+| Two quantities whose ratio is the point | Bars at one scale next to the things they measure | `bar` | `bars` |
+| The same situation under two conditions | Two panels with the same scene, one element changed | `panel` | `spec_example.py` `two_panels` |
+
+Rules that go with the table:
+
+- After the first build, look at the whole preview sheet, not one figure at a time. If three figures share
+  a skeleton (same panel grid, same left-to-right chain), redraw one in the form its content calls for.
+- A form carries meaning. A ring says "this repeats", nesting says "inside is reachable only through the
+  outside", bar length says "this much". Do not use one for layout variety alone.
+- Sections that explain the AWS configuration are drawn as AWS architecture with official icons
+  (`diagrams.md`), not with these forms.
+
 ## Style
 
 - Canvas 960 px wide (viewBox units); the PNG is rendered at 2x. Height follows the content.
@@ -26,8 +71,13 @@ one is about. A post about a physical system should open with a scene.
   model box, intended motion). Green and red appear only in `mark()` for success and failure.
 - Solid gray arrows are data or control flow. Dashed orange paths are intended motion or a human link
   (teleoperation, correction). Do not use dashed orange for data.
-- Text sizes: 16 px bold for a name, 14 px for a detail line or a sentence, 13 px for the label under an
-  object. Nothing smaller. Korean labels, English for product and model names.
+- Text sizes in a spec are nominal: 16 for a name, 14 for a detail line, 13 for the label under an object.
+  `txt()` renders them as 18 / 16 / 15 px and draws detail text in dark gray `#3A434E`, because the post
+  shows the 960 px canvas at about 65% and the author found smaller, lighter text hard to read ("서브타이틀이
+  작거나 그림이 흐릿하거나"). Leave room for the rendered size when you set box and chip widths. Korean
+  labels, English for product and model names.
+- PNGs are rendered at 3x (`build_figures.py --scale`, default 3) so text stays sharp when the figure is
+  scaled or zoomed.
 - Words come from the post and stay short: a name, a noun, a phrase next to the thing it names. No
   sentence under a drawing or along the bottom of a panel explaining what the picture means. The author
   removed those; the explanation belongs in the paragraph that introduces the figure and in the caption.
@@ -36,6 +86,27 @@ one is about. A post about a physical system should open with a scene.
 - Everything that stands has something to stand on: `table()` or `ground()`.
 - Leave air. No text over a drawing, no drawing touching a panel edge, at least 16 px between a label and
   the next object.
+
+## One figure per scenario, and more forms
+
+Do not put every workload, team or scenario into one figure with a row each. The author asked for a
+figure per scenario ("시나리오별로 그림 넣는 게 더 이해 돕기 좋지"): each scenario gets its own figure in the
+section that explains it, in the form that suits it, and the chapter opening names the scenarios in a
+sentence.
+
+Forms used in the Physical AI training post that the table above does not list:
+
+| The figure shows | Form |
+|---|---|
+| Categories that overlap | Venn: tinted circles, the shared case in the overlap |
+| Quantities that differ by orders of magnitude | Horizontal bars on a log scale, the value written on each bar |
+| Steps that build on each other | Staircase with a scene standing on each step |
+| A system that answers several requirements | Drawing of the system with numbered badges, the numbers explained beside it |
+| Why one component fits and another does not | Cutaway of the component, the unfit one drawn small beside it |
+| One thing used in several ways | Tree: the thing at the top, one branch per use |
+
+Colour can separate ideas as well as mark focus (orange for the policy or the robot, teal for the world
+model and simulation, blue for infrastructure and data). Keep one meaning per colour across the post.
 
 ## Pictogram catalog (`assets/illustration/_pict.py`)
 
@@ -50,12 +121,15 @@ one is about. A post about a physical system should open with a scene.
 | `monitor(x, y, w, h, inner)` | Screen on a stand; put a simulated scene inside | top-left |
 | `server`, `db`, `doc` | Server, storage, document | top-left |
 | `nn`, `model_box(x, y, w, h, name, sub, focal)` | Network icon; model box with the icon, a name and up to two lines | top-left |
+| `agent_icon`, `gear_icon`, `shield_icon`, `icon_box(x, y, w, h, icon, name, sub, focal)`, `block` | Role icons, a named box with any of them, a plain gray endpoint block | top-left |
+| `pulses`, `lane`, `timeline`, `boundary`, `ring_arc`, `ring_pt`, `bar` | Form helpers (see "Forms") | |
 | `mark(x, y, ok)` | Success or failure badge | centre |
 | `bubble`, `chip` | Spoken instruction; a small named value | top-left, centre |
 | `panel`, `title`, `txt`, `lines`, `arrow`, `motion` | Layout: background panel, name with detail lines, text, flow arrow, dashed motion path | |
 | `canvas(slug, title, desc, h, parts)` | Wraps the list of strings into a figure | |
 
-`spec_example.py` in the same directory builds two figures with these and is the pattern to copy.
+`spec_example.py` in the same directory builds two scenes and `spec_forms.py` builds the six other forms;
+copy the pattern, not the content.
 
 ### Adding a pictogram
 
@@ -86,7 +160,8 @@ If the pictogram will be useful in later posts, copy it back into the skill's `_
    Open `<work>/diagrams/out/preview.png` with Read. The geometry checker of `aws-diagram-design` does not
    see pictograms, so overlaps are found only by looking. Check, for every figure: no text on a drawing
    or on a panel edge, arrows start and end in open space next to the thing they refer to, held objects
-   sit in the gripper, nothing is cut by the canvas.
+   sit in the gripper, nothing is cut by the canvas. Then look at the sheet as a whole: the same role has
+   the same icon everywhere, and no three figures share one skeleton.
 4. Fix coordinates and rebuild until the sheet is clean. Two or three rounds is normal.
 5. Install the ones that ship, with their figure numbers:
    ```bash
