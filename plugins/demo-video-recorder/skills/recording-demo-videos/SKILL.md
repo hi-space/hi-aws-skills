@@ -1,23 +1,27 @@
 ---
 name: recording-demo-videos
-description: Use when the user wants a demo, LinkedIn or product video of a web UI (dashboard, live simulation, replay page) with zoom-ins on panels, a title card, burned-in captions, or a highlight reel cut from longer takes; also when captioning a screen recording (.mov) they made themselves. Headless Linux with Playwright and ffmpeg. Korean triggers: 데모 영상, 시연 영상, 링크드인 영상, 영상 녹화, 화면 녹화 편집, 자막 넣어줘, 하이라이트 릴, 릴 만들어줘.
+description: Use when the user wants a demo, LinkedIn or product video of a web UI (dashboard, live simulation, replay page) with zoom-ins on panels, a title card, burned-in captions, or a highlight reel cut from longer takes; also a one-take working demo of a deployed app for a customer proposal; also when captioning a screen recording (.mov) they made themselves. Headless Linux with Playwright and ffmpeg. Korean triggers: 데모 영상, 시연 영상, 워킹 데모, 제안용 데모 영상, 원테이크, 링크드인 영상, 영상 녹화, 화면 녹화 편집, 자막 넣어줘, 하이라이트 릴, 릴 만들어줘.
 ---
 
 # Recording Demo Videos
 
 ## Overview
 
-Script first: an intro card with the message and what the demo shows, chapters, captions that say what each feature does, a summary card with the take home messages. Then record the real UI in wall-clock time with Playwright `recordVideo` while an in-page CSS camera pans and zooms, burn captions and cards with ffmpeg, and cut a reel from a JSON manifest. Output is 1920×1080 H.264 at 1.25× by default. Nothing in the app is patched; only the camera is scripted.
+Script first (intro card, chapters, captions on what each feature does, summary card), then record the real UI in wall-clock time with Playwright `recordVideo` and an in-page CSS camera, burn captions and cards with ffmpeg, and cut a reel from a JSON manifest. Output 1920×1080 H.264, 1.25× by default. The app is never patched.
 
 Inputs: a take from `record_demo.mjs` (webm + camlog, captions anchored to UI events) or a user-made screen recording (.mov/.mp4, captions anchored to raw seconds).
+
+## Choose a mode
+
+Chapter mode (below) joins clips with fades. For a working demo or proposal that must look uncut (원테이크, 워킹 데모), follow [references/onetake.md](references/onetake.md) instead.
 
 ## Pipeline
 
 1. **Find selectors**: open the app with Playwright once and dump candidate elements with their rects via `page.evaluate` at the recording layout size, or read a screenshot. A `rec.focus` that matches nothing keeps the camera still, prints `selector matched nothing` and writes `missing: true` into the camlog; grep for it before editing.
 2. **Script** ([references/script.md](references/script.md)): intro card, chapters (title = what the feature lets the user do, subtitle = where), chapter cards, beats per chapter (`scripts/<stem>.json`, format in `python3 scripts/edit_demo.py --help`), summary card. All cards in one `cards.json`.
-3. **Storyboard** (`storyboard.mjs`, copy `scripts/storyboard.example.mjs`): one async function that navigates, calls `rec.install()`, then alternates shots (`rec.reset` / `rec.region` / `rec.focus`) with `rec.sleep` holds. Every hold is footage: size them to the target length. Fixed holds when you know what happens; the event-probe loop when the UI changes at unpredictable times. `tap(locator)` for clicks; `rec.note('<kind>')` at every event a caption will anchor to. Shot labels are an edit sheet, not captions.
+3. **Storyboard** (`storyboard.mjs`, copy `scripts/storyboard.example.mjs`): one async function that navigates, calls `rec.install()`, then alternates shots (`rec.reset` / `rec.region` / `rec.focus`) with `rec.sleep` holds. Every hold is footage; use the event-probe loop when the UI changes at unpredictable times. `tap(locator)` for clicks; `rec.note('<kind>')` at every event a caption will anchor to. Shot labels are an edit sheet, not captions.
 4. **Record**: `node scripts/record_demo.mjs --url <site> --storyboard ./storyboard.mjs --name <stem> --out raw --playwright-root <dir>` → `raw/<stem>.webm` + `raw/<stem>.camlog.json`. Default layout 1920×1080. When the whole UI fits one screen and should read large, add `--layout 1280x720`: the page is laid out at 1280×720 and zoomed 1.5× to fill the frame, crisp, with selectors and camera calls unchanged. `--playwright-root`: any directory whose `node_modules` has `playwright` (else `npm i playwright && npx playwright install chromium`).
-5. **Cut points**: camlog entries have `t` (seconds from launch) and a kind (`shot` with `key`/`label`, your `note` kinds). Fill each beat's `at` with `shot:<key>[#n]`, `<note kind>` or raw seconds, plus `offset`. Prefer event anchors: after a re-record raw-second anchors must be re-tuned by hand, event anchors survive.
+5. **Cut points**: camlog entries have `t` (seconds from launch) and a kind (`shot` with `key`/`label`, your `note` kinds). Fill each beat's `at` with `shot:<key>[#n]`, `<note kind>` or raw seconds, plus `offset`. Prefer event anchors; they survive a re-record.
 6. **Clip**: `python3 scripts/edit_demo.py clip raw/<stem>.webm --script scripts/<stem>.json` → `clips/<stem>.mp4`. Title card 0–4 s, then the beats as lower thirds. Default `"speed": 1.25`; a waiting stretch gets its own script with `"speed": 4` and its own `start`/`end` on the same raw file, and the pieces re-join in the reel with `fade_out: 0` / `fade_in: 0` ([references/reel-manifest.md](references/reel-manifest.md)). Beat `at` stays raw seconds at any speed. No URL or watermark overlay unless asked (`--tag`).
 7. **Cards**: `python3 scripts/make_cards.py cards.json --out clips` → one `.mp4` and `.png` preview per card; read the previews.
 8. **Reel**: `reel.json` (intro card, chapters with their chapter cards, summary card last) → `python3 scripts/edit_demo.py reel reel.json --out reel.mp4`. Segments must share one resolution; the tool aborts before encoding if they differ.

@@ -15,9 +15,15 @@
  * that fits one screen and should read large. Done with `html { zoom }`, not a smaller viewport: recordVideo
  * pads a small viewport top-left with grey. The camera math runs in layout px; selectors and pads are unchanged.
  *
+ * --camera zoom: a gentle camera for one-take demos (references/onetake.md). Every shot zooms the whole page with
+ * `html { zoom }` up to opts.kmax (default 1.1, capped at 1.25) and never pans, so fixed panels (a chat drawer, a
+ * header) stay where they are and the frame reads as the real page at 100 % most of the time. Same rec.* API.
+ * The camlog is rewritten after every note, so a take that crashes halfway still has its events.
+ *
  * Playwright is resolved from --playwright-root / $PLAYWRIGHT_ROOT / cwd (a dir with node_modules).
  */
 import fs from 'node:fs/promises';
+import fsSync from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
@@ -27,11 +33,13 @@ const option = (name, fallback) => { const i = argv.indexOf(name); return i < 0 
 
 const siteUrl = option('--url', process.env.DEMO_URL);
 const storyboardPath = option('--storyboard');
-if (!siteUrl || !storyboardPath) { console.error('usage: record_demo.mjs --url <site> --storyboard <file.mjs> [--name n] [--out dir] [--max-seconds n] [--layout 1280x720]'); process.exit(2); }
+if (!siteUrl || !storyboardPath) { console.error('usage: record_demo.mjs --url <site> --storyboard <file.mjs> [--name n] [--out dir] [--max-seconds n] [--layout 1280x720] [--camera pan|zoom]'); process.exit(2); }
 const name = option('--name', path.basename(storyboardPath, path.extname(storyboardPath)));
 const outDir = path.resolve(option('--out', 'raw'));
 const maxSeconds = Number(option('--max-seconds', 150));
 const layout = option('--layout', '1920x1080');
+const cameraMode = option('--camera', 'pan');
+if (!['pan', 'zoom'].includes(cameraMode)) { console.error(`--camera must be pan or zoom, got ${cameraMode}`); process.exit(2); }
 const [LW, LH] = layout.split('x').map(Number);
 if (!(LW > 0 && LH > 0) || Math.abs(LW / LH - 16 / 9) > 0.01) { console.error(`--layout must be 16:9 (1920x1080 or 1280x720), got ${layout}`); process.exit(2); }
 await fs.mkdir(outDir, { recursive: true });
@@ -45,7 +53,17 @@ const W = 1920, H = 1080;
 const Z = W / LW;  // html zoom; 1 for the default layout
 
 // ---------------------------------------------------------------- camera (runs inside the page)
-const CAMERA_JS = `
+// One-take camera: whole-page html zoom, no pan. focus/region only decide the zoom level (opts.kmax).
+const ZOOM_CAMERA_JS = `
+(() => {
+  if (window.__cam) return;
+  const state = { x: 0, y: 0, k: 1 };
+  const apply = (x, y, k) => { k = Math.max(1, Math.min(k, 1.25)); document.documentElement.style.zoom = String(k); Object.assign(state, { x: 0, y: 0, k }); return { ...state }; };
+  const rect = selector => { const e = document.querySelector(selector); if (!e) return null; const r = e.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; };
+  const focus = (selector, opts = {}) => { const r = rect(selector); return r && r.w > 1 && r.h > 1 ? apply(0, 0, opts.kmax ?? 1.1) : null; };
+  window.__cam = { state, apply, rect, focus, region: (x, y, w, h, opts = {}) => apply(0, 0, opts.kmax ?? 1.1), reset: () => apply(0, 0, 1) };
+})();`;
+const PAN_CAMERA_JS = `
 (() => {
   if (window.__cam) return;
   const style = document.createElement('style');
@@ -104,8 +122,12 @@ const tap = async locator => { await locator.first().waitFor({ state: 'visible' 
 class Recorder {
   constructor(page, name) { this.page = page; this.name = name; this.log = []; this.t0 = Date.now(); this.lastShot = 0; this.lastKey = ''; }
   now() { return (Date.now() - this.t0) / 1000; }
-  note(kind, data = {}) { this.log.push({ t: +this.now().toFixed(2), kind, ...data }); }
-  async install() { await this.page.evaluate(CAMERA_JS); }
+  note(kind, data = {}) {
+    this.log.push({ t: +this.now().toFixed(2), kind, ...data });
+    // Partial camlog after every event: a take that dies halfway can still be inspected or edited.
+    fsSync.writeFileSync(path.join(outDir, `${this.name}.camlog.json`), JSON.stringify({ name: this.name, url: siteUrl, layout, camera: cameraMode, ok: false, log: this.log }, null, 2));
+  }
+  async install() { await this.page.evaluate(cameraMode === 'zoom' ? ZOOM_CAMERA_JS : PAN_CAMERA_JS); }
   async shot(key, fn, label) {
     const result = await this.page.evaluate(fn).catch(error => ({ error: String(error) }));
     this.lastShot = this.now(); this.lastKey = key;
@@ -151,7 +173,7 @@ try {
   const target = path.join(outDir, `${name}.webm`);
   await fs.copyFile(recorded, target);
   await fs.unlink(recorded).catch(() => {});
-  await fs.writeFile(path.join(outDir, `${name}.camlog.json`), JSON.stringify({ name, url: siteUrl, layout, ok, errors, duration_s: rec.now(), log: rec.log }, null, 2));
+  await fs.writeFile(path.join(outDir, `${name}.camlog.json`), JSON.stringify({ name, url: siteUrl, layout, camera: cameraMode, ok, errors, duration_s: rec.now(), log: rec.log }, null, 2));
   await browser.close();
   console.log(JSON.stringify({ video: target, ok, seconds: rec.now(), errors: errors.length }));
 }

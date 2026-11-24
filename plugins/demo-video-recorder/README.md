@@ -14,6 +14,21 @@
 
 카메라는 브라우저 안에서 `body`에 CSS `transform`을 걸어 움직입니다. 녹화된 영상을 나중에 잘라 확대하면 흐려지지만, 페이지 안에서 확대하면 글자가 그 크기로 다시 그려져 2배까지 선명합니다. `--layout 1280x720`도 같은 이유로 `html { zoom }`을 씁니다.
 
+## 원테이크 모드 (1.3.0)
+
+고객 제안이나 배포된 에이전트의 워킹 데모처럼 편집 흔적이 없어야 하는 영상용입니다. 로그인부터 로그아웃까지 한 번의 녹화를 자르지 않고 씁니다. 모델 응답 대기는 4배속으로 돌리고 화면에 빨리 감기 배지를 붙이며, 구간은 페이드 없이 이어 붙입니다. 자막은 단계 칩, 목적, 동작 방식의 3줄입니다. 카드는 원테이크 앞뒤에만 둡니다.
+
+| 단계 | 도구 |
+|---|---|
+| 녹화 | `record_demo.mjs --camera zoom` (화면 이동 없이 페이지 전체만 최대 1.25배 확대), `scripts/storyboard.onetake.example.mjs` (응답 실패, 가드레일 차단, 카드 없음이면 녹화 중단) |
+| 검사 | `python3 scripts/onetake.py check onetake.json` (이벤트 앵커, 자막 길이와 문자, 겹침) |
+| 편집 | `python3 scripts/onetake.py edit onetake.json`, 자막을 넣은 원테이크와 `.srt` 생성 |
+| 카드 | `node scripts/render_cards.mjs cards` (`assets/card-template.html`에서 시작하는 HTML 카드) |
+| 조립 | `python3 scripts/onetake.py assemble final.json`, 최종 mp4와 `.ko.srt` 생성 |
+| 확인 | `onetake.py sheet`(프레임 시트), `onetake.py scan`(화면 전환 때 하얗게 뜨는 구간) |
+
+절차와 스토리 짜는 법은 [references/onetake.md](skills/recording-demo-videos/references/onetake.md)에 있습니다.
+
 직접 찍은 화면 녹화(.mov)도 같은 `clip`/`reel` 명령으로 자막을 넣습니다. 이때 자막의 `at`은 원본의 초 단위 시각입니다.
 
 ## 요구 사항
@@ -43,6 +58,7 @@ ln -s "$PWD/hi-aws-skills/plugins/demo-video-recorder/skills/recording-demo-vide
 
 - [SKILL.md](skills/recording-demo-videos/SKILL.md): 9단계 파이프라인, 빠른 참조, 흔한 실수
 - [references/script.md](skills/recording-demo-videos/references/script.md): 인트로 카드, 챕터와 간지, 자막 문장 규칙, 정리 카드, `cards.json` 형식
+- [references/onetake.md](skills/recording-demo-videos/references/onetake.md): 원테이크 모드, 스토리 짜기, 3줄 자막, 녹화 중단 조건, 편집과 확인
 - [references/reel-manifest.md](skills/recording-demo-videos/references/reel-manifest.md): 릴 매니페스트 형식, 구간별 `fade_in`/`fade_out`
 - `scripts/storyboard.example.mjs`: 스토리보드 예시(고정 대기와 이벤트 감지 루프)
 

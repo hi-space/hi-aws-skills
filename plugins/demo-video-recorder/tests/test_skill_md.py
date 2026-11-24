@@ -83,7 +83,7 @@ def test_script_reference_defines_cards_and_voice():
 def test_korean_examples_obey_the_voice_rules():
     """Every Korean example line (outside ✗ bad examples) must itself follow the rules, or the next reel copies it."""
     hangul = re.compile(r"[가-힣]")
-    for path in (SCRIPT_MD, SKILL_MD, PLUGIN / "README.md"):
+    for path in (SCRIPT_MD, SKILL_MD, PLUGIN / "README.md", SKILL / "references" / "onetake.md"):
         for n, line in enumerate(path.read_text().splitlines(), 1):
             if not hangul.search(line) or "✗" in line:
                 continue

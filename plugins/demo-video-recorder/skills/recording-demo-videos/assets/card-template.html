@@ -1,0 +1,31 @@
+<!doctype html>
+<!-- One-take card template (1920x1080). Copy to cards/<name>.html, edit, render with scripts/render_cards.mjs.
+     Palette: take it from the product UI so the cards and the take read as one video (paper / ink / accent).
+     Icons: official service icons as <img> (file:// or data URI); no hand-drawn pictograms. -->
+<html lang="ko"><head><meta charset="utf-8"><style>
+@font-face{font-family:NS;src:url(file:///usr/share/fonts/truetype/nanum/NanumSquareR.ttf);font-weight:400}
+@font-face{font-family:NS;src:url(file:///usr/share/fonts/truetype/nanum/NanumSquareB.ttf);font-weight:700 900}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1920px;height:1080px;background:#f4efe7;color:#1c2321;font-family:NS,'NanumGothic',sans-serif;overflow:hidden;position:relative}
+.k{font-size:26px;letter-spacing:.22em;color:#a8432f;font-weight:800}
+h1{font-size:76px;font-weight:800;line-height:1.22}
+h2{font-size:54px;font-weight:800;line-height:1.25;margin-top:16px}
+.sub{font-size:30px;color:#4b5350;line-height:1.6}
+.dim{color:#7c827f}
+.box{background:#fffdf9;border:1.5px solid #ddd3c4;border-radius:18px;padding:26px 28px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.box b{font-size:27px;font-weight:800;display:block}
+.box span{font-size:21px;color:#5d6461;display:block;margin-top:12px;line-height:1.5}
+.svc{display:flex;align-items:center;gap:14px}
+.svc img{width:58px;height:58px}
+</style></head><body>
+  <div style="position:absolute;left:150px;top:110px">
+    <div class="k">WHAT YOU SAW</div>
+    <h2>지금 배포되어 동작하는 기능</h2>
+  </div>
+  <div class="grid" style="position:absolute;left:150px;top:300px;width:1620px">
+    <div class="box"><b>자연어 상품 상담</b><span>조건을 검색 필터로 바꿔 실제 상품만 추천합니다</span></div>
+    <div class="box"><b>대화 맥락 유지</b><span>대화 기록을 읽어 후속 질문에 답합니다</span></div>
+    <div class="box"><b>안전장치</b><span>범위 밖 질문을 거절하고 유해 요청을 차단합니다</span></div>
+  </div>
+</body></html>
